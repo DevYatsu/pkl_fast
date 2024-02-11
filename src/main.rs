@@ -1,8 +1,7 @@
-use lexer::Token;
 use logos::{Lexer, Logos};
 use std::{env, fs, time::Instant};
 
-mod lexer;
+use pkl_fast::lexer::PklToken;
 mod parser;
 
 fn main() {
@@ -18,17 +17,17 @@ fn main() {
 
     let pkl_code = fs::read_to_string(target_file).unwrap_or("".to_owned());
     let start = Instant::now();
-    let mut lexer: Lexer<Token> = Token::lexer(&pkl_code);
+    let mut lexer: Lexer<PklToken> = PklToken::lexer(&pkl_code);
     let end = Instant::now();
 
     while let Some(token) = lexer.next() {
         println!("{:?}", token);
         let statement = match token {
-            Ok(Token::Import) => {
+            Ok(PklToken::Import) => {
                 parser::import::parse_import(&mut lexer)
                 
             }
-            Ok(Token::GlobbedImport) => {
+            Ok(PklToken::GlobbedImport) => {
                 parser::import::parse_globbed_import(&mut lexer)
             }
             _ => continue,

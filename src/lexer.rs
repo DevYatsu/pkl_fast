@@ -3,7 +3,7 @@ use logos::Logos;
 #[derive(Logos, Debug, PartialEq)]
 #[logos(error = LexingError)]
 #[logos(skip r"[\f]+")]
-pub enum Token {
+pub enum PklToken {
     #[token("\n")]
     NewLine,
     #[token("\t")]
