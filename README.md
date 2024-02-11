@@ -11,4 +11,4 @@
 - Designed for speed and reliability.
 
 ## Contact
-For questions, suggestions, or feedback, please reach out to me at yatsu.dev@gmail.com. Pull requests are appreciated, and issues are welcome too! Thank you for your interest in contributing to the project!
+For questions, suggestions, or feedback, please reach out to me at <yatsu.dev@gmail.com>. Pull requests are appreciated, and issues are welcome too! Thank you for your interest in contributing to the project!
