@@ -16,6 +16,8 @@ pub enum Token {
     #[token("@ModuleInfo")]
     ModuleInfo,
 
+    #[token("import*")]
+    GlobbedImport,
     #[token("import")]
     Import,
     #[token("extends")]
