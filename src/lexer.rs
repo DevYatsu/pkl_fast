@@ -50,6 +50,8 @@ pub enum Token {
     Colon,
     #[token(",")]
     Comma,
+    #[token(".")]
+    Dot,
     #[token(";")]
     SemiColon,
     #[token("{")]
@@ -103,11 +105,11 @@ pub enum Token {
     Identifier,
 
     #[regex("//.*")]
-    SingleLineComment,
+    LineComment,
     #[regex("///.*")]
-    TripleSlashComment,
+    DocComment,
     #[regex(r"/\*([^*]|\*[^/])*\*/")]
-    MultiLineComment,
+    BlockComment,
 }
 
 use std::num::{ParseFloatError, ParseIntError};

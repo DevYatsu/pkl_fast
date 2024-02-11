@@ -20,6 +20,10 @@ fn main() {
             baz
         else
             foo
+
+        typealias Foo = "foo"|"bar"|"baz"
+        res1 = new { bar = "bar"; baz = "baz" }
+        res2 = new { 1; 2; 3; 4; 5; 6 }
     "#;
 
     let lexer: Lexer<Token> = Token::lexer(pkl_code);
