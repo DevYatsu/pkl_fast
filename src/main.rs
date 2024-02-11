@@ -1,7 +1,6 @@
 use logos::{Lexer, Logos};
 use lexer::Token;
 
-mod parser;
 mod lexer;
 
 fn main() {

@@ -41,10 +41,16 @@ pub enum Token {
     PlusSign,
     #[token("-")]
     MinusSign,
-    #[token("|>")]
+    #[token("|>", priority = 3)]
     PipeOperator,
+    #[token("|")]
+    OrOperator,
 
     #[token(":")]
+    Colon,
+    #[token(",")]
+    Comma,
+    #[token(";")]
     SemiColon,
     #[token("{")]
     OpenBrace,
