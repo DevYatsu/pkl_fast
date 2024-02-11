@@ -1,6 +1,6 @@
 [package]
 name = "pkl_fast"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["yatsu"]
 
@@ -9,7 +9,6 @@ repository = "https://github.com/DevYatsu/pkl_fast"
 license = "MIT"
 
 keywords = ["pkl_fast", "pkl", "serialization", "apple", "fast"]
-
 
 [dependencies]
 logos = "0.14.0"
