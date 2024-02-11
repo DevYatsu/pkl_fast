@@ -23,8 +23,15 @@ pub enum Token {
     #[token("class")]
     Class,
 
+    #[token("hidden")]
+    Hidden,
+
     #[token("function")]
     Function,
+    #[token("throw")]
+    Throw,
+    #[token("->")]
+    ArrowOperator,
 
     #[token("if")]
     If,
@@ -34,17 +41,20 @@ pub enum Token {
     Let,
     #[token("as")]
     As,
+    #[token("for")]
+    For,
+    #[token("in")]
+    In,
 
+    #[token("?")]
+    QuestionOperator,
+
+    #[regex(r#"==|<=|<|>=|>|!=|\!|\&\&|\|\|"#)]
+    EqualityOperator,
     #[token("=")]
     EqualSign,
-    #[token("+")]
-    PlusSign,
-    #[token("-")]
-    MinusSign,
-    #[token("|>", priority = 3)]
-    PipeOperator,
-    #[token("|")]
-    OrOperator,
+    #[regex(r#"\+|-|\*|\*\*|\|>|%|~/|"#)]
+    ArithmeticOperation,
 
     #[token(":")]
     Colon,
@@ -55,8 +65,13 @@ pub enum Token {
     #[token(";")]
     SemiColon,
     #[token("{")]
-    OpenBrace,
+    OpenBracket,
     #[token("}")]
+    CloseBracket,
+
+    #[token("[")]
+    OpenBrace,
+    #[token("]")]
     CloseBrace,
     #[token("(")]
     OpenParenthesis,
@@ -76,16 +91,25 @@ pub enum Token {
     NumberType,
     #[token("UInt16")]
     UInt16Type,
+    #[token("Duration")]
+    DurationType,
+    #[token("DataSize")]
+    DataSizeType,
     #[regex(r"Listing<\w+>")]
     ListingType,
 
-    #[token("List")]
-    List,
+    #[token("Infinity")] 
+    Infinity,
+    #[token("-Infinity")] 
+    NegativeInfinity,
+    #[token("NaN")]
+    NotANumber,
+
     #[regex(r"true|false", |lex| lex.slice() == "true")]
     Boolean(bool),
-    #[regex(r#"\d+"#, |lex| lex.slice().parse())]
+    #[regex(r"(\d(?:_?\d)*|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)", |lex| lex.slice().parse(), priority = 3)]
     Integer(i32),
-    #[regex(r#"\d+\.\d+"#, |lex| lex.slice().parse())]
+    #[regex(r"\d+\.\d+", |lex| lex.slice().parse(), priority = 4)]
     Float(f64),
 
     #[regex(r#""(?:\\.|[^\\"])*\(\s*\w+\s*\)(?:\\.|[^\\"])*""#)]
@@ -96,6 +120,12 @@ pub enum Token {
     EscapeCloseParenthesis,
     #[regex(r#""[^"]*""#)]
     StringLiteral,
+
+    #[regex(r#"ns|us|ms|s|min|h|d"#, priority = 3)]
+    MinIndication,
+
+    #[regex(r#"b|kb|mb|gb|tb|pb|kib|mib|gib|tib|pib"#, priority = 3)]
+    DataSizeIndication,
 
     // #[regex("[A-Z][a-zA-Z]*")]
     // PascalCaseValue,
