@@ -98,18 +98,18 @@ pub enum Token {
     #[regex(r"Listing<\w+>")]
     ListingType,
 
-    #[token("Infinity")] 
+    #[token("Infinity")]
     Infinity,
-    #[token("-Infinity")] 
+    #[token("-Infinity")]
     NegativeInfinity,
     #[token("NaN")]
     NotANumber,
 
     #[regex(r"true|false", |lex| lex.slice() == "true")]
     Boolean(bool),
-    #[regex(r"(\d(?:_?\d)*|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)", |lex| lex.slice().parse(), priority = 3)]
+    #[regex(r"-?(\d(?:_?\d)*|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)", |lex| lex.slice().parse(), priority = 3)]
     Integer(i32),
-    #[regex(r"\d+\.\d+", |lex| lex.slice().parse(), priority = 4)]
+    #[regex(r"-?(\d*\.\d+(e\d+)?)", |lex| lex.slice().parse(), priority = 4)]
     Float(f64),
 
     #[regex(r#""(?:\\.|[^\\"])*\(\s*\w+\s*\)(?:\\.|[^\\"])*""#)]
