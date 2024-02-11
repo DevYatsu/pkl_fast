@@ -28,10 +28,13 @@ pub enum Token {
 
     #[token("function")]
     Function,
-    #[token("throw")]
-    Throw,
     #[token("->")]
     ArrowOperator,
+
+    #[token("throw")]
+    Throw,
+    #[token("trace")]
+    Trace,
 
     #[token("if")]
     If,
@@ -46,14 +49,15 @@ pub enum Token {
     #[token("in")]
     In,
 
-    #[token("?")]
-    QuestionOperator,
-
-    #[regex(r#"==|<=|<|>=|>|!=|\!|\&\&|\|\|"#)]
-    EqualityOperator,
+    /// support for:
+    /// - ==, <=, >=, >
+    /// - !, !!, ?, ??
+    /// - &&, ||, |
+    #[regex(r#"==|<=|<|>=|>|!=|!!|!|\?\?|\?|\&\&|\&|\|\||\||"#)]
+    Operators,
     #[token("=")]
     EqualSign,
-    #[regex(r#"\+|-|\*|\*\*|\|>|%|~/|"#)]
+    #[regex(r#"\+|-|\*|\*\*|\|>|%|~/"#)]
     ArithmeticOperation,
 
     #[token(":")]
@@ -89,6 +93,8 @@ pub enum Token {
     IntType,
     #[token("Number")]
     NumberType,
+    #[token("NonNull")]
+    NonNullType,
     #[token("UInt16")]
     UInt16Type,
     #[token("Duration")]
@@ -104,6 +110,9 @@ pub enum Token {
     NegativeInfinity,
     #[token("NaN")]
     NotANumber,
+
+    #[token("null")]
+    Null,
 
     #[regex(r"true|false", |lex| lex.slice() == "true")]
     Boolean(bool),
