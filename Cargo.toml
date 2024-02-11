@@ -12,3 +12,4 @@ keywords = ["pkl_fast", "pkl", "serialization", "apple", "fast"]
 
 
 [dependencies]
+logos = "0.14.0"
