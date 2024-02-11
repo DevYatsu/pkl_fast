@@ -2,8 +2,6 @@ use lexer::Token;
 use logos::{Lexer, Logos};
 use std::{env, fs, time::Instant};
 
-use crate::parser::Statement;
-
 mod lexer;
 mod parser;
 
