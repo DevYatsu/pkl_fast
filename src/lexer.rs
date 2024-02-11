@@ -64,6 +64,8 @@ pub enum Token {
     BooleanType,
     #[token("Int")]
     IntType,
+    #[token("Number")]
+    NumberType,
     #[token("UInt16")]
     UInt16Type,
     #[regex(r"Listing<\w+>")]
