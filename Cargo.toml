@@ -8,7 +8,7 @@ description = "A library aiming to easily and efficiently work with Apple's PKL 
 repository = "https://github.com/DevYatsu/pkl_fast"
 license = "MIT"
 
-keywords = ["pkl", "serialization", "apple", "json", "format", "efficient"]
+keywords = ["pkl_fast", "pkl", "serialization", "apple", "fast"]
 
 
 [dependencies]
