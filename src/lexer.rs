@@ -2,8 +2,15 @@ use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq)]
 #[logos(error = LexingError)]
-#[logos(skip r"[ \t\n\f]+")]
+#[logos(skip r"[\f]+")]
 pub enum Token {
+    #[token("\n")]
+    NewLine,
+    #[token("\t")]
+    Tab,
+    #[token(" ")]
+    Space,
+
     #[token("module")]
     Module,
     #[token("@ModuleInfo")]
@@ -64,6 +71,8 @@ pub enum Token {
     Colon,
     #[token(",")]
     Comma,
+    #[token("...", priority = 3)]
+    SpreadSyntax,
     #[token(".")]
     Dot,
     #[token(";")]
@@ -127,6 +136,8 @@ pub enum Token {
     EscapeOpenParenthesis,
     #[token("\\)")]
     EscapeCloseParenthesis,
+    #[regex(r#"`[^"]*`"#)]
+    IllegalIdentifier,
     #[regex(r#""[^"]*""#)]
     StringLiteral,
 

@@ -1,62 +1,21 @@
+use std::{fs, time::Instant};
+
 use lexer::Token;
 use logos::{Lexer, Logos};
 
 mod lexer;
 
 fn main() {
-    let pkl_code = r#"
-        /// Designates whether it is zebra party time.
-        // TODO: Add constraints here?
-        /* Let's have a zebra party */
-        name = "Pkl: Configure your Systems in New Ways"
-        attendants = 100
-        /* isInteractive = true */
-        amountLearned = 13.37
+    let pkl_code = fs::read_to_string("test.pkl").unwrap_or("".to_owned());
+    let start = Instant::now();
+    let lexer: Lexer<Token> = Token::lexer(&pkl_code);
+    let end = Instant::now();
 
-        if (bar)
-            bar
-        else
-        if (baz)
-            baz
-        else
-            foo
-
-        typealias Foo = "foo"|"bar"|"baz"
-        res1 = new { bar = "bar"; baz = "baz" }
-        res2 = new { 1; 2; 3; 4; 5; 6 }
-
-        amends "Foo.pkl" 
-
-        res1 { "foo" } 
-        res2 = 1 + 2 
-        res3 = res2 as Number 
-        res4 = List(1, 2, 3) 
-        res5 = if (foo) bar else baz 
-
-        bird {
-            name = "Common wood pigeon"
-            diet = "Seeds"
-            taxonomy {
-                kingdom = "Animalia"
-                clade = "Dinosauria"
-                order = "Columbiformes"
-            }
-        }
-        parrot {
-            name = "Parrot"
-            diet = "Berries"
-            taxonomy {
-                kingdom = "Animalia"
-                clade = "Dinosauria"
-                order = "Psittaciformes"
-            }
-        }
-    "#;
-
-    let lexer: Lexer<Token> = Token::lexer(pkl_code);
-
+    println!("lexer {:?}", lexer);
     // Print the parsed data
     for token in lexer {
         println!("{:?}", token);
     }
+
+    println!("Total time: {} microseconds", (end-start).as_micros())
 }
