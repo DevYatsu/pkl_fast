@@ -1,0 +1,14 @@
+[package]
+name = "pkl_fast"
+version = "0.1.0"
+edition = "2021"
+authors = ["yatsu"]
+
+description = "A library aiming to easily and efficiently work with Apple's PKL format."
+repository = "https://github.com/DevYatsu/pkl_fast"
+license = "MIT"
+
+keywords = ["pkl", "serialization", "apple", "json", "format", "efficient"]
+
+
+[dependencies]
