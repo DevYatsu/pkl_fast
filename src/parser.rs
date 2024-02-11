@@ -1,19 +1,45 @@
+use logos::Lexer;
+use pkl_fast::lexer::PklToken;
+
+mod amends;
 mod constant;
-pub mod import;
+mod import;
+
+pub type ParsingResult<T> = std::result::Result<T, ParsingError>;
 
 #[derive(Debug)]
 pub enum Statement<'a> {
     Import(&'a str),
     GlobbedImport(&'a str),
+    Amends(&'a str),
 }
-
-pub type ParsingResult<T> = std::result::Result<T, ParsingError>;
 
 #[derive(Debug)]
 pub enum ParsingError {
     InvalidSyntax(String),
     UnexpectedToken(String),
     ExpectedSpace,
+}
+
+pub fn parse<'source>(
+    mut lexer: Lexer<'source, PklToken>,
+) -> ParsingResult<Vec<Statement<'source>>> {
+    let mut statements = vec![];
+
+    while let Some(token) = lexer.next() {
+        println!("{:?}", token);
+        let statement = match token {
+            Ok(PklToken::Import) => import::parse_import(&mut lexer),
+            Ok(PklToken::GlobbedImport) => import::parse_globbed_import(&mut lexer),
+            Ok(PklToken::Amends) => amends::parse_amends(&mut lexer),
+            _ => continue,
+        };
+
+        println!("{:?}", statement);
+        statements.push(statement.unwrap());
+    }
+
+    Ok(statements)
 }
 
 impl std::fmt::Display for ParsingError {

@@ -1,6 +1,5 @@
 use logos::Logos;
 
-
 /// The PklToken enum possesses a `lexer` method that lexes an input into tokens constituting the Pkl syntax
 #[derive(Logos, Debug, PartialEq)]
 #[logos(error = LexingError)]

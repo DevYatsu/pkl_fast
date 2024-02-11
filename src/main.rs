@@ -2,6 +2,8 @@ use logos::{Lexer, Logos};
 use std::{env, fs, time::Instant};
 
 use pkl_fast::lexer::PklToken;
+
+use crate::parser::parse;
 mod parser;
 
 fn main() {
@@ -17,24 +19,10 @@ fn main() {
 
     let pkl_code = fs::read_to_string(target_file).unwrap_or("".to_owned());
     let start = Instant::now();
-    let mut lexer: Lexer<PklToken> = PklToken::lexer(&pkl_code);
+    let lexer: Lexer<PklToken> = PklToken::lexer(&pkl_code);
     let end = Instant::now();
 
-    while let Some(token) = lexer.next() {
-        println!("{:?}", token);
-        let statement = match token {
-            Ok(PklToken::Import) => {
-                parser::import::parse_import(&mut lexer)
-                
-            }
-            Ok(PklToken::GlobbedImport) => {
-                parser::import::parse_globbed_import(&mut lexer)
-            }
-            _ => continue,
-        };
-
-        println!("{:?}", statement);
-    }
+    let parse_result = parse(lexer);
 
     println!("Total time: {} microseconds", (end - start).as_micros())
 }
