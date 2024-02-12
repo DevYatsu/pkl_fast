@@ -4,6 +4,7 @@ use pkl_fast::lexer::PklToken;
 mod amends;
 mod constant;
 mod import;
+mod utils;
 
 pub type ParsingResult<T> = std::result::Result<T, ParsingError>;
 
