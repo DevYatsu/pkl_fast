@@ -1,19 +1,21 @@
-use logos::Lexer;
-
 use pkl_fast::lexer::PklToken;
 
-use super::{utils::jump_spaces_and_then, ParsingResult, Statement};
+use super::{utils::jump_spaces_and_then, ParsingError, ParsingResult, PklLexer, Statement};
 
-pub fn parse_amends<'source>(
-    lexer: &mut Lexer<'source, PklToken>,
-) -> ParsingResult<Statement<'source>> {
-    let predicate = |lexer: &mut Lexer<'source, PklToken>| -> ParsingResult<Statement<'source>> {
-        let raw_value = lexer.slice(); // retrieve value with quotes: "value"
+pub fn parse_amends<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Statement<'source>> {
+    let predicate = |token, lexer: &mut PklLexer<'source>| {
+        if let Ok(PklToken::StringLiteral) = token {
+            let raw_value = lexer.slice(); // retrieve value with quotes: "value"
 
-        let value = &raw_value[1..raw_value.len() - 1];
-        Ok(Statement::Amends(value))
+            let value = &raw_value[1..raw_value.len() - 1];
+            Ok(Statement::Amends(value))
+        } else {
+            Err(ParsingError::Expected(format!(
+                "Expected a valid `amends` value at: {}",
+                &(lexer.source()[lexer.span().start..lexer.span().start + 15])
+            )))
+        }
     };
 
-    let value = jump_spaces_and_then(lexer, &predicate);
-    value
+    jump_spaces_and_then(lexer, &predicate)
 }

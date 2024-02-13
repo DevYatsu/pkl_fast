@@ -1,10 +1,12 @@
-use super::ParsingResult;
-use logos::Lexer;
-use pkl_fast::lexer::PklToken;
+use super::{ParsingError, ParsingResult, PklLexer};
+use pkl_fast::lexer::{LexingError, PklToken};
 
 pub fn jump_spaces_and_then<'source, Output>(
-    lexer: &mut Lexer<'source, PklToken>,
-    predicate: &dyn Fn(&mut Lexer<'source, PklToken>) -> ParsingResult<Output>,
+    lexer: &mut PklLexer<'source>,
+    predicate: &dyn Fn(
+        Result<PklToken, LexingError>,
+        &mut PklLexer<'source>,
+    ) -> ParsingResult<Output>,
 ) -> ParsingResult<Output> {
     loop {
         if let Some(token) = lexer.next() {
@@ -12,7 +14,41 @@ pub fn jump_spaces_and_then<'source, Output>(
                 continue;
             }
 
-            return predicate(lexer);
+            return predicate(token, lexer);
         };
     }
+}
+
+pub fn parse_object_name<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {
+    let start_index: usize = lexer.span().start;
+    let mut _end_index: Option<usize> = None;
+    // i came up with the indexes approach to avoid uneccessary string creation
+    // if you have any better approach please share it with me
+
+    loop {
+        let mut peekable = lexer.peekable();
+
+        let peeked = peekable.peek();
+        if let Some(token) = peeked {
+            match token {
+                Ok(PklToken::Identifier) => {
+                    lexer.next();
+                }
+                Ok(PklToken::Dot) => {
+                    lexer.next();
+                }
+                _ => {
+                    _end_index = Some(lexer.span().start);
+                    break;
+                }
+            }
+        }
+    }
+
+    let source = lexer.source();
+    if (&source[start_index..start_index+1]) == "." {
+        return Err(ParsingError::UnexpectedToken("found .".to_owned()))
+    }
+
+    Ok(&source[start_index.._end_index.unwrap()])
 }

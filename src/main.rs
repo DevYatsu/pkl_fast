@@ -23,6 +23,9 @@ fn main() {
     let end = Instant::now();
 
     let parse_result = parse(lexer);
+    if let Err(e) = parse_result {
+        println!("Error: {}", e);
+    }
 
     println!("Total time: {} microseconds", (end - start).as_micros())
 }
