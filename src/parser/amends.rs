@@ -1,6 +1,11 @@
+use miette::NamedSource;
 use pkl_fast::lexer::PklToken;
 
-use super::{utils::jump_spaces_and_then, ParsingError, ParsingResult, PklLexer, Statement};
+use super::{
+    errors::{locating::get_error_location, ExpectedStringError},
+    utils::jump_spaces_and_then,
+    ParsingError, ParsingResult, PklLexer, Statement,
+};
 
 pub fn parse_amends<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Statement<'source>> {
     let predicate = |token, lexer: &mut PklLexer<'source>| {
@@ -10,10 +15,10 @@ pub fn parse_amends<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Sta
             let value = &raw_value[1..raw_value.len() - 1];
             Ok(Statement::Amends(value))
         } else {
-            Err(ParsingError::Expected(format!(
-                "Expected a valid `amends` value at: {}",
-                &(lexer.source()[lexer.span().start..lexer.span().start + 15])
-            )))
+            Err(ParsingError::ExpectedString(ExpectedStringError {
+                src: NamedSource::new("main.pkl", lexer.source().to_string()),
+                at: get_error_location(lexer).into(),
+            }))
         }
     };
 

@@ -1,4 +1,9 @@
-use super::{utils::jump_spaces_and_then, ParsingError, ParsingResult, PklLexer, Statement};
+use super::{
+    errors::{locating::get_error_location, ExpectedStringError},
+    utils::jump_spaces_and_then,
+    ParsingError, ParsingResult, PklLexer, Statement,
+};
+use miette::NamedSource;
 use pkl_fast::lexer::PklToken;
 
 pub fn parse_import<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Statement<'source>> {
@@ -22,10 +27,10 @@ fn parse_import_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&
             let value = &raw_value[1..raw_value.len() - 1];
             Ok(value)
         } else {
-            Err(ParsingError::Expected(format!(
-                "Expected a valid `import` value at: {}",
-                &(lexer.source()[lexer.span().start..lexer.span().start + 15])
-            )))
+            Err(ParsingError::ExpectedString(ExpectedStringError {
+                src: NamedSource::new("main.pkl", lexer.source().to_string()),
+                at: get_error_location(lexer).into(),
+            }))
         }
     })
 }

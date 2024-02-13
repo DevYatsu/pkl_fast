@@ -46,8 +46,8 @@ pub fn parse_object_name<'source>(lexer: &mut PklLexer<'source>) -> ParsingResul
     }
 
     let source = lexer.source();
-    if (&source[start_index..start_index+1]) == "." {
-        return Err(ParsingError::UnexpectedToken("found .".to_owned()))
+    if (&source[start_index..start_index + 1]) == "." {
+        return Err(ParsingError::UnexpectedToken("found .".to_owned()));
     }
 
     Ok(&source[start_index.._end_index.unwrap()])

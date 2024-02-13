@@ -1,13 +1,18 @@
 use logos::Lexer;
+use miette::{diagnostic, Diagnostic};
 use pkl_fast::lexer::PklToken;
+use thiserror::Error;
+
+use self::errors::ExpectedStringError;
 
 mod amends;
 mod constant;
+mod errors;
 mod import;
 mod module;
 mod utils;
 
-pub type ParsingResult<T> = std::result::Result<T, ParsingError>;
+pub type ParsingResult<T> = miette::Result<T, ParsingError>;
 pub type PklLexer<'source> = Lexer<'source, PklToken>;
 
 #[derive(Debug)]
@@ -18,12 +23,17 @@ pub enum Statement<'a> {
     Module(&'a str),
 }
 
-#[derive(Debug)]
+#[derive(Error, Diagnostic, Debug)]
 pub enum ParsingError {
+    #[error("Invalid syntax")]
     InvalidSyntax(String),
+
+    #[error("Unexpected token `{0}` found")]
     UnexpectedToken(String),
-    ExpectedSpace,
-    Expected(String),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    ExpectedString(#[from] ExpectedStringError),
 }
 
 pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Statement<'source>>> {
@@ -44,23 +54,4 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
     }
 
     Ok(statements)
-}
-
-impl std::fmt::Display for ParsingError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ParsingError::InvalidSyntax(message) => {
-                write!(f, "Invalid syntax: {}", message)
-            }
-            ParsingError::UnexpectedToken(token) => {
-                write!(f, "Unexpected token: {}", token)
-            }
-            ParsingError::ExpectedSpace => {
-                write!(f, "Expected a whitespace")
-            }
-            ParsingError::Expected(message) => {
-                write!(f, "{}", message)
-            }
-        }
-    }
 }
