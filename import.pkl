@@ -1,6 +1,7 @@
 import    "test3.pkl" 
-import*   "test2.pkl"
+import*   "testt"
 
+module x
 module com.animals.Birds
 amends "wow.pkl"
 extends "test.pkl"

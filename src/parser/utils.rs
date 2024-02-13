@@ -1,10 +1,16 @@
-use super::{ParsingError, ParsingResult, PklLexer};
+use super::{
+    errors::{
+        locating::{generate_source, get_error_location},
+        UnexpectedError,
+    },
+    ParsingError, ParsingResult, PklLexer,
+};
 use pkl_fast::lexer::{LexingError, PklToken};
 
 pub fn jump_spaces_and_then<'source, Output>(
     lexer: &mut PklLexer<'source>,
     predicate: &dyn Fn(
-        Result<PklToken, LexingError>,
+        Option<Result<PklToken, LexingError>>,
         &mut PklLexer<'source>,
     ) -> ParsingResult<Output>,
 ) -> ParsingResult<Output> {
@@ -14,8 +20,25 @@ pub fn jump_spaces_and_then<'source, Output>(
                 continue;
             }
 
-            return predicate(token, lexer);
+            return predicate(Some(token), lexer);
+        } else {
+            return predicate(None, lexer);
         };
+    }
+}
+pub fn jump_spaces_with_peek<'source>(lexer: &mut PklLexer<'source>) -> () {
+    loop {
+        let mut peekable = lexer.peekable();
+        if let Some(token) = peekable.peek() {
+            if let Ok(PklToken::Space) = token {
+                lexer.next();
+                continue;
+            }
+
+            break;
+        } else {
+            break;
+        }
     }
 }
 
@@ -42,12 +65,17 @@ pub fn parse_object_name<'source>(lexer: &mut PklLexer<'source>) -> ParsingResul
                     break;
                 }
             }
+        } else {
+            break;
         }
     }
 
     let source = lexer.source();
     if (&source[start_index..start_index + 1]) == "." {
-        return Err(ParsingError::UnexpectedToken("found .".to_owned()));
+        return Err(ParsingError::UnexpectedToken(UnexpectedError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer).into(),
+        }));
     }
 
     Ok(&source[start_index.._end_index.unwrap()])

@@ -1,4 +1,7 @@
-use self::errors::ExpectedStringError;
+use self::{
+    errors::{InvalidIdentifierError, InvalidStringError, UnexpectedError},
+    import::ImportClause,
+};
 use logos::Lexer;
 use miette::{diagnostic, Diagnostic};
 use pkl_fast::lexer::PklToken;
@@ -18,7 +21,10 @@ pub type PklLexer<'source> = Lexer<'source, PklToken>;
 
 #[derive(Debug)]
 pub enum Statement<'a> {
-    Import(&'a str),
+    Import {
+        clause: ImportClause<'a>,
+        imported_as: Option<&'a str>,
+    },
     GlobbedImport(&'a str),
     Amends(&'a str),
     Module(&'a str),
@@ -30,12 +36,17 @@ pub enum ParsingError {
     #[error("Invalid syntax")]
     InvalidSyntax(String),
 
-    #[error("Unexpected token `{0}` found")]
-    UnexpectedToken(String),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    UnexpectedToken(#[from] UnexpectedError),
 
     #[error(transparent)]
     #[diagnostic(transparent)]
-    ExpectedString(#[from] ExpectedStringError),
+    InvalidString(#[from] InvalidStringError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidIdentifier(#[from] InvalidIdentifierError),
 }
 
 pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Statement<'source>>> {

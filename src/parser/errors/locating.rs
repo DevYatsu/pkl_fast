@@ -1,5 +1,5 @@
 use crate::parser::PklLexer;
-use miette::SourceSpan;
+use miette::{NamedSource, SourceSpan};
 
 pub fn find_last_newline_after_index(input: &str, index: usize) -> usize {
     let mut last_newline_index = 0;
@@ -19,4 +19,8 @@ pub fn get_error_location<'source>(lexer: &mut PklLexer<'source>) -> SourceSpan 
         find_last_newline_after_index(lexer.source(), lexer.span().end),
     )
         .into()
+}
+
+pub fn generate_source(file_name: &str, source: &str) -> NamedSource<String> {
+    NamedSource::new(file_name, source.to_string())
 }
