@@ -1,5 +1,6 @@
-import    "test" 
-import*   "efef"
+import    "test3.pkl" 
+import*   "test2.pkl"
 
 module com.animals.Birds
-amends "hey how are u?"
+amends "wow.pkl"
+extends "test.pkl"

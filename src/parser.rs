@@ -1,15 +1,16 @@
+use self::errors::ExpectedStringError;
 use logos::Lexer;
 use miette::{diagnostic, Diagnostic};
 use pkl_fast::lexer::PklToken;
 use thiserror::Error;
 
-use self::errors::ExpectedStringError;
-
 mod amends;
 mod constant;
-mod errors;
+mod extends;
 mod import;
 mod module;
+
+mod errors;
 mod utils;
 
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;
@@ -21,6 +22,7 @@ pub enum Statement<'a> {
     GlobbedImport(&'a str),
     Amends(&'a str),
     Module(&'a str),
+    Extends(&'a str),
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -46,6 +48,7 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
             Ok(PklToken::GlobbedImport) => import::parse_globbed_import(&mut lexer)?,
             Ok(PklToken::Amends) => amends::parse_amends(&mut lexer)?,
             Ok(PklToken::Module) => module::parse_module(&mut lexer)?,
+            Ok(PklToken::Extends) => extends::parse_extends(&mut lexer)?,
             _ => continue,
         };
 
