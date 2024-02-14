@@ -16,6 +16,9 @@ pub enum PklToken {
     Module,
     #[token("@ModuleInfo")]
     ModuleInfo,
+    
+    #[token("@Deprecated")]
+    DeprecatedInstruction,
 
     #[token("import*")]
     GlobbedImport,
