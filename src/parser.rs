@@ -68,10 +68,7 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
                 let imported_as_new_value = as_statement::parse_as(&mut lexer, &statements)?;
                 if let Some(statement) = statements.last_mut() {
                     match statement {
-                        Statement::Import { imported_as, .. } => {
-                            *imported_as = Some(imported_as_new_value);
-                        }
-                        Statement::GlobbedImport { imported_as, .. } => {
+                        Statement::Import { imported_as, .. } | Statement::GlobbedImport { imported_as, .. } => {
                             *imported_as = Some(imported_as_new_value);
                         }
                         _ => todo!(),
