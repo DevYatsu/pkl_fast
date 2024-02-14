@@ -2,7 +2,7 @@ use self::{
     errors::{InvalidIdentifierError, InvalidStringError, UnexpectedError},
     import::ImportClause,
 };
-use logos::{Lexer, Span};
+use logos::Lexer;
 use miette::{diagnostic, Diagnostic};
 use pkl_fast::lexer::PklToken;
 use thiserror::Error;

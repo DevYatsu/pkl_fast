@@ -14,7 +14,7 @@ pub fn parse_as<'source>(
 ) -> ParsingResult<&'source str> {
     if let Some(statement) = statements.last() {
         match statement {
-            Statement::Import { imported_as, .. } => {
+            Statement::Import { .. } => {
                 let imported_as_new_value = jump_spaces_and_then(lexer, |token, lexer| {
                     if let Some(Ok(PklToken::Identifier)) = token {
                         let value: &str = lexer.slice();

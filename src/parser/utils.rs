@@ -21,24 +21,9 @@ where
             }
 
             return predicate(Some(token), lexer);
-        } else {
-            return predicate(None, lexer);
-        };
-    }
-}
-pub fn jump_spaces_with_peek<'source>(lexer: &mut PklLexer<'source>) -> () {
-    loop {
-        let mut peekable = lexer.peekable();
-        if let Some(token) = peekable.peek() {
-            if let Ok(PklToken::Space) = token {
-                lexer.next();
-                continue;
-            }
-
-            break;
-        } else {
-            break;
         }
+
+        return predicate(None, lexer);
     }
 }
 
