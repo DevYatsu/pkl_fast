@@ -26,7 +26,10 @@ pub enum Statement<'a> {
         clause: ImportClause<'a>,
         imported_as: Option<&'a str>,
     },
-    GlobbedImport(&'a str),
+    GlobbedImport {
+        clause: ImportClause<'a>,
+        imported_as: Option<&'a str>,
+    },
     Amends(&'a str),
     Module(&'a str),
     Extends(&'a str),
@@ -66,6 +69,9 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
                 if let Some(statement) = statements.last_mut() {
                     match statement {
                         Statement::Import { imported_as, .. } => {
+                            *imported_as = Some(imported_as_new_value);
+                        }
+                        Statement::GlobbedImport { imported_as, .. } => {
                             *imported_as = Some(imported_as_new_value);
                         }
                         _ => todo!(),

@@ -1,5 +1,5 @@
 use logos::{Lexer, Logos};
-use std::{env, fs, ops::Index, time::Instant};
+use std::{env, fs, time::Instant};
 
 use pkl_fast::lexer::PklToken;
 

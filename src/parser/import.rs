@@ -30,7 +30,11 @@ pub fn parse_globbed_import<'source>(
     lexer: &mut PklLexer<'source>,
 ) -> ParsingResult<Statement<'source>> {
     let value = parse_import_value(lexer)?;
-    Ok(Statement::GlobbedImport(value))
+
+    Ok(Statement::GlobbedImport {
+        clause: import_clause(value),
+        imported_as: None,
+    })
 }
 
 fn parse_import_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {
