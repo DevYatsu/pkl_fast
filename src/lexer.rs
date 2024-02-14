@@ -46,11 +46,6 @@ pub enum PklToken {
     #[token("->")]
     ArrowOperator,
 
-    #[token("throw")]
-    Throw,
-    #[token("trace")]
-    Trace,
-
     #[token("if")]
     If,
     #[token("else")]
@@ -63,6 +58,9 @@ pub enum PklToken {
     For,
     #[token("in")]
     In,
+    #[token("when")]
+    When,
+
 
     /// support for:
     /// - ==, <=, >=, >
