@@ -20,10 +20,11 @@ fn main() -> miette::Result<()> {
     let pkl_code = fs::read_to_string(target_file).unwrap_or("".to_owned());
     let start = Instant::now();
     let lexer: Lexer<PklToken> = PklToken::lexer(&pkl_code);
-    let end = Instant::now();
 
     let statements = parse(lexer)?;
     println!("{:?}", statements);
+    
+    let end = Instant::now();
     println!("Total time: {} microseconds", (end - start).as_micros());
 
     Ok(())

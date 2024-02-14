@@ -30,7 +30,7 @@ pub fn parse_as<'source>(
 
                 return Ok(imported_as_new_value);
             }
-            _ => unreachable!("should not be reached"),
+            _ => todo!("should not be reached"),
         }
     }
 
