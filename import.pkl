@@ -1,4 +1,4 @@
-import    "test3.pkl" 
+import    "test3.pkl"  as test
 import*   "testt"
 
 module x

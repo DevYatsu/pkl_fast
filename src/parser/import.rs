@@ -1,10 +1,10 @@
 use std::path::Path;
 
-use crate::parser::errors::{locating::generate_source, InvalidIdentifierError, UnexpectedError};
+use crate::parser::errors::locating::generate_source;
 
 use super::{
     errors::{locating::get_error_location, InvalidStringError},
-    utils::{jump_spaces_and_then, jump_spaces_with_peek},
+    utils::jump_spaces_and_then,
     ParsingError, ParsingResult, PklLexer, Statement,
 };
 use pkl_fast::lexer::PklToken;
@@ -34,7 +34,7 @@ pub fn parse_globbed_import<'source>(
 }
 
 fn parse_import_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {
-    jump_spaces_and_then(lexer, &|token, lexer| {
+    jump_spaces_and_then(lexer, |token, lexer| {
         if let Some(Ok(PklToken::StringLiteral)) = token {
             let raw_value = lexer.slice(); // retrieve value with quotes: "value"
             println!("raw : {:?}", raw_value);

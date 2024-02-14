@@ -2,12 +2,13 @@ use self::{
     errors::{InvalidIdentifierError, InvalidStringError, UnexpectedError},
     import::ImportClause,
 };
-use logos::Lexer;
+use logos::{Lexer, Span};
 use miette::{diagnostic, Diagnostic};
 use pkl_fast::lexer::PklToken;
 use thiserror::Error;
 
 mod amends;
+mod as_statement;
 mod constant;
 mod extends;
 mod import;
@@ -60,6 +61,18 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
             Ok(PklToken::Amends) => amends::parse_amends(&mut lexer)?,
             Ok(PklToken::Module) => module::parse_module(&mut lexer)?,
             Ok(PklToken::Extends) => extends::parse_extends(&mut lexer)?,
+            Ok(PklToken::As) => {
+                let imported_as_new_value = as_statement::parse_as(&mut lexer, &statements)?;
+                if let Some(statement) = statements.last_mut() {
+                    match statement {
+                        Statement::Import { imported_as, .. } => {
+                            *imported_as = Some(imported_as_new_value);
+                        }
+                        _ => todo!(),
+                    }
+                }
+                continue;
+            }
             _ => continue,
         };
 

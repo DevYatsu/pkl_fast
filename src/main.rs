@@ -23,6 +23,7 @@ fn main() -> miette::Result<()> {
     let end = Instant::now();
 
     let statements = parse(lexer)?;
+    println!("{:?}", statements);
     println!("Total time: {} microseconds", (end - start).as_micros());
 
     Ok(())

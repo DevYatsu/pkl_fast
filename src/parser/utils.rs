@@ -7,13 +7,13 @@ use super::{
 };
 use pkl_fast::lexer::{LexingError, PklToken};
 
-pub fn jump_spaces_and_then<'source, Output>(
+pub fn jump_spaces_and_then<'source, Output, F>(
     lexer: &mut PklLexer<'source>,
-    predicate: &dyn Fn(
-        Option<Result<PklToken, LexingError>>,
-        &mut PklLexer<'source>,
-    ) -> ParsingResult<Output>,
-) -> ParsingResult<Output> {
+    predicate: F,
+) -> ParsingResult<Output>
+where
+    F: Fn(Option<Result<PklToken, LexingError>>, &mut PklLexer<'source>) -> ParsingResult<Output>,
+{
     loop {
         if let Some(token) = lexer.next() {
             if let Ok(PklToken::Space) = token {
