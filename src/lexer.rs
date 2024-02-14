@@ -26,6 +26,8 @@ pub enum PklToken {
     #[token("amends")]
     Amends,
 
+    #[token("abstract")]
+    Abstract,
     #[token("open")]
     Open,
     #[token("new")]
