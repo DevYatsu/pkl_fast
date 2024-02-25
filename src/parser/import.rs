@@ -4,7 +4,6 @@ use crate::parser::errors::locating::generate_source;
 
 use super::{
     errors::{locating::get_error_location, InvalidStringError},
-    utils::jump_spaces_and_then,
     ParsingError, ParsingResult, PklLexer, Statement,
 };
 use crate::lexer::PklToken;
@@ -38,19 +37,19 @@ pub fn parse_globbed_import<'source>(
 }
 
 fn parse_import_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {
-    jump_spaces_and_then(lexer, |token, lexer| {
-        if let Some(Ok(PklToken::StringLiteral)) = token {
-            let raw_value = lexer.slice(); // retrieve value with quotes: "value"
+    let token = lexer.next();
 
-            let value = &raw_value[1..raw_value.len() - 1];
-            Ok(value)
-        } else {
-            Err(ParsingError::InvalidString(InvalidStringError {
-                src: generate_source("main.pkl", lexer.source()),
-                at: get_error_location(lexer).into(),
-            }))
-        }
-    })
+    if let Some(Ok(PklToken::StringLiteral)) = token {
+        let raw_value = lexer.slice(); // retrieve value with quotes: "value"
+
+        let value = &raw_value[1..raw_value.len() - 1];
+        Ok(value)
+    } else {
+        Err(ParsingError::InvalidString(InvalidStringError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer).into(),
+        }))
+    }
 }
 
 fn import_clause(value: &str) -> ImportClause {

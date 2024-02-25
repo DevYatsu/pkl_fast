@@ -1,5 +1,5 @@
-use pkl_fast::Logos;
 use pkl_fast::lexer::PklToken;
+use pkl_fast::Logos;
 
 #[test]
 fn empty() {

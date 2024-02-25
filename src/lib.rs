@@ -19,7 +19,7 @@
 //!
 //! ```rust
 //! use pkl_fast::{Logos, lexer::PklToken, parser::{parse, ParsingError, Statement}};
-//! 
+//!
 //! fn main() -> ParsingError<()> {
 //!     let source: String = fs::read_to_string("file.pkl")?;
 //!     let tokens: Lexer<PklToken> = PklToken::lexer(source);

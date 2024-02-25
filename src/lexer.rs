@@ -8,14 +8,12 @@ PklToken enum possesses a `lexer` method that lexes an input into tokens constit
 */
 #[derive(Logos, Debug, PartialEq)]
 #[logos(error = LexingError)]
-#[logos(skip r"[\f]+")]
+#[logos(skip r"[\f\ ]+")]
 pub enum PklToken {
     #[token("\n")]
     NewLine,
     #[token("\t")]
     Tab,
-    #[token(" ")]
-    Space,
 
     #[token("module")]
     Module,
@@ -161,7 +159,8 @@ pub enum PklToken {
     // PascalCaseValue,
     // #[regex("[a-z][a-zA-Z]*")]
     // CamelCaseValue, // in pkl words written in camelCase are meant to be used as values
-    #[regex("[a-zA-Z_][a-zA-Z0-9_]*")]
+    ///Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
+    #[regex(r"([a-zA-Z_][a-zA-Z0-9_]*)(\.([a-zA-Z_][a-zA-Z0-9_]*))*")]
     Identifier,
 
     #[regex("//.*")]
