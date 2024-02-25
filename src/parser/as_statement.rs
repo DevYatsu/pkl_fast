@@ -3,9 +3,9 @@ use crate::parser::utils::jump_spaces_and_then;
 use super::{
     errors::{
         locating::{generate_source, get_error_location},
-        InvalidIdentifierError, UnexpectedError,
+        InvalidIdentifierError,
     },
-    ParsingError, ParsingResult, PklLexer, PklToken, Statement,
+    ParsingError, ParsingResult, PklLexer, PklToken,
 };
 
 pub fn parse_as<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {
