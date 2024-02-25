@@ -21,6 +21,7 @@
 //! ## Example
 //!
 //!
+//!
 //! ## License
 //!
 //! `miette` is released to the Rust community under the [Apache license
