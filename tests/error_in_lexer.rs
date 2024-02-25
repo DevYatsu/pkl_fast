@@ -1,6 +1,4 @@
-use logos::Logos;
-use pkl_fast::lexer::PklToken;
-use pkl_fast::parser::parse;
+use pkl_fast::{Logos, lexer::PklToken, parser::parse};
 
 #[test]
 fn error_in_lexing() {

@@ -1,4 +1,4 @@
-use logos::Logos;
+use pkl_fast::Logos;
 use pkl_fast::lexer::PklToken;
 
 #[test]

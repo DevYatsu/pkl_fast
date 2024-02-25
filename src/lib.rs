@@ -5,8 +5,6 @@
 //! ## Table of Contents
 //!
 //! - [Installing](#installing)
-//! - [Lexer](#lexer)
-//! - [Parser](#parser)
 //! - [Example](#example)
 //! - [License](#license)
 //!
@@ -17,10 +15,19 @@
 //! $ cargo add miette
 //! ```
 //!
-//!
 //! ## Example
 //!
+//! ```rust
+//! use pkl_fast::{Logos, lexer::PklToken, parser::{parse, ParsingError, Statement}};
+//! 
+//! fn main() -> ParsingError<()> {
+//!     let source: String = fs::read_to_string("file.pkl")?;
+//!     let tokens: Lexer<PklToken> = PklToken::lexer(source);
+//!     let statements: Vec<Statement<'_>> = parse(tokens)?;
+//!     // statements now contains a representation of the source string as an AST (statements)
+//! }
 //!
+//! ```
 //!
 //! ## License
 //!
@@ -32,3 +39,4 @@
 
 pub mod lexer;
 pub mod parser;
+pub use logos::Logos;
