@@ -1,10 +1,15 @@
+use crate::parser::errors::parse_lexing_error;
+
 use self::{
-    errors::{InvalidIdentifierError, InvalidStringError, UnexpectedError},
+    errors::{
+        InvalidFloatError, InvalidIdentifierError, InvalidIntError, InvalidStringError,
+        UnexpectedError,
+    },
     import::ImportClause,
 };
 use logos::Lexer;
 use miette::{diagnostic, Diagnostic};
-use pkl_fast::lexer::PklToken;
+use pkl_fast::lexer::{LexingError, PklToken};
 use thiserror::Error;
 
 mod amends;
@@ -37,8 +42,9 @@ pub enum Statement<'a> {
 
 #[derive(Error, Diagnostic, Debug)]
 pub enum ParsingError {
-    #[error("Invalid syntax")]
-    InvalidSyntax(String),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    LexingError(#[from] LexingError),
 
     #[error(transparent)]
     #[diagnostic(transparent)]
@@ -47,6 +53,12 @@ pub enum ParsingError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     InvalidString(#[from] InvalidStringError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidInt(#[from] InvalidIntError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidFloat(#[from] InvalidFloatError),
 
     #[error(transparent)]
     #[diagnostic(transparent)]
@@ -68,7 +80,8 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
                 let imported_as_new_value = as_statement::parse_as(&mut lexer, &statements)?;
                 if let Some(statement) = statements.last_mut() {
                     match statement {
-                        Statement::Import { imported_as, .. } | Statement::GlobbedImport { imported_as, .. } => {
+                        Statement::Import { imported_as, .. }
+                        | Statement::GlobbedImport { imported_as, .. } => {
                             *imported_as = Some(imported_as_new_value);
                         }
                         _ => todo!(),
@@ -76,6 +89,7 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
                 }
                 continue;
             }
+            Err(e) => return Err(parse_lexing_error(&mut lexer, e)),
             _ => continue,
         };
 

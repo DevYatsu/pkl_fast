@@ -1,4 +1,7 @@
 use logos::Logos;
+use miette::Diagnostic;
+use std::num::{ParseFloatError, ParseIntError};
+use thiserror::Error;
 
 /// The PklToken enum possesses a `lexer` method that lexes an input into tokens constituting the Pkl syntax
 #[derive(Logos, Debug, PartialEq)]
@@ -16,7 +19,7 @@ pub enum PklToken {
     Module,
     #[token("@ModuleInfo")]
     ModuleInfo,
-    
+
     #[token("@Deprecated")]
     DeprecatedInstruction,
 
@@ -60,7 +63,6 @@ pub enum PklToken {
     In,
     #[token("when")]
     When,
-
 
     /// support for:
     /// - ==, <=, >=, >
@@ -168,29 +170,29 @@ pub enum PklToken {
     BlockComment,
 }
 
-use std::num::{ParseFloatError, ParseIntError};
-
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Error, Diagnostic)]
+#[diagnostic(code(pkl_fast::lexing_error), help("try removing a character"))]
+#[error("Lexing Error: Unexpected Token")]
 pub enum LexingError {
-    InvalidInteger(String),
-    InvalidFloat(String),
+    #[error("Invalid Integer")]
+    InvalidInteger,
 
+    #[error("Invalid Float")]
+    InvalidFloat,
+
+    #[error("Not a valid ASCII Character")]
     #[default]
     NonAsciiCharacter,
 }
 
 impl From<ParseIntError> for LexingError {
     fn from(err: ParseIntError) -> Self {
-        use std::num::IntErrorKind::*;
-        match err.kind() {
-            PosOverflow | NegOverflow => LexingError::InvalidInteger("overflow error".to_owned()),
-            _ => LexingError::InvalidInteger("other error".to_owned()),
-        }
+        LexingError::InvalidInteger
     }
 }
 
 impl From<ParseFloatError> for LexingError {
-    fn from(_err: ParseFloatError) -> Self {
-        LexingError::InvalidFloat("invalidFloat".to_owned())
+    fn from(err: ParseFloatError) -> Self {
+        LexingError::InvalidFloat
     }
 }

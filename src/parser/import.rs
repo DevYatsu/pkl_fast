@@ -41,7 +41,6 @@ fn parse_import_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&
     jump_spaces_and_then(lexer, |token, lexer| {
         if let Some(Ok(PklToken::StringLiteral)) = token {
             let raw_value = lexer.slice(); // retrieve value with quotes: "value"
-            println!("raw : {:?}", raw_value);
 
             let value = &raw_value[1..raw_value.len() - 1];
             Ok(value)

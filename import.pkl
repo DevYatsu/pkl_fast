@@ -1,5 +1,5 @@
-import    "test3.pkl"  as test
-import*   "testt" as test
+import* "testt" 
+import "test3.pkl" 
 
 module x
 module com.animals.Birds
