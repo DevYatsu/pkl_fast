@@ -21,6 +21,13 @@
 //! ## Example
 //!
 //!
+//! ## License
+//!
+//! `miette` is released to the Rust community under the [Apache license
+//! 2.0](./LICENSE).
+//!
+//! It also includes code taken from [`miette`](https://github.com/zkat/miette),
+//! and some from [`thiserror`](https://github.com/dtolnay/thiserror) and [`logos`](https://github.com/maciejhirsz/logos), which are Apache licensed.
 
 pub mod lexer;
 pub mod parser;
