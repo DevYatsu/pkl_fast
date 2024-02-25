@@ -1,9 +1,9 @@
 use logos::{Lexer, Logos};
 use miette::Diagnostic;
-use std::{env, fs, path::PathBuf, time::Instant};
-use thiserror::Error;
 use pkl_fast::lexer::PklToken;
 use pkl_fast::parser::parse;
+use std::{env, fs, path::PathBuf, time::Instant};
+use thiserror::Error;
 
 fn main() -> miette::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -13,7 +13,7 @@ fn main() -> miette::Result<()> {
     let start = Instant::now();
 
     let lexer: Lexer<PklToken> = PklToken::lexer(&pkl_code);
-    let file_name = target_path
+    let _file_name = target_path
         .file_name()
         .ok_or_else(|| ProgramError::InvalidFilePath)?;
 

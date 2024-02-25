@@ -1,5 +1,5 @@
-use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
 use crate::lexer::LexingError;
+use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
 use thiserror::Error;
 
 use self::locating::{generate_source, get_error_location};

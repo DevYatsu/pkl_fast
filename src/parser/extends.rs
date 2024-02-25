@@ -1,5 +1,5 @@
-use miette::NamedSource;
 use crate::lexer::PklToken;
+use miette::NamedSource;
 
 use super::{
     errors::{locating::get_error_location, InvalidStringError},

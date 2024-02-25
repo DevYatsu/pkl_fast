@@ -5,7 +5,7 @@ use super::{
         locating::{generate_source, get_error_location},
         InvalidIdentifierError,
     },
-    ParsingError, ParsingResult, PklLexer, PklToken
+    ParsingError, ParsingResult, PklLexer, PklToken,
 };
 
 pub fn parse_as<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {

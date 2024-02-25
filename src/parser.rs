@@ -10,9 +10,9 @@ use self::{
     },
     import::ImportClause,
 };
+use crate::lexer::{LexingError, PklToken};
 use logos::Lexer;
 use miette::{diagnostic, Diagnostic};
-use crate::lexer::{LexingError, PklToken};
 use thiserror::Error;
 
 mod amends;
@@ -85,7 +85,7 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
             Ok(PklToken::Extends) => extends::parse_extends(&mut lexer)?,
             Ok(PklToken::As) => {
                 let imported_as_new_value = as_statement::parse_as(&mut lexer)?;
-                                println!("{:?}", token);
+                println!("{:?}", token);
                 println!("{:?}", imported_as_new_value);
 
                 if let Some(statement) = statements.last_mut() {
@@ -99,7 +99,7 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
                             return Err(ParsingError::AsStatementUnsupported(InvalidAsStatement {
                                 src: generate_source("main.pkl", lexer.source()),
                                 at: get_error_location(&mut lexer).into(),
-                            }))
+                            }));
                         }
                     }
                 } else {

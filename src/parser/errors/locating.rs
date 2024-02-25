@@ -17,7 +17,7 @@ fn find_first_newline_after_index(input: &str, actual_index: usize) -> usize {
 pub fn get_error_location<'source>(lexer: &mut PklLexer<'source>) -> SourceSpan {
     (
         lexer.span().start,
-        find_first_newline_after_index(lexer.source(), lexer.span().end) + 1
+        find_first_newline_after_index(lexer.source(), lexer.span().end) + 1,
     )
         .into()
 }
