@@ -93,3 +93,17 @@ pub struct InvalidFloatError {
     #[source_code]
     pub src: NamedSource<String>,
 }
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(pkl_fast::invalid_as),
+    help("The 'as' keyword is only supported in 'import' or 'import*' statements")
+)]
+#[error("Invalid 'as' statement")]
+pub struct InvalidAsStatement {
+    #[label("here")]
+    pub at: SourceSpan,
+
+    #[source_code]
+    pub src: NamedSource<String>,
+}

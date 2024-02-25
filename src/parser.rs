@@ -1,9 +1,12 @@
-use crate::parser::errors::parse_lexing_error;
+use crate::parser::errors::{
+    locating::{generate_source, get_error_location},
+    parse_lexing_error,
+};
 
 use self::{
     errors::{
-        InvalidFloatError, InvalidIdentifierError, InvalidIntError, InvalidStringError,
-        UnexpectedError,
+        InvalidAsStatement, InvalidFloatError, InvalidIdentifierError, InvalidIntError,
+        InvalidStringError, UnexpectedError,
     },
     import::ImportClause,
 };
@@ -63,6 +66,10 @@ pub enum ParsingError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     InvalidIdentifier(#[from] InvalidIdentifierError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    AsStatementUnsupported(#[from] InvalidAsStatement),
 }
 
 pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Statement<'source>>> {
@@ -77,16 +84,28 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
             Ok(PklToken::Module) => module::parse_module(&mut lexer)?,
             Ok(PklToken::Extends) => extends::parse_extends(&mut lexer)?,
             Ok(PklToken::As) => {
-                let imported_as_new_value = as_statement::parse_as(&mut lexer, &statements)?;
+                let imported_as_new_value = as_statement::parse_as(&mut lexer)?;
                 if let Some(statement) = statements.last_mut() {
                     match statement {
                         Statement::Import { imported_as, .. }
                         | Statement::GlobbedImport { imported_as, .. } => {
                             *imported_as = Some(imported_as_new_value);
                         }
-                        _ => todo!(),
+                        _ => {
+                            println!("{:?}", get_error_location(&mut lexer));
+                            return Err(ParsingError::AsStatementUnsupported(InvalidAsStatement {
+                                src: generate_source("main.pkl", lexer.source()),
+                                at: get_error_location(&mut lexer).into(),
+                            }))
+                        }
                     }
+                } else {
+                    return Err(ParsingError::UnexpectedToken(UnexpectedError {
+                        src: generate_source("main.pkl", lexer.source()),
+                        at: get_error_location(&mut lexer).into(),
+                    }));
                 }
+
                 continue;
             }
             Err(e) => return Err(parse_lexing_error(&mut lexer, e)),

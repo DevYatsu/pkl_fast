@@ -1,7 +1,7 @@
 use crate::parser::PklLexer;
 use miette::{NamedSource, SourceSpan};
 
-pub fn find_last_newline_after_index(input: &str, actual_index: usize) -> usize {
+pub fn _find_last_newline_after_index(input: &str, actual_index: usize) -> usize {
     let mut index = 0;
 
     for (i, c) in input.chars().enumerate().skip(actual_index) {
@@ -25,7 +25,6 @@ pub fn find_first_newline_after_index(input: &str, actual_index: usize) -> usize
 
     index
 }
-
 
 pub fn get_error_location<'source>(lexer: &mut PklLexer<'source>) -> SourceSpan {
     (

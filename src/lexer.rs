@@ -186,13 +186,13 @@ pub enum LexingError {
 }
 
 impl From<ParseIntError> for LexingError {
-    fn from(err: ParseIntError) -> Self {
+    fn from(_err: ParseIntError) -> Self {
         LexingError::InvalidInteger
     }
 }
 
 impl From<ParseFloatError> for LexingError {
-    fn from(err: ParseFloatError) -> Self {
+    fn from(_err: ParseFloatError) -> Self {
         LexingError::InvalidFloat
     }
 }

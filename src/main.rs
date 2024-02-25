@@ -1,7 +1,7 @@
 use logos::{Lexer, Logos};
 use miette::Diagnostic;
+use std::{env, fs, path::PathBuf, time::Instant};
 use thiserror::Error;
-use std::{env, ffi::OsStr, fs, path::{Path, PathBuf}, time::Instant};
 
 use pkl_fast::lexer::PklToken;
 
@@ -16,7 +16,9 @@ fn main() -> miette::Result<()> {
     let start = Instant::now();
 
     let lexer: Lexer<PklToken> = PklToken::lexer(&pkl_code);
-    let file_name = target_path.file_name().ok_or_else(|| ProgramError::InvalidFilePath)?;
+    let file_name = target_path
+        .file_name()
+        .ok_or_else(|| ProgramError::InvalidFilePath)?;
 
     let statements = parse(lexer)?;
     println!("{:?}", statements);
@@ -28,7 +30,8 @@ fn main() -> miette::Result<()> {
 }
 
 fn get_target_file(args: &[String]) -> miette::Result<PathBuf> {
-    Ok(args.get(1)
+    Ok(args
+        .get(1)
         .map(|file_path| PathBuf::from(file_path))
         .ok_or_else(|| ProgramError::NoFileArgument)?)
 }
@@ -36,10 +39,16 @@ fn get_target_file(args: &[String]) -> miette::Result<PathBuf> {
 #[derive(Error, Diagnostic, Debug)]
 pub enum ProgramError {
     #[error("No target file provided")]
-    #[diagnostic(code(program_error::target_file), help("Run the command `cargo run <file_path>`"))]
+    #[diagnostic(
+        code(program_error::target_file),
+        help("Run the command `cargo run <file_path>`")
+    )]
     NoFileArgument,
 
     #[error("Invalid file path")]
-    #[diagnostic(code(program_error::file_path), help("Ensure the existence of a file at the specified path"))]
-    InvalidFilePath
+    #[diagnostic(
+        code(program_error::file_path),
+        help("Ensure the existence of a file at the specified path")
+    )]
+    InvalidFilePath,
 }

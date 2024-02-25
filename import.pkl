@@ -3,5 +3,6 @@ import "test3.pkl"
 
 module x
 module com.animals.Birds
-amends "wow.pkl"
+amends "wow.pkl" as test
 extends "test.pkl"
+
