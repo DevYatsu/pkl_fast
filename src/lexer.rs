@@ -3,7 +3,9 @@ use miette::Diagnostic;
 use std::num::{ParseFloatError, ParseIntError};
 use thiserror::Error;
 
-/// The PklToken enum possesses a `lexer` method that lexes an input into tokens constituting the Pkl syntax
+/**
+PklToken enum possesses a `lexer` method that lexes an input into tokens constituting the Pkl syntax
+*/
 #[derive(Logos, Debug, PartialEq)]
 #[logos(error = LexingError)]
 #[logos(skip r"[\f]+")]
@@ -173,6 +175,9 @@ pub enum PklToken {
 #[derive(Default, Debug, Clone, PartialEq, Error, Diagnostic)]
 #[diagnostic(code(pkl_fast::lexing_error), help("try removing a character"))]
 #[error("Lexing Error: Unexpected Token")]
+/**
+LexingError enum. Used by lexing operations in the protocol. Is only returned through [`ParsingError`](crate::parsing::ParsingError)
+*/
 pub enum LexingError {
     #[error("Invalid Integer")]
     InvalidInteger,

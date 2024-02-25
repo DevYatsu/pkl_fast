@@ -1,4 +1,4 @@
-use pkl_fast::lexer::PklToken;
+use crate::lexer::PklToken;
 
 use super::{
     errors::{

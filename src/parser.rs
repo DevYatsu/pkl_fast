@@ -12,14 +12,14 @@ use self::{
 };
 use logos::Lexer;
 use miette::{diagnostic, Diagnostic};
-use pkl_fast::lexer::{LexingError, PklToken};
+use crate::lexer::{LexingError, PklToken};
 use thiserror::Error;
 
 mod amends;
 mod as_statement;
 mod constant;
 mod extends;
-mod import;
+pub mod import;
 mod module;
 
 mod errors;
@@ -28,7 +28,7 @@ mod utils;
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;
 pub type PklLexer<'source> = Lexer<'source, PklToken>;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Statement<'a> {
     Import {
         clause: ImportClause<'a>,
@@ -85,6 +85,9 @@ pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Stateme
             Ok(PklToken::Extends) => extends::parse_extends(&mut lexer)?,
             Ok(PklToken::As) => {
                 let imported_as_new_value = as_statement::parse_as(&mut lexer)?;
+                                println!("{:?}", token);
+                println!("{:?}", imported_as_new_value);
+
                 if let Some(statement) = statements.last_mut() {
                     match statement {
                         Statement::Import { imported_as, .. }

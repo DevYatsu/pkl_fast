@@ -5,7 +5,7 @@ use super::{
     },
     ParsingError, ParsingResult, PklLexer,
 };
-use pkl_fast::lexer::{LexingError, PklToken};
+use crate::lexer::{LexingError, PklToken};
 
 pub fn jump_spaces_and_then<'source, Output, F>(
     lexer: &mut PklLexer<'source>,

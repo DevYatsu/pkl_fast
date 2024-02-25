@@ -2,11 +2,8 @@ use logos::{Lexer, Logos};
 use miette::Diagnostic;
 use std::{env, fs, path::PathBuf, time::Instant};
 use thiserror::Error;
-
 use pkl_fast::lexer::PklToken;
-
-use crate::parser::parse;
-mod parser;
+use pkl_fast::parser::parse;
 
 fn main() -> miette::Result<()> {
     let args: Vec<String> = env::args().collect();

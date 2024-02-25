@@ -7,9 +7,9 @@ use super::{
     utils::jump_spaces_and_then,
     ParsingError, ParsingResult, PklLexer, Statement,
 };
-use pkl_fast::lexer::PklToken;
+use crate::lexer::PklToken;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ImportClause<'a> {
     LocalFile(&'a Path),
     StandardLibrary(&'a str), // example: `pkl:math` with the pkl: stripped thus only leaving `math`
