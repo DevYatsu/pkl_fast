@@ -8,22 +8,15 @@ use self::{
         InvalidAsStatement, InvalidFloatError, InvalidIdentifierError, InvalidIntError,
         InvalidStringError, UnexpectedEndOfInputError, UnexpectedError,
     },
-    import::ImportClause,
+    statement::ImportClause,
 };
 use crate::lexer::{LexingError, PklToken};
 use logos::Lexer;
 use miette::{diagnostic, Diagnostic};
 use thiserror::Error;
 
-mod amends;
-mod as_statement;
-mod constant;
-mod extends;
-pub mod import;
-mod module;
-
+mod statement;
 pub mod value;
-
 pub mod errors;
 
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;

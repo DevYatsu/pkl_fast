@@ -2,8 +2,6 @@ use std::collections::HashMap;
 use miette::NamedSource;
 use crate::parser::{errors::UnexpectedEndOfInputError, ParsingError, ParsingResult};
 
-pub use super::datasize::DataSize;
-pub use super::duration::Duration;
 use super::errors::locating::get_error_location;
 use super::PklLexer;
 
