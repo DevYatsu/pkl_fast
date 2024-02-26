@@ -1,5 +1,5 @@
 use crate::{
-    parser::value::parse_value,
+    parser::{types::PklType, value::parse_value},
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
 };
 
@@ -22,9 +22,13 @@ pub fn parse_identifier_statement<'source>(
 
             todo!()
         }
+        Ok(PklToken::Colon) => {
+            // expect a type
+            todo!()
+        }
         Err(e) => Err(ParsingError::lexing(lexer, e))?,
         _ => Err(ParsingError::unexpected(lexer))?,
     };
 
-    Ok(Statement::VariableDeclaration { name, value })
+    Ok(Statement::VariableDeclaration { name, value, optional_type: None })
 }

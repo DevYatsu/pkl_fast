@@ -20,6 +20,7 @@ pub enum Statement<'a> {
     Extends(&'a str),
     VariableDeclaration {
         name: &'a str,
+        optional_type: Option<PklType<'a>>,
         value: PklValue<'a>,
     },
 }
@@ -32,4 +33,5 @@ pub use import::ImportClause;
 pub use import::{parse_globbed_import, parse_import};
 pub use module::parse_module;
 
+use super::types::PklType;
 use super::value::PklValue;
