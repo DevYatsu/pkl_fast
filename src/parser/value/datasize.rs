@@ -6,9 +6,9 @@ pub struct DataSize {
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
-/// DataSizeValue represents the value of the DataSize, which can be an u64 or an f64
+/// DataSizeValue represents the value of the DataSize, which can be an i64 or an f64
 pub enum DataSizeValue {
-    Integer(u64),
+    Integer(i64),
     Float(f64),
 }
 
@@ -48,7 +48,7 @@ impl From<&str> for DataSizeUnit {
             "gb" => DataSizeUnit::Gigabytes,
             "tb" => DataSizeUnit::Terabytes,
             "pb" => DataSizeUnit::Petabytes,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -58,8 +58,8 @@ impl From<f64> for DataSizeValue {
         DataSizeValue::Float(value)
     }
 }
-impl From<u64> for DataSizeValue {
-    fn from(value: u64) -> Self {
+impl From<i64> for DataSizeValue {
+    fn from(value: i64) -> Self {
         DataSizeValue::Integer(value)
     }
 }

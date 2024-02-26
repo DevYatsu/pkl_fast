@@ -1,5 +1,5 @@
 use self::datasize::{DataSize, DataSizeValue};
-use self::duration::Duration;
+use self::duration::{Duration, DurationUnit, DurationValue};
 use super::PklLexer;
 use crate::parser::value::datasize::DataSizeUnit;
 use crate::parser::{errors::ParsingError, ParsingResult};
@@ -78,7 +78,7 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
             }
             PklToken::DataSize => match lexer.slice().split('.').collect::<Vec<_>>().as_slice() {
                 [value, unit] => {
-                    let value: DataSizeValue = value.parse::<u64>()?.into();
+                    let value: DataSizeValue = value.parse::<i64>()?.into();
                     let unit: DataSizeUnit = (*unit).into();
                     Ok(PklValue::DataSize(DataSize { value, unit }))
                 }
@@ -89,9 +89,19 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
                 }
                 _ => unreachable!("Cannot be reached!"),
             },
-            PklToken::Duration => {
-                todo!()
-            }
+            PklToken::Duration => match lexer.slice().split('.').collect::<Vec<_>>().as_slice() {
+                [value, unit] => {
+                    let value: DurationValue = value.parse::<i64>()?.into();
+                    let unit: DurationUnit = (*unit).into();
+                    Ok(PklValue::Duration(Duration { value, unit }))
+                }
+                [value, frac, unit] => {
+                    let value: DurationValue = format!("{}.{}", value, frac).parse::<f64>()?.into();
+                    let unit: DurationUnit = (*unit).into();
+                    Ok(PklValue::Duration(Duration { value, unit }))
+                }
+                _ => unreachable!("Cannot be reached!"),
+            },
             _ => Err(ParsingError::unexpected(lexer)),
         }
     } else {
