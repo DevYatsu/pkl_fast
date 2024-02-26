@@ -28,3 +28,30 @@ pub enum PklType<'a> {
 
     Class(&'a str),
 }
+
+impl<'a> From<&'a str> for PklType<'a> {
+    fn from(value: &'a str) -> Self {
+        match value {
+            "Any" => PklType::Any,
+            "unknown" => PklType::Unknown,
+            "nothing" => PklType::Nothing,
+            "String" => PklType::String,
+            "Boolean" => PklType::Boolean,
+            "Int" => PklType::Int,
+            "UInt16" => PklType::UInt16,
+            "Float" => PklType::Float,
+            "Number" => PklType::Number,
+            "Duration" => PklType::Duration,
+            "DataSize" => PklType::DataSize,
+            "Null" => PklType::Null,
+            "Collection" => PklType::Collection(Box::new(PklType::Unknown)), // Adjust as needed
+            "Listing" => PklType::Listing(Box::new(PklType::Unknown)),       // Adjust as needed
+            "List" => PklType::List(Box::new(PklType::Unknown)),             // Adjust as needed
+            "Pair" => PklType::Pair(Box::new(PklType::Unknown), Box::new(PklType::Unknown)), // Adjust as needed
+            "Map" => PklType::Map(Box::new(PklType::Unknown), Box::new(PklType::Unknown)), // Adjust as needed
+            "Mapping" => PklType::Mapping(Box::new(PklType::Unknown), Box::new(PklType::Unknown)), // Adjust as needed
+            "Set" => PklType::Set(Box::new(PklType::Unknown)), // Adjust as needed
+            _ => PklType::Class(value),
+        }
+    }
+}
