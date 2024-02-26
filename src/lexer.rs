@@ -76,8 +76,8 @@ pub enum PklToken {
     /// - &&, ||, |
     #[regex(r#"==|<=|<|>=|>|!=|!!|!|\?\?|\?|\&\&|\&|\|\||\||"#)]
     Operators,
-    #[token("=")]
-    EqualSign,
+    #[regex(r#"=|\+=|-=|\*=|%=|/="#, priority = 3)]
+    AssignementOperation,
     #[regex(r#"\+|-|\*|\*\*|\|>|%|~/"#)]
     ArithmeticOperation,
 

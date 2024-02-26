@@ -1,9 +1,9 @@
 mod amends;
 mod as_statement;
-mod variable;
 mod extends;
 mod import;
 mod module;
+mod variable;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement<'a> {
@@ -20,14 +20,13 @@ pub enum Statement<'a> {
     Extends(&'a str),
     VariableDeclaration {
         name: &'a str,
-        value: PklValue<'a>
-    }
-,
+        value: PklValue<'a>,
+    },
     VariableAssignment {
         name: &'a str,
         operator: AssignOperator,
-        value: PklValue<'a>
-    }
+        value: PklValue<'a>,
+    },
 }
 
 pub use amends::parse_amends;
@@ -37,4 +36,5 @@ pub use import::ImportClause;
 pub use import::{parse_globbed_import, parse_import};
 pub use module::parse_module;
 
+use super::operator::AssignOperator;
 use super::value::PklValue;
