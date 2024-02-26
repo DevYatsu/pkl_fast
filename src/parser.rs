@@ -6,7 +6,7 @@ use crate::parser::errors::{
 use self::{
     errors::{
         InvalidAsStatement, InvalidFloatError, InvalidIdentifierError, InvalidIntError,
-        InvalidStringError, UnexpectedError,
+        InvalidStringError, UnexpectedEndOfInputError, UnexpectedError,
     },
     import::ImportClause,
 };
@@ -22,7 +22,9 @@ mod extends;
 pub mod import;
 mod module;
 
-mod errors;
+pub mod value;
+
+pub mod errors;
 
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;
 pub type PklLexer<'source> = Lexer<'source, PklToken>;
@@ -69,6 +71,10 @@ pub enum ParsingError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     AsStatementUnsupported(#[from] InvalidAsStatement),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    UnexpectedEndOfInput(#[from] UnexpectedEndOfInputError),
 }
 
 pub fn parse<'source>(mut lexer: PklLexer<'source>) -> ParsingResult<Vec<Statement<'source>>> {

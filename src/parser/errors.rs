@@ -107,3 +107,17 @@ pub struct InvalidAsStatement {
     #[source_code]
     pub src: NamedSource<String>,
 }
+
+#[derive(Error, Diagnostic, Debug)]
+#[error("Unexpected end of input")]
+#[diagnostic(
+    code(pkl_fast::unexpected_end_of_input),
+    help("Try putting a string or removing a character")
+)]
+pub struct UnexpectedEndOfInputError {
+    #[label("here")]
+    pub at: SourceSpan,
+
+    #[source_code]
+    pub src: NamedSource<String>,
+}

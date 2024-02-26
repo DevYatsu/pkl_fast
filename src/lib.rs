@@ -39,5 +39,9 @@
 
 pub mod lexer;
 pub mod parser;
-pub mod value;
 pub use logos::Logos;
+
+mod prelude {
+    pub use crate::lexer::PklToken;
+    pub use crate::parser::{parse, ParsingError, ParsingResult, value::PklValue};
+}
