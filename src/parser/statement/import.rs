@@ -1,12 +1,6 @@
 use std::path::Path;
 
-use crate::{
-    parser::errors::{
-        locating::{generate_source, get_error_location},
-        InvalidStringError,
-    },
-    prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
-};
+use crate::prelude::{ParsingError, ParsingResult, PklLexer, PklToken};
 
 use super::Statement;
 
