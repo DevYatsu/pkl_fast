@@ -8,7 +8,7 @@ use super::{
 };
 use crate::lexer::PklToken;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ImportClause<'a> {
     LocalFile(&'a Path),
     StandardLibrary(&'a str), // example: `pkl:math` with the pkl: stripped thus only leaving `math`

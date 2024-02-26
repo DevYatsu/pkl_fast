@@ -39,4 +39,5 @@
 
 pub mod lexer;
 pub mod parser;
+pub mod value;
 pub use logos::Logos;

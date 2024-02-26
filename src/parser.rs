@@ -23,12 +23,11 @@ pub mod import;
 mod module;
 
 mod errors;
-mod utils;
 
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;
 pub type PklLexer<'source> = Lexer<'source, PklToken>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement<'a> {
     Import {
         clause: ImportClause<'a>,

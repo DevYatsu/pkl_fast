@@ -6,7 +6,7 @@ use thiserror::Error;
 /**
 PklToken enum possesses a `lexer` method that lexes an input into tokens constituting the Pkl syntax
 */
-#[derive(Logos, Debug, PartialEq)]
+#[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(error = LexingError)]
 #[logos(skip r"[\f\ ]+")]
 pub enum PklToken {
@@ -133,6 +133,15 @@ pub enum PklToken {
 
     #[regex(r"true|false", |lex| lex.slice() == "true")]
     Boolean(bool),
+
+    #[regex(r#"-?\d+(\.\d+)?\.(ns|us|ms|s|min|h|d)"#, priority = 4)]
+    Duration,
+    #[regex(
+        r#"-?\d+(\.\d+)?\.(b|kb|mb|gb|tb|pb|kib|mib|gib|tib|pib)"#,
+        priority = 4
+    )]
+    DataSize,
+
     #[regex(r"-?(\d(?:_?\d)*|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)", |lex| lex.slice().parse(), priority = 3)]
     Integer(i32),
     #[regex(r"-?(\d*\.\d+(e\d+)?)", |lex| lex.slice().parse(), priority = 4)]
@@ -148,12 +157,6 @@ pub enum PklToken {
     IllegalIdentifier,
     #[regex(r#""[^"]*""#)]
     StringLiteral,
-
-    #[regex(r#"ns|us|ms|s|min|h|d"#, priority = 3)]
-    MinIndication,
-
-    #[regex(r#"b|kb|mb|gb|tb|pb|kib|mib|gib|tib|pib"#, priority = 3)]
-    DataSizeIndication,
 
     // #[regex("[A-Z][a-zA-Z]*")]
     // PascalCaseValue,
