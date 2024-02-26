@@ -1,7 +1,5 @@
-use crate::lexer::LexingError;
-use crate::parser::{errors::UnexpectedEndOfInputError, ParsingError, ParsingResult};
+use crate::parser::{ParsingError, ParsingResult};
 use crate::prelude::PklToken;
-use miette::NamedSource;
 use std::collections::HashMap;
 
 use self::datasize::DataSize;
@@ -38,9 +36,8 @@ pub enum PklValue<'a> {
 
 pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
     if let Some(token) = lexer.next() {
-        if let Err(_e) = token {
-            // temporary mesure, LexingError may differ
-            return Err(ParsingError::LexingError(LexingError::NonAsciiCharacter));
+        if let Err(e) = token {
+            return Err(ParsingError::lexing(lexer, e));
         }
 
         match token.unwrap() {
@@ -49,17 +46,41 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
                 let raw_value = lexer.slice();
                 Ok(PklValue::String(&raw_value[1..raw_value.len() - 1]))
             }
-            PklToken::Integer(int) => Ok(PklValue::Int(int)),
-            PklToken::Float(f) => Ok(PklValue::Float(f)),
+            PklToken::Integer => {
+                let raw_value = lexer.slice();
+
+                // Remove underscores from the string
+                let clean_value = raw_value.replace("_", "");
+
+                // Check if the value starts with a radix specifier
+                let parsed_value = if clean_value.starts_with("0x") {
+                    // Parse hexadecimal value
+                    i64::from_str_radix(&clean_value[2..], 16)
+                } else if clean_value.starts_with("0b") {
+                    // Parse binary value
+                    i64::from_str_radix(&clean_value[2..], 2)
+                } else if clean_value.starts_with("0o") {
+                    // Parse octal value
+                    i64::from_str_radix(&clean_value[2..], 8)
+                } else {
+                    // Parse decimal value
+                    clean_value.parse::<i64>()
+                };
+
+                Ok(PklValue::Int(parsed_value?))
+            }
+            PklToken::Float => {
+                let raw_value = lexer.slice();
+                let clean_value = raw_value.parse::<f64>();
+                Ok(PklValue::Float(clean_value?))
+            }
             PklToken::Null => Ok(PklValue::Null),
-            _ => todo!(),
+            PklToken::OpenBracket => {
+                todo!()
+            }
+            _ => Err(ParsingError::unexpected(lexer)),
         }
     } else {
-        return Err(ParsingError::UnexpectedEndOfInput(
-            UnexpectedEndOfInputError {
-                src: NamedSource::new("main.pkl", lexer.source().to_string()),
-                at: get_error_location(lexer).into(),
-            },
-        ));
+        return Err(ParsingError::eof(lexer));
     }
 }

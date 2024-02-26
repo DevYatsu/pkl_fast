@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, num::{ParseFloatError, ParseIntError}};
 
 use crate::parser::{
     errors::{
@@ -31,6 +31,13 @@ pub enum ParsingError {
     #[diagnostic(code(pkl::io_error))]
     IoError(#[from] io::Error),
 
+    #[error(transparent)]
+    #[diagnostic(code(pkl::io_error))]
+    ParseIntError(#[from] ParseIntError),
+    #[error(transparent)]
+    #[diagnostic(code(pkl::io_error))]
+    ParseFloatError(#[from] ParseFloatError),
+    
     #[error(transparent)]
     #[diagnostic(transparent)]
     LexingError(#[from] LexingError),
@@ -96,12 +103,10 @@ pub fn parse<'source>(
 
                 continue;
             }
-
             Ok(PklToken::Identifier) => {
                 // match for variable declaration, object declaration and variable assignment
                 let identifier = lexer.slice();
-
-                todo!()
+                statement::parse_identifier_statement(&mut lexer, identifier)?
             }
             Err(e) => return Err(parse_lexing_error(&mut lexer, e)),
             _ => continue,
@@ -138,5 +143,8 @@ impl ParsingError {
             src: generate_source("main.pkl", lexer.source()),
             at: get_error_location(lexer).into(),
         })
+    }
+    pub fn lexing(lexer: &mut PklLexer<'_>, e: LexingError) -> Self {
+        parse_lexing_error(lexer, e)
     }
 }

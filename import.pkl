@@ -6,4 +6,4 @@ module com.animals.Birds
 amends "wow.pkl" 
 extends "test.pkl"
 
-test = 2
+test = 100_000_000

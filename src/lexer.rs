@@ -76,8 +76,8 @@ pub enum PklToken {
     /// - &&, ||, |
     #[regex(r#"==|<=|<|>=|>|!=|!!|!|\?\?|\?|\&\&|\&|\|\||\||"#)]
     Operators,
-    #[regex(r#"=|\+=|-=|\*=|%=|/="#, priority = 3)]
-    AssignementOperation,
+    #[token("=")]
+    EqualSign,
     #[regex(r#"\+|-|\*|\*\*|\|>|%|~/"#)]
     ArithmeticOperation,
 
@@ -148,10 +148,10 @@ pub enum PklToken {
     )]
     DataSize,
 
-    #[regex(r"-?(\d(?:_?\d)*|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)", |lex| lex.slice().parse(), priority = 3)]
-    Integer(i64),
-    #[regex(r"-?(\d*\.\d+(e\d+)?)", |lex| lex.slice().parse(), priority = 4)]
-    Float(f64),
+    #[regex(r"-?(\d(?:_?\d)*|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)", priority = 3)]
+    Integer,
+    #[regex(r"-?(\d*\.\d+(e\d+)?)", priority = 4)]
+    Float,
 
     #[regex(r#""(?:\\.|[^\\"])*\(\s*\w+\s*\)(?:\\.|[^\\"])*""#)]
     InterpolatedString,
