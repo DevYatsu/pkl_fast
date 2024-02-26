@@ -51,4 +51,8 @@ pub mod prelude {
         parse, statement::Statement, value::PklValue, ParsingError, ParsingResult,
     };
     pub use logos::Logos;
+
+    pub fn lex<'source>(source: &'source str) -> PklLexer<'source> {
+        PklToken::lexer(source)
+    }
 }

@@ -127,13 +127,6 @@ pub enum PklToken {
     #[regex(r"Listing<\w+>")]
     ListingType,
 
-    #[token("Infinity")]
-    Infinity,
-    #[token("-Infinity")]
-    NegativeInfinity,
-    #[token("NaN")]
-    NotANumber,
-
     #[token("null")]
     Null,
 
@@ -148,9 +141,23 @@ pub enum PklToken {
     )]
     DataSize,
 
-    #[regex(r"-?(\d(?:_?\d)*|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)", priority = 3)]
+    /// Integer variant includes basic integers as well as binary, hexadecimal and octal numbers
+    /// For example, these values are valid integers:
+    /// - 123, -123_000
+    /// - 0x012AFF, 0x0_12_.AFF
+    /// - 0b00010111, 0b000_101_11
+    /// - 0o755, 0o75_5
+    #[regex(r"-?(\d(?:_?\d)*)|0[xX]([0-9a-fA-F](?:_?[0-9a-fA-F])*)|0b([01](?:_?[01])*)|0o([0-7](?:_?[0-7])*)", priority = 3)]
     Integer,
-    #[regex(r"-?(\d*\.\d+(e\d+)?)", priority = 4)]
+
+    /// Float variant includes float number with optional decimal part and/or exponent
+    /// Infinity, -Infinity and NaN are also valid floats
+    /// For example, these values are valid floats:
+    /// - .23, -123.23
+    /// - .5e-2,  2.12e9
+    /// - Infinity, -Infinity
+    /// - Nan
+    #[regex(r"(-?((\d*\.\d+(e-?\d+)?)|(Infinity)))|NaN", priority = 4)]
     Float,
 
     #[regex(r#""(?:\\.|[^\\"])*\(\s*\w+\s*\)(?:\\.|[^\\"])*""#)]

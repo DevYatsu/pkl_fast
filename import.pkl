@@ -6,4 +6,4 @@ module com.animals.Birds
 amends "wow.pkl" 
 extends "test.pkl"
 
-test = 100_000_000
+test = 0x0134_64DE 

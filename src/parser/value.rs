@@ -1,12 +1,9 @@
+use self::datasize::DataSize;
+use self::duration::Duration;
+use super::PklLexer;
 use crate::parser::{ParsingError, ParsingResult};
 use crate::prelude::PklToken;
 use std::collections::HashMap;
-
-use self::datasize::DataSize;
-use self::duration::Duration;
-
-use super::errors::locating::get_error_location;
-use super::PklLexer;
 
 mod datasize;
 mod duration;
@@ -47,10 +44,11 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
                 Ok(PklValue::String(&raw_value[1..raw_value.len() - 1]))
             }
             PklToken::Integer => {
-                let raw_value = lexer.slice();
+                let raw_value: &str = lexer.slice();
 
                 // Remove underscores from the string
                 let clean_value = raw_value.replace("_", "");
+                println!("{} {}", raw_value, clean_value);
 
                 // Check if the value starts with a radix specifier
                 let parsed_value = if clean_value.starts_with("0x") {

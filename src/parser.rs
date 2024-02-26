@@ -1,4 +1,7 @@
-use std::{io, num::{ParseFloatError, ParseIntError}};
+use std::{
+    io,
+    num::{ParseFloatError, ParseIntError},
+};
 
 use crate::parser::{
     errors::{
@@ -37,7 +40,7 @@ pub enum ParsingError {
     #[error(transparent)]
     #[diagnostic(code(pkl::io_error))]
     ParseFloatError(#[from] ParseFloatError),
-    
+
     #[error(transparent)]
     #[diagnostic(transparent)]
     LexingError(#[from] LexingError),
