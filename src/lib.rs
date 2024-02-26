@@ -18,13 +18,16 @@
 //! ## Example
 //!
 //! ```rust
-//! use pkl_fast::prelude::{parse, PklToken, Logos};
+//! use pkl_fast::prelude::{parse, PklToken, Logos, ParsingResult};
+//! use std::fs;
 //!
-//! fn main() -> ParsingError<()> {
-//!     let source: String = fs::read_to_string("file.pkl")?;
-//!     let tokens = PklToken::lexer(source);
+//! fn main() -> ParsingResult<()> {
+//!     let source: String = fs::read_to_string("file.pkl").unwrap_or("".to_owned());
+//!     let tokens = PklToken::lexer(&source);
 //!     let statements = parse(tokens)?;
 //!     // statements now contains a representation of the source string as a Vec<Statements>
+//! 
+//!     Ok(())
 //! }
 //!
 //! ```

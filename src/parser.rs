@@ -1,3 +1,5 @@
+use std::io;
+
 use crate::parser::{
     errors::{
         locating::{generate_source, get_error_location},
@@ -24,6 +26,10 @@ pub type PklLexer<'source> = Lexer<'source, PklToken>;
 
 #[derive(Error, Diagnostic, Debug)]
 pub enum ParsingError {
+    #[error(transparent)]
+    #[diagnostic(code(pkl::io_error))]
+    IoError(#[from] io::Error),
+
     #[error(transparent)]
     #[diagnostic(transparent)]
     LexingError(#[from] LexingError),
