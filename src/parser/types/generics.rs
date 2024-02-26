@@ -1,5 +1,3 @@
-use std::str::Split;
-
 pub fn extract_generics<'a>(raw_string: &'a str) -> (&'a str, std::str::Split<'a, char>) {
     let generic_start_index = raw_string.find('<').unwrap();
     let base_type = &raw_string[0..generic_start_index];
