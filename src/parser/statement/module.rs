@@ -15,10 +15,7 @@ pub fn parse_module<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Sta
         Ok(Statement::Module(value))
     } else {
         if token.is_some() {
-            Err(ParsingError::InvalidString(InvalidStringError {
-                src: generate_source("main.pkl", lexer.source()),
-                at: get_error_location(lexer).into(),
-            }))
+            Err(ParsingError::invalid_string(lexer))
         } else {
             Err(ParsingError::eof(lexer))
         }

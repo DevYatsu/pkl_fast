@@ -124,7 +124,19 @@ impl ParsingError {
     pub fn unexpected(lexer: &mut PklLexer<'_>) -> Self {
         ParsingError::UnexpectedToken(UnexpectedError {
             src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(&mut lexer).into(),
+            at: get_error_location(lexer).into(),
+        })
+    }
+    pub fn invalid_string(lexer: &mut PklLexer<'_>) -> Self {
+        ParsingError::InvalidString(InvalidStringError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer).into(),
+        })
+    }
+    pub fn invalid_id(lexer: &mut PklLexer<'_>) -> Self {
+        ParsingError::InvalidIdentifier(InvalidIdentifierError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer).into(),
         })
     }
 }
