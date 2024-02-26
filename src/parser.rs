@@ -20,6 +20,7 @@ use thiserror::Error;
 pub mod errors;
 pub mod statement;
 pub mod value;
+mod operator;
 
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;
 pub type PklLexer<'source> = Lexer<'source, PklToken>;

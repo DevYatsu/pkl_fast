@@ -149,7 +149,7 @@ pub enum PklToken {
     DataSize,
 
     #[regex(r"-?(\d(?:_?\d)*|0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+)", |lex| lex.slice().parse(), priority = 3)]
-    Integer(i32),
+    Integer(i64),
     #[regex(r"-?(\d*\.\d+(e\d+)?)", |lex| lex.slice().parse(), priority = 4)]
     Float(f64),
 

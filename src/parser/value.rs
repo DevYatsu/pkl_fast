@@ -1,4 +1,6 @@
+use crate::lexer::LexingError;
 use crate::parser::{errors::UnexpectedEndOfInputError, ParsingError, ParsingResult};
+use crate::prelude::PklToken;
 use miette::NamedSource;
 use std::collections::HashMap;
 
@@ -36,7 +38,20 @@ pub enum PklValue<'a> {
 
 pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
     if let Some(token) = lexer.next() {
-        match token {
+        if let Err(_e) = token {
+            // temporary mesure, LexingError may differ
+            return Err(ParsingError::LexingError(LexingError::NonAsciiCharacter));
+        }
+
+        match token.unwrap() {
+            PklToken::Boolean(b) => Ok(PklValue::Boolean(b)),
+            PklToken::StringLiteral => {
+                let raw_value = lexer.slice();
+                Ok(PklValue::String(&raw_value[1..raw_value.len() - 1]))
+            }
+            PklToken::Integer(int) => Ok(PklValue::Int(int)),
+            PklToken::Float(f) => Ok(PklValue::Float(f)),
+            PklToken::Null => Ok(PklValue::Null),
             _ => todo!(),
         }
     } else {
