@@ -15,23 +15,23 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 ## Todo List
 
 - [x] Parsing basic values (e.g., int, float, boolean, string, datasize, duration)
-- [ ] Parsing Objects, Class
-- [ ] Parsing Map, Mapping, Set, Listing
+- [ ] Parsing objects declaration
+- [ ] Parsing `Map`, `Mapping`, `Set`, `Listing`
 
 - [x] Parsing simple type annotations (`Int`, `Float`, `UInt16`, `unknown`, `Any`)
 - [x] Parsing more complex type annotations (e.g., `Listing<Type>`, `Mapping<Type, OtherType>`)
 
-- [x] Parsing import/import\* statement (with optional `as`)
-- [x] Parsing amends statement
-- [x] Parsing extends statement
-- [x] Parsing module statement
+- [x] Parsing `import/import\*` statement (with optional `as`)
+- [x] Parsing `amends` statement
+- [x] Parsing `extends` statement
+- [x] Parsing `module` statement
 
 - [ ] Parsing variable declaration statement (partially done)
-- [ ] Parsing variable class statement
-- [ ] Parsing functions statement
+- [ ] Parsing `class` statement
+- [ ] Parsing `function` statement
 
-- [ ] Parsing @ModuleInfo/@Deprecated annotation
-- [ ] Parsing typealias annotation
+- [ ] Parsing `@ModuleInfo`/`@Deprecated` annotation
+- [ ] Parsing `typealias` annotation
 - [ ] Parsing If/Else/Let/For/When statement
 
 - [ ] Parsing Arithmetic expressions
