@@ -12,9 +12,13 @@ pub fn parse_as<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'sourc
     if let Some(Ok(PklToken::Identifier)) = token {
         Ok(lexer.slice())
     } else {
-        Err(ParsingError::InvalidIdentifier(InvalidIdentifierError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer).into(),
-        }))
+        if token.is_some() {
+            Err(ParsingError::InvalidIdentifier(InvalidIdentifierError {
+                src: generate_source("main.pkl", lexer.source()),
+                at: get_error_location(lexer).into(),
+            }))
+        } else {
+            Err(ParsingError::eof(lexer))
+        }
     }
 }

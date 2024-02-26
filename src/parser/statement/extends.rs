@@ -1,7 +1,5 @@
-use miette::NamedSource;
-
 use crate::{
-    parser::errors::{locating::get_error_location, InvalidStringError},
+    parser::errors::{locating::{generate_source, get_error_location}, InvalidStringError},
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
 };
 
@@ -14,9 +12,13 @@ pub fn parse_extends<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<St
         let value = &raw_value[1..raw_value.len() - 1];
         Ok(Statement::Extends(value))
     } else {
-        Err(ParsingError::InvalidString(InvalidStringError {
-            src: NamedSource::new("main.pkl", lexer.source().to_string()),
-            at: get_error_location(lexer).into(),
-        }))
+        if token.is_some() {
+            Err(ParsingError::InvalidString(InvalidStringError {
+                src: generate_source("main.pkl", lexer.source()),
+                at: get_error_location(lexer).into(),
+            }))
+        } else {
+            Err(ParsingError::eof(lexer))
+        }
     }
 }

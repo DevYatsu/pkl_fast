@@ -46,10 +46,14 @@ fn parse_import_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&
         let value = &raw_value[1..raw_value.len() - 1];
         Ok(value)
     } else {
-        Err(ParsingError::InvalidString(InvalidStringError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer).into(),
-        }))
+        if token.is_some() {
+            Err(ParsingError::InvalidString(InvalidStringError {
+                src: generate_source("main.pkl", lexer.source()),
+                at: get_error_location(lexer).into(),
+            }))
+        } else {
+            Err(ParsingError::eof(lexer))
+        }
     }
 }
 

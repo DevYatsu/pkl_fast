@@ -16,7 +16,7 @@ pub enum ArithmeticOperator {
     /// The bitwise OR operator `|`.
     BitwiseOr,
     /// The bitwise NOT operator `~|`.
-    BitwiseNot
+    BitwiseNot,
 }
 
 impl From<&str> for ArithmeticOperator {
@@ -29,7 +29,7 @@ impl From<&str> for ArithmeticOperator {
             "/" => ArithmeticOperator::Division,
             "%" => ArithmeticOperator::Modulo,
             "|" => ArithmeticOperator::BitwiseOr,
-            "~/" => ArithmeticOperator::BitwiseNot, 
+            "~/" => ArithmeticOperator::BitwiseNot,
             _ => unreachable!("Should not be reached! (in ArithmeticOperator struct)"),
         }
     }

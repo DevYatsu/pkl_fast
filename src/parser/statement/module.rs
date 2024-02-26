@@ -1,8 +1,26 @@
-use crate::prelude::{ParsingResult, PklLexer};
+use crate::{
+    parser::errors::{
+        locating::{generate_source, get_error_location},
+        InvalidStringError,
+    },
+    prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
+};
 
 use super::Statement;
 pub fn parse_module<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Statement<'source>> {
-    lexer.next();
-    let value = lexer.slice();
-    Ok(Statement::Module(value))
+    let token = lexer.next();
+
+    if let Some(Ok(PklToken::StringLiteral)) = token {
+        let value = lexer.slice();
+        Ok(Statement::Module(value))
+    } else {
+        if token.is_some() {
+            Err(ParsingError::InvalidString(InvalidStringError {
+                src: generate_source("main.pkl", lexer.source()),
+                at: get_error_location(lexer).into(),
+            }))
+        } else {
+            Err(ParsingError::eof(lexer))
+        }
+    }
 }

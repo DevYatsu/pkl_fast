@@ -35,6 +35,7 @@ pub use extends::parse_extends;
 pub use import::ImportClause;
 pub use import::{parse_globbed_import, parse_import};
 pub use module::parse_module;
+pub use variable::parse_var_declaration;
 
 use super::operator::AssignOperator;
 use super::value::PklValue;
