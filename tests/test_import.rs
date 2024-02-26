@@ -1,6 +1,7 @@
-use pkl_fast::lexer::PklToken;
-use pkl_fast::parser::{import::ImportClause, parse, Statement};
-use pkl_fast::Logos;
+use pkl_fast::{
+    parser::statement::ImportClause,
+    prelude::{parse, Logos, PklToken, Statement},
+};
 use std::path::Path;
 
 #[test]

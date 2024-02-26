@@ -1,5 +1,4 @@
-use pkl_fast::lexer::PklToken;
-use pkl_fast::Logos;
+use pkl_fast::prelude::{Logos, PklToken};
 
 #[test]
 fn empty() {

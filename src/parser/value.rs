@@ -34,7 +34,7 @@ pub enum PklValue<'a> {
     Null,
 }
 
-pub fn parse_extends<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
+pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
     if let Some(token) = lexer.next() {
         match token {
             _ => todo!(),

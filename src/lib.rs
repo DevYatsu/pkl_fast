@@ -12,26 +12,26 @@
 //! ## Installing
 //!
 //! ```sh
-//! $ cargo add miette
+//! $ cargo add pkl_fast
 //! ```
 //!
 //! ## Example
 //!
 //! ```rust
-//! use pkl_fast::{Logos, lexer::PklToken, parser::{parse, ParsingError, Statement}};
+//! use pkl_fast::prelude::{parse, PklToken, Logos};
 //!
 //! fn main() -> ParsingError<()> {
 //!     let source: String = fs::read_to_string("file.pkl")?;
-//!     let tokens: Lexer<PklToken> = PklToken::lexer(source);
-//!     let statements: Vec<Statement<'_>> = parse(tokens)?;
-//!     // statements now contains a representation of the source string as an AST (statements)
+//!     let tokens = PklToken::lexer(source);
+//!     let statements = parse(tokens)?;
+//!     // statements now contains a representation of the source string as a Vec<Statements>
 //! }
 //!
 //! ```
 //!
 //! ## License
 //!
-//! `miette` is released to the Rust community under the [Apache license
+//! `pkl_fast` is released to the Rust community under the [Apache license
 //! 2.0](./LICENSE).
 //!
 //! It also includes code taken from [`miette`](https://github.com/zkat/miette),
@@ -41,8 +41,11 @@ pub mod lexer;
 pub mod parser;
 pub use logos::Logos;
 
-mod prelude {
+pub mod prelude {
     pub use crate::lexer::PklToken;
     pub use crate::parser::PklLexer;
-    pub use crate::parser::{parse, value::PklValue, ParsingError, ParsingResult};
+    pub use crate::parser::{
+        parse, statement::Statement, value::PklValue, ParsingError, ParsingResult,
+    };
+    pub use logos::Logos;
 }
