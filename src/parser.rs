@@ -1,7 +1,7 @@
-use crate::parser::errors::{
+use crate::parser::{errors::{
     locating::{generate_source, get_error_location},
     parse_lexing_error,
-};
+}, statement::Statement};
 
 use self::errors::{
     InvalidAsStatement, InvalidFloatError, InvalidIdentifierError, InvalidIntError,
