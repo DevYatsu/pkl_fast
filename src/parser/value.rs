@@ -48,7 +48,6 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
 
                 // Remove underscores from the string
                 let clean_value = raw_value.replace("_", "");
-                println!("{} {}", raw_value, clean_value);
 
                 // Check if the value starts with a radix specifier
                 let parsed_value = if clean_value.starts_with("0x") {

@@ -6,4 +6,5 @@ module com.animals.Birds
 amends "wow.pkl" 
 extends "test.pkl"
 
-test = 0x0134_64DE 
+num: Int = 0x0134_64DE 
+num2: Float = -1.2e3 

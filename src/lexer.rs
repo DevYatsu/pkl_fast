@@ -110,24 +110,9 @@ pub enum PklToken {
     #[token("typealias")]
     TypeAlias,
 
-    #[token("String")]
-    StringType,
-    #[token("Boolean")]
-    BooleanType,
-    #[token("Int")]
-    IntType,
-    #[token("Number")]
-    NumberType,
-    #[token("NonNull")]
-    NonNullType,
-    #[token("UInt16")]
-    UInt16Type,
-    #[token("Duration")]
-    DurationType,
-    #[token("DataSize")]
-    DataSizeType,
-    #[regex(r"Listing<\w+>")]
-    ListingType,
+    /// This variant shall represent types with a given generic such as `Listing<Bird>` or `Map<Int, String>`  
+    #[regex(r"[A-Za-z][A-Za-z0-9]*<([A-Za-z_][A-Za-z0-9_]*)(?:,\s*([A-Za-z_][A-Za-z0-9_]*))?>")]
+    GenericTypeAnnotation,
 
     #[token("null")]
     Null,

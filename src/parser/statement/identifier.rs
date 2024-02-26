@@ -1,5 +1,5 @@
 use crate::{
-    parser::{types::PklType, value::parse_value},
+    parser::{types::parse_type, value::parse_value},
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
 };
 
@@ -12,11 +12,19 @@ pub fn parse_identifier_statement<'source>(
     let token = lexer.next();
 
     if token.is_none() {
-        return Err(ParsingError::unexpected(lexer));
+        return Err(ParsingError::eof(lexer));
     }
 
-    let value = match token.unwrap() {
-        Ok(PklToken::EqualSign) => parse_value(lexer)?,
+    let statement = match token.unwrap() {
+        Ok(PklToken::EqualSign) => {
+            let value = parse_value(lexer)?;
+
+            Statement::VariableDeclaration {
+                name,
+                value,
+                optional_type: None,
+            }
+        }
         Ok(PklToken::OpenBracket) => {
             // object definition
 
@@ -24,15 +32,24 @@ pub fn parse_identifier_statement<'source>(
         }
         Ok(PklToken::Colon) => {
             // expect a type
-            todo!()
+
+            let variable_type = parse_type(lexer)?;
+            let mut statement = parse_identifier_statement(lexer, name)?;
+
+            if let Statement::VariableDeclaration {
+                ref mut optional_type,
+                ..
+            } = statement
+            {
+                // statement is certain to be a variable declaration
+                *optional_type = Some(variable_type);
+            }
+
+            statement
         }
         Err(e) => Err(ParsingError::lexing(lexer, e))?,
         _ => Err(ParsingError::unexpected(lexer))?,
     };
 
-    Ok(Statement::VariableDeclaration {
-        name,
-        value,
-        optional_type: None,
-    })
+    Ok(statement)
 }
