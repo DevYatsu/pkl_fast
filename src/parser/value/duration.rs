@@ -1,8 +1,8 @@
 #[derive(Debug, PartialEq, Eq, PartialOrd, Hash, Clone)]
 /// A struct representating the Pkl Duration value composed of a `Number` and a unit component of type `String`.
 pub struct Duration {
-    value: u64,
-    unit: DurationUnit,
+    pub value: u64,
+    pub unit: DurationUnit,
 }
 #[derive(Debug, PartialEq, Eq, PartialOrd, Hash, Clone)]
 /// DurationUnit represents the unit of the DataSize, restricted to these values: "ns"|"us"|"ms"|"s"|"min"|"h"|"d".

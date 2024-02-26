@@ -1,6 +1,7 @@
-use self::datasize::DataSize;
+use self::datasize::{DataSize, DataSizeValue};
 use self::duration::Duration;
 use super::PklLexer;
+use crate::parser::value::datasize::DataSizeUnit;
 use crate::parser::{errors::ParsingError, ParsingResult};
 use crate::prelude::PklToken;
 use std::collections::HashMap;
@@ -73,6 +74,22 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
             }
             PklToken::Null => Ok(PklValue::Null),
             PklToken::OpenBracket => {
+                todo!("Cannot proceed objects for now")
+            }
+            PklToken::DataSize => match lexer.slice().split('.').collect::<Vec<_>>().as_slice() {
+                [value, unit] => {
+                    let value: DataSizeValue = value.parse::<u64>()?.into();
+                    let unit: DataSizeUnit = (*unit).into();
+                    Ok(PklValue::DataSize(DataSize { value, unit }))
+                }
+                [value, frac, unit] => {
+                    let value: DataSizeValue = format!("{}.{}", value, frac).parse::<f64>()?.into();
+                    let unit: DataSizeUnit = (*unit).into();
+                    Ok(PklValue::DataSize(DataSize { value, unit }))
+                }
+                _ => unreachable!("Cannot be reached!"),
+            },
+            PklToken::Duration => {
                 todo!()
             }
             _ => Err(ParsingError::unexpected(lexer)),
