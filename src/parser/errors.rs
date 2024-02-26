@@ -1,30 +1,63 @@
+use std::{
+    io,
+    num::{ParseFloatError, ParseIntError},
+};
+
 use crate::lexer::LexingError;
 use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
 use thiserror::Error;
 
-use self::locating::{generate_source, get_error_location};
+use self::{
+    lexing::parse_lexing_error,
+    locating::{generate_source, get_error_location},
+};
 
-use super::{ParsingError, PklLexer};
+use super::PklLexer;
+pub mod lexing;
 pub mod locating;
 
-pub fn parse_lexing_error<'source>(
-    lexer: &mut PklLexer<'source>,
-    err: LexingError,
-) -> ParsingError {
-    match err {
-        LexingError::InvalidInteger => ParsingError::InvalidInt(InvalidIntError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer).into(),
-        }),
-        LexingError::InvalidFloat => ParsingError::InvalidFloat(InvalidFloatError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer).into(),
-        }),
-        LexingError::NonAsciiCharacter => ParsingError::UnexpectedToken(UnexpectedError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer).into(),
-        }),
-    }
+#[derive(Error, Diagnostic, Debug)]
+pub enum ParsingError {
+    #[error(transparent)]
+    #[diagnostic(code(pkl::io_error))]
+    IoError(#[from] io::Error),
+
+    #[error(transparent)]
+    #[diagnostic(code(pkl::io_error))]
+    ParseIntError(#[from] ParseIntError),
+    #[error(transparent)]
+    #[diagnostic(code(pkl::io_error))]
+    ParseFloatError(#[from] ParseFloatError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    LexingError(#[from] LexingError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    UnexpectedToken(#[from] UnexpectedError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidString(#[from] InvalidStringError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidInt(#[from] InvalidIntError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidFloat(#[from] InvalidFloatError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidIdentifier(#[from] InvalidIdentifierError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    AsStatementUnsupported(#[from] InvalidAsStatement),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    UnexpectedEndOfInput(#[from] UnexpectedEndOfInputError),
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -120,4 +153,34 @@ pub struct UnexpectedEndOfInputError {
 
     #[source_code]
     pub src: NamedSource<String>,
+}
+
+impl ParsingError {
+    pub fn eof(lexer: &mut PklLexer<'_>) -> Self {
+        ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer).into(),
+        })
+    }
+    pub fn unexpected(lexer: &mut PklLexer<'_>) -> Self {
+        ParsingError::UnexpectedToken(UnexpectedError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer).into(),
+        })
+    }
+    pub fn invalid_string(lexer: &mut PklLexer<'_>) -> Self {
+        ParsingError::InvalidString(InvalidStringError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer).into(),
+        })
+    }
+    pub fn invalid_id(lexer: &mut PklLexer<'_>) -> Self {
+        ParsingError::InvalidIdentifier(InvalidIdentifierError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer).into(),
+        })
+    }
+    pub fn lexing(lexer: &mut PklLexer<'_>, e: LexingError) -> Self {
+        parse_lexing_error(lexer, e)
+    }
 }

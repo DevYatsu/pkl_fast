@@ -48,7 +48,7 @@ pub mod prelude {
     pub use crate::lexer::PklToken;
     pub use crate::parser::PklLexer;
     pub use crate::parser::{
-        parse, statement::Statement, value::PklValue, ParsingError, ParsingResult,
+        errors::ParsingError, parse, statement::Statement, value::PklValue, ParsingResult,
     };
     pub use logos::Logos;
 

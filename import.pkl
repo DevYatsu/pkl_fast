@@ -8,3 +8,5 @@ extends "test.pkl"
 
 num: Int = 0x0134_64DE 
 num2: Float = -1.2e3 
+
+test: Map<Float, Int> = 2.5

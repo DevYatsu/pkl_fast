@@ -1,6 +1,10 @@
+use self::generics::extract_generics;
+
+use super::{errors::ParsingError, ParsingResult, PklLexer};
 use crate::prelude::PklToken;
 
-use super::{ParsingError, ParsingResult, PklLexer};
+mod errors;
+mod generics;
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub enum PklType<'a> {
@@ -45,7 +49,24 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
                 Ok(value.into())
             }
             PklToken::GenericTypeAnnotation => {
-                todo!()
+                let raw_value: &str = lexer.slice();
+
+                let (base_type, mut generics) = extract_generics(raw_value);
+
+                // there is necessarily one generic otherwise the lexer would have produced an Error
+                // we do not need to call trim method on our strings as it's done in the impl From<&str>
+                let first_generic: PklType<'_> = generics.next().unwrap().into();
+                let second_generic = generics.next().map(|s| s.into());
+
+                if second_generic.is_some() {
+                    Ok(PklType::generate_from_2_generic(
+                        base_type,
+                        first_generic,
+                        second_generic.unwrap(),
+                    ))
+                } else {
+                    Ok(PklType::generate_from_1_generic(base_type, first_generic))
+                }
             }
             _ => Err(ParsingError::unexpected(lexer)),
         }
@@ -56,7 +77,7 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
 
 impl<'a> From<&'a str> for PklType<'a> {
     fn from(value: &'a str) -> Self {
-        match value {
+        match value.trim() {
             "Any" => PklType::Any,
             "unknown" => PklType::Unknown,
             "nothing" => PklType::Nothing,
@@ -69,7 +90,7 @@ impl<'a> From<&'a str> for PklType<'a> {
             "Duration" => PklType::Duration,
             "DataSize" => PklType::DataSize,
             "Null" => PklType::Null,
-            "Collection" => PklType::Collection(Box::new(PklType::Unknown)), // For now we put unknown everywhere
+            "Collection" => PklType::Collection(Box::new(PklType::Unknown)),
             "Listing" => PklType::Listing(Box::new(PklType::Unknown)),
             "List" => PklType::List(Box::new(PklType::Unknown)),
             "Pair" => PklType::Pair(Box::new(PklType::Unknown), Box::new(PklType::Unknown)),
@@ -77,6 +98,30 @@ impl<'a> From<&'a str> for PklType<'a> {
             "Mapping" => PklType::Mapping(Box::new(PklType::Unknown), Box::new(PklType::Unknown)),
             "Set" => PklType::Set(Box::new(PklType::Unknown)),
             _ => PklType::Class(value),
+        }
+    }
+}
+
+impl<'a> PklType<'a> {
+    pub fn generate_from_1_generic(base_type: &'a str, first_type: PklType<'a>) -> PklType<'a> {
+        match base_type {
+            "Collection" => PklType::Collection(Box::new(first_type)),
+            "Listing" => PklType::Listing(Box::new(first_type)),
+            "List" => PklType::List(Box::new(first_type)),
+            "Set" => PklType::Set(Box::new(first_type)),
+            _ => todo!("should not be reached dude, create an error if here"),
+        }
+    }
+    pub fn generate_from_2_generic(
+        base_type: &'a str,
+        first_type: PklType<'a>,
+        second_type: PklType<'a>,
+    ) -> PklType<'a> {
+        match base_type {
+            "Pair" => PklType::Pair(Box::new(first_type), Box::new(second_type)),
+            "Map" => PklType::Map(Box::new(first_type), Box::new(second_type)),
+            "Mapping" => PklType::Mapping(Box::new(first_type), Box::new(second_type)),
+            _ => todo!("should not be reached dude, create an error if here"),
         }
     }
 }

@@ -1,7 +1,7 @@
 use self::datasize::DataSize;
 use self::duration::Duration;
 use super::PklLexer;
-use crate::parser::{ParsingError, ParsingResult};
+use crate::parser::{errors::ParsingError, ParsingResult};
 use crate::prelude::PklToken;
 use std::collections::HashMap;
 
