@@ -1,9 +1,13 @@
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub enum PklType<'a> {
-    String, 
+    Any,
+    Unknown,
+    Nothing,
+
+    String,
     Boolean,
 
-    Int, 
+    Int,
     UInt16,
     Float,
     Number,
@@ -12,8 +16,15 @@ pub enum PklType<'a> {
     DataSize,
     Null,
 
-    Listing,
-    Map,
+    Collection(Box<PklType<'a>>),
+    Listing(Box<PklType<'a>>),
+    List(Box<PklType<'a>>),
 
-    Class(&'a str)
-}   
+    Pair(Box<PklType<'a>>, Box<PklType<'a>>),
+    Map(Box<PklType<'a>>, Box<PklType<'a>>),
+    Mapping(Box<PklType<'a>>, Box<PklType<'a>>),
+
+    Set(Box<PklType<'a>>),
+
+    Class(&'a str),
+}

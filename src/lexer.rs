@@ -69,6 +69,8 @@ pub enum PklToken {
     In,
     #[token("when")]
     When,
+    #[token("is")]
+    Is,
 
     /// support for:
     /// - ==, <=, >=, >

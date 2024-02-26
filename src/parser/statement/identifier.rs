@@ -30,5 +30,9 @@ pub fn parse_identifier_statement<'source>(
         _ => Err(ParsingError::unexpected(lexer))?,
     };
 
-    Ok(Statement::VariableDeclaration { name, value, optional_type: None })
+    Ok(Statement::VariableDeclaration {
+        name,
+        value,
+        optional_type: None,
+    })
 }
