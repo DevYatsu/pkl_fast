@@ -1,6 +1,9 @@
-use std::collections::HashMap;
-use miette::NamedSource;
 use crate::parser::{errors::UnexpectedEndOfInputError, ParsingError, ParsingResult};
+use miette::NamedSource;
+use std::collections::HashMap;
+
+use self::datasize::DataSize;
+use self::duration::Duration;
 
 use super::errors::locating::get_error_location;
 use super::PklLexer;
@@ -34,7 +37,7 @@ pub enum PklValue<'a> {
 pub fn parse_extends<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
     if let Some(token) = lexer.next() {
         match token {
-            _ => todo!()
+            _ => todo!(),
         }
     } else {
         return Err(ParsingError::UnexpectedEndOfInput(
