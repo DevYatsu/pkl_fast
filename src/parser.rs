@@ -118,7 +118,7 @@ impl ParsingError {
     pub fn eof(lexer: &mut PklLexer<'_>) -> Self {
         ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError {
             src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(&mut lexer).into(),
+            at: get_error_location(lexer).into(),
         })
     }
     pub fn unexpected(lexer: &mut PklLexer<'_>) -> Self {

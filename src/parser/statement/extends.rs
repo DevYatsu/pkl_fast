@@ -1,5 +1,8 @@
 use crate::{
-    parser::errors::{locating::{generate_source, get_error_location}, InvalidStringError},
+    parser::errors::{
+        locating::{generate_source, get_error_location},
+        InvalidStringError,
+    },
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
 };
 
