@@ -40,6 +40,12 @@ pub enum PklToken {
     New,
     #[token("class")]
     Class,
+    #[token("local")]
+    Local,
+    #[token("this")]
+    This,
+    #[token("default")]
+    Default,
 
     #[token("hidden")]
     Hidden,
