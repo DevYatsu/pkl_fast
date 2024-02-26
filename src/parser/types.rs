@@ -1,9 +1,18 @@
-use self::generics::extract_generics;
+use self::{
+    errors::{Expected1GenericError, Expected2GenericError, TypeError},
+    generics::extract_generics,
+};
 
-use super::{errors::ParsingError, ParsingResult, PklLexer};
+use super::{
+    errors::{
+        locating::{generate_source, get_error_location},
+        ParsingError,
+    },
+    ParsingResult, PklLexer,
+};
 use crate::prelude::PklToken;
 
-mod errors;
+pub mod errors;
 mod generics;
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
@@ -60,12 +69,17 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
 
                 if second_generic.is_some() {
                     Ok(PklType::generate_from_2_generic(
+                        lexer,
                         base_type,
                         first_generic,
                         second_generic.unwrap(),
-                    ))
+                    )?)
                 } else {
-                    Ok(PklType::generate_from_1_generic(base_type, first_generic))
+                    Ok(PklType::generate_from_1_generic(
+                        lexer,
+                        base_type,
+                        first_generic,
+                    )?)
                 }
             }
             _ => Err(ParsingError::unexpected(lexer)),
@@ -103,25 +117,43 @@ impl<'a> From<&'a str> for PklType<'a> {
 }
 
 impl<'a> PklType<'a> {
-    pub fn generate_from_1_generic(base_type: &'a str, first_type: PklType<'a>) -> PklType<'a> {
+    pub fn generate_from_1_generic(
+        lexer: &mut PklLexer<'a>,
+        base_type: &'a str,
+        first_type: PklType<'a>,
+    ) -> Result<PklType<'a>, TypeError> {
         match base_type {
-            "Collection" => PklType::Collection(Box::new(first_type)),
-            "Listing" => PklType::Listing(Box::new(first_type)),
-            "List" => PklType::List(Box::new(first_type)),
-            "Set" => PklType::Set(Box::new(first_type)),
-            _ => todo!("should not be reached dude, create an error if here"),
+            "Collection" => Ok(PklType::Collection(Box::new(first_type))),
+            "Listing" => Ok(PklType::Listing(Box::new(first_type))),
+            "List" => Ok(PklType::List(Box::new(first_type))),
+            "Set" => Ok(PklType::Set(Box::new(first_type))),
+            _ => {
+                return Err(TypeError::Expected1Generic(Expected1GenericError {
+                    src: generate_source("main.pkl", lexer.source()),
+                    at: get_error_location(lexer).into(),
+                }))
+            }
         }
     }
     pub fn generate_from_2_generic(
+        lexer: &mut PklLexer<'a>,
         base_type: &'a str,
         first_type: PklType<'a>,
         second_type: PklType<'a>,
-    ) -> PklType<'a> {
+    ) -> Result<PklType<'a>, TypeError> {
         match base_type {
-            "Pair" => PklType::Pair(Box::new(first_type), Box::new(second_type)),
-            "Map" => PklType::Map(Box::new(first_type), Box::new(second_type)),
-            "Mapping" => PklType::Mapping(Box::new(first_type), Box::new(second_type)),
-            _ => todo!("should not be reached dude, create an error if here"),
+            "Pair" => Ok(PklType::Pair(Box::new(first_type), Box::new(second_type))),
+            "Map" => Ok(PklType::Map(Box::new(first_type), Box::new(second_type))),
+            "Mapping" => Ok(PklType::Mapping(
+                Box::new(first_type),
+                Box::new(second_type),
+            )),
+            _ => {
+                return Err(TypeError::Expected2Generic(Expected2GenericError {
+                    src: generate_source("main.pkl", lexer.source()),
+                    at: get_error_location(lexer).into(),
+                }))
+            }
         }
     }
 }

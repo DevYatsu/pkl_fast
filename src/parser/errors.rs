@@ -12,7 +12,7 @@ use self::{
     locating::{generate_source, get_error_location},
 };
 
-use super::PklLexer;
+use super::{types::errors::TypeError, PklLexer};
 pub mod lexing;
 pub mod locating;
 
@@ -23,15 +23,18 @@ pub enum ParsingError {
     IoError(#[from] io::Error),
 
     #[error(transparent)]
-    #[diagnostic(code(pkl::io_error))]
+    #[diagnostic(code(num::parse_int))]
     ParseIntError(#[from] ParseIntError),
     #[error(transparent)]
-    #[diagnostic(code(pkl::io_error))]
+    #[diagnostic(code(num::parse_float))]
     ParseFloatError(#[from] ParseFloatError),
 
     #[error(transparent)]
     #[diagnostic(transparent)]
     LexingError(#[from] LexingError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    TypeError(#[from] TypeError),
 
     #[error(transparent)]
     #[diagnostic(transparent)]

@@ -5,16 +5,33 @@ use thiserror::Error;
 pub enum TypeError {
     #[error(transparent)]
     #[diagnostic(transparent)]
-    MissingTypeGeneric(#[from] MissingTypeGenericError),
+    Expected1Generic(#[from] Expected1GenericError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    Expected2Generic(#[from] Expected2GenericError),
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[error("Missing a type generic")]
+#[error("Expected an Enum that takes 1 generic argument")]
 #[diagnostic(
-    code(pkl_fast::unexpected_end_of_input),
-    help("Add a type Generic to the type")
+    code(pkl_fast::types::generic::expected_1),
+    help("Check the number of generic types")
 )]
-pub struct MissingTypeGenericError {
+pub struct Expected1GenericError {
+    #[label("here")]
+    pub at: SourceSpan,
+
+    #[source_code]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[error("Expected an Enum that takes 2 generic arguments")]
+#[diagnostic(
+    code(pkl_fast::types::generic::expected_1),
+    help("Check the number of generic types")
+)]
+pub struct Expected2GenericError {
     #[label("here")]
     pub at: SourceSpan,
 
