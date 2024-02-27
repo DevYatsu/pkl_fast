@@ -14,6 +14,7 @@ pub mod errors;
 mod operator;
 pub mod statement;
 mod types;
+mod utils;
 pub mod value;
 
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;
@@ -58,6 +59,7 @@ pub fn parse<'source>(
                 let identifier = lexer.slice();
                 statement::parse_identifier_statement(&mut lexer, identifier)?
             }
+            Ok(PklToken::TypeAlias) => statement::parse_typealias(&mut lexer)?,
             Err(e) => return Err(parse_lexing_error(&mut lexer, e)),
             _ => continue,
         };

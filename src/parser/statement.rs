@@ -4,6 +4,7 @@ mod extends;
 mod identifier;
 mod import;
 mod module;
+mod typealias;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement<'a> {
@@ -23,6 +24,10 @@ pub enum Statement<'a> {
         optional_type: Option<PklType<'a>>,
         value: PklValue<'a>,
     },
+    TypeAlias {
+        alias: &'a str,
+        equivalent_type: PklType<'a>,
+    },
 }
 
 pub use amends::parse_amends;
@@ -32,6 +37,7 @@ pub use identifier::parse_identifier_statement;
 pub use import::ImportClause;
 pub use import::{parse_globbed_import, parse_import};
 pub use module::parse_module;
+pub use typealias::parse_typealias;
 
 use super::types::PklType;
 use super::value::PklValue;
