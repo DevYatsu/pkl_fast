@@ -30,3 +30,10 @@ tortoise = (dodo) {
     `class` = "Reptilia" 
   }
 }
+
+pigeon: Bird = new {
+  name = "Common wood pigeon"
+  taxonomy {
+    species = "Columba palumbus"
+  }
+}

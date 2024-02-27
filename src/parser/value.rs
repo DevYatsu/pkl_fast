@@ -1,6 +1,6 @@
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
-use self::object::extract_amended_object;
+use self::object::extract_amended_object_name;
 use super::utils::retrieve_next_token;
 use super::PklLexer;
 use crate::parser::value::datasize::DataSizeUnit;
@@ -8,10 +8,12 @@ use crate::parser::{errors::ParsingError, ParsingResult};
 use crate::prelude::PklToken;
 use std::collections::HashMap;
 
+mod class;
 mod datasize;
 mod duration;
 pub mod object;
 
+pub use class::parse_class_instance;
 pub use object::parse_object;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -39,10 +41,21 @@ pub enum PklValue<'a> {
     DataSize(DataSize),
     Null,
 
+    /// You may ask why `name` is optional ?
+    /// pkl allows to specify the class in only the type and not in the instantiation
+    /// Thus when parsing a value we cannot know the name if the type is specified and not the name after the `new`
+    /// For instance, we can write:
+    /// parrot: Bird = new {
+    ///     name = "James"
+    /// }
+    /// or:
+    /// parrot = new Bird {
+    ///     name = "James"
+    /// }
     ClassInstance {
-        name: &'a str,
-        arguments: HashMap<&'a str, PklValue<'a>>
-    }
+        name: Option<&'a str>,
+        arguments: HashMap<&'a str, PklValue<'a>>,
+    },
 }
 
 pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
@@ -85,7 +98,7 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
         PklToken::Null => Ok(PklValue::Null),
         PklToken::AmendedObjectBracket => {
             let raw_value: &str = lexer.slice();
-            let amended_by = extract_amended_object(raw_value);
+            let amended_by = extract_amended_object_name(raw_value);
 
             let value = parse_object(lexer, Some(amended_by))?;
 
@@ -117,6 +130,9 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
             }
             _ => unreachable!("Cannot be reached!"),
         },
+        PklToken::New => {
+            parse_class_instance(lexer)
+        }
         _ => Err(ParsingError::unexpected(lexer)),
     }
 }

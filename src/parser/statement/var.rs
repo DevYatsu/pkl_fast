@@ -3,9 +3,9 @@ use crate::{
         operator::parse_equal,
         types::parse_type,
         utils::retrieve_next_token,
-        value::{object::extract_amended_object, parse_object, parse_value},
+        value::{parse_object, parse_value},
     },
-    prelude::{lex, ParsingError, ParsingResult, PklLexer, PklToken},
+    prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
 };
 
 use super::Statement;
