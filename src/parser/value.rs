@@ -38,6 +38,11 @@ pub enum PklValue<'a> {
     Duration(Duration),
     DataSize(DataSize),
     Null,
+
+    ClassInstance {
+        name: &'a str,
+        arguments: HashMap<&'a str, PklValue<'a>>
+    }
 }
 
 pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
