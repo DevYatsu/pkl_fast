@@ -1,4 +1,5 @@
 use crate::prelude::{ParsingError, ParsingResult, PklLexer, PklToken};
+mod identifier;
 
 pub fn retrieve_next_token<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklToken> {
     let token = lexer.next();
@@ -29,3 +30,5 @@ pub fn parse_token<'source>(
         _ => Err(ParsingError::unexpected(lexer))?,
     }
 }
+
+pub use identifier::parse_identifier;
