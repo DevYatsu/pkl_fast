@@ -58,7 +58,7 @@ pub fn parse<'source>(
             Ok(PklToken::Identifier) => {
                 // match for variable declaration, object declaration and variable assignment
                 let identifier = lexer.slice();
-                statement::parse_identifier_statement(&mut lexer, identifier)?
+                statement::parse_var_statement(&mut lexer, identifier)?
             }
             Ok(PklToken::ModuleInfo) => parse_module_info(&mut lexer)?,
             Ok(PklToken::DeprecatedInstruction) => parse_deprecated(&mut lexer)?,

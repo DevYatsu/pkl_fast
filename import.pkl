@@ -13,7 +13,13 @@ extends "test.pkl"
 num: Int = 0x0134_64DE 
 num2: Float = -1.2e3 
 
-test: Map<Float, Number> = 2.5 // no type checking for the moment
+typealias NumbersDictionnary = Map<Float, Number>
+test: NumbersDictionnary = 2.5 // no type checking for the moment
 
-typealias Test = Map<Float, Number>
 
+dodo {
+  name = "Dodo"
+  taxonomy { 
+    `class` = "Aves" 
+  }
+}

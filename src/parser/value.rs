@@ -9,6 +9,9 @@ use std::collections::HashMap;
 
 mod datasize;
 mod duration;
+mod object;
+
+pub use object::parse_object;
 
 #[derive(Debug, PartialEq, Clone)]
 /// An enum representing any Pkl value

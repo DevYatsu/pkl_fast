@@ -1,3 +1,5 @@
+use std::{collections::HashMap, hash::Hash};
+
 use crate::prelude::{ParsingError, ParsingResult, PklLexer, PklToken};
 mod identifier;
 mod string;
@@ -51,6 +53,34 @@ pub fn list_while_not_token<'source, R>(
         }
 
         result_vec.push(predicate(lexer, token)?);
+    }
+
+    Ok(result_vec)
+}
+
+pub fn hashmap_while_not_token<'source, K, V>(
+    lexer: &mut PklLexer<'source>,
+    separator_token: PklToken,
+    end_token: PklToken,
+    predicate: &dyn Fn(&mut PklLexer<'source>, PklToken) -> ParsingResult<(K, V)>,
+) -> ParsingResult<HashMap<K, V>>
+where
+    K: Eq + Hash,
+{
+    let mut result_vec = HashMap::new();
+
+    loop {
+        let token = retrieve_next_token(lexer)?;
+
+        if token == end_token {
+            break;
+        }
+        if token == separator_token {
+            continue;
+        }
+
+        let (key, value) = predicate(lexer, token)?;
+        result_vec.insert(key, value);
     }
 
     Ok(result_vec)

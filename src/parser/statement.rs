@@ -1,10 +1,10 @@
 mod amends;
 mod extends;
-mod identifier;
 mod import;
 mod info;
 mod module;
 mod typealias;
+mod var;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement<'a> {
@@ -40,13 +40,13 @@ pub enum Statement<'a> {
 
 pub use amends::parse_amends;
 pub use extends::parse_extends;
-pub use identifier::parse_identifier_statement;
 pub use import::ImportClause;
 pub use import::{parse_globbed_import, parse_import};
 pub use info::parse_deprecated;
 pub use info::parse_module_info;
 pub use module::parse_module;
 pub use typealias::parse_typealias;
+pub use var::parse_var_statement;
 
 use self::info::InfoField;
 

@@ -153,7 +153,7 @@ pub enum PklToken {
     EscapeOpenParenthesis,
     #[token("\\)")]
     EscapeCloseParenthesis,
-    #[regex(r#"`[^"]*`"#)]
+    #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#)]
     IllegalIdentifier,
     #[regex(r#""[^"]*""#)]
     StringLiteral,
