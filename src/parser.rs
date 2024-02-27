@@ -5,6 +5,7 @@ use crate::parser::{
         InvalidAsStatement, ParsingError,
     },
     statement::Statement,
+    utils::parse_identifier,
 };
 
 use crate::lexer::PklToken;
@@ -34,7 +35,7 @@ pub fn parse<'source>(
             Ok(PklToken::Module) => statement::parse_module(&mut lexer)?,
             Ok(PklToken::Extends) => statement::parse_extends(&mut lexer)?,
             Ok(PklToken::As) => {
-                let imported_as_new_value = statement::parse_as(&mut lexer)?;
+                let imported_as_new_value = parse_identifier(&mut lexer)?;
                 if let Some(statement) = statements.last_mut() {
                     match statement {
                         Statement::Import { imported_as, .. }

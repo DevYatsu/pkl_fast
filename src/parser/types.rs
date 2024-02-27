@@ -8,6 +8,7 @@ use super::{
         locating::{generate_source, get_error_location},
         ParsingError,
     },
+    utils::retrieve_next_token,
     ParsingResult, PklLexer,
 };
 use crate::prelude::PklToken;
@@ -47,45 +48,39 @@ pub enum PklType<'a> {
 }
 
 pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklType<'source>> {
-    if let Some(token) = lexer.next() {
-        if let Err(e) = token {
-            return Err(ParsingError::lexing(lexer, e));
+    let token = retrieve_next_token(lexer)?;
+
+    match token {
+        PklToken::Identifier => {
+            let value: &str = lexer.slice();
+            Ok(value.into())
         }
+        PklToken::GenericTypeAnnotation => {
+            let raw_value: &str = lexer.slice();
 
-        match token.unwrap() {
-            PklToken::Identifier => {
-                let value: &str = lexer.slice();
-                Ok(value.into())
+            let (base_type, mut generics) = extract_generics(raw_value);
+
+            // there is necessarily one generic otherwise the lexer would have produced an Error
+            // we do not need to call trim method on our strings as it's done in the impl From<&str>
+            let first_generic: PklType<'_> = generics.next().unwrap().into();
+            let second_generic = generics.next().map(|s| s.into());
+
+            if second_generic.is_some() {
+                Ok(PklType::generate_from_2_generic(
+                    lexer,
+                    base_type,
+                    first_generic,
+                    second_generic.unwrap(),
+                )?)
+            } else {
+                Ok(PklType::generate_from_1_generic(
+                    lexer,
+                    base_type,
+                    first_generic,
+                )?)
             }
-            PklToken::GenericTypeAnnotation => {
-                let raw_value: &str = lexer.slice();
-
-                let (base_type, mut generics) = extract_generics(raw_value);
-
-                // there is necessarily one generic otherwise the lexer would have produced an Error
-                // we do not need to call trim method on our strings as it's done in the impl From<&str>
-                let first_generic: PklType<'_> = generics.next().unwrap().into();
-                let second_generic = generics.next().map(|s| s.into());
-
-                if second_generic.is_some() {
-                    Ok(PklType::generate_from_2_generic(
-                        lexer,
-                        base_type,
-                        first_generic,
-                        second_generic.unwrap(),
-                    )?)
-                } else {
-                    Ok(PklType::generate_from_1_generic(
-                        lexer,
-                        base_type,
-                        first_generic,
-                    )?)
-                }
-            }
-            _ => Err(ParsingError::unexpected(lexer)),
         }
-    } else {
-        return Err(ParsingError::eof(lexer));
+        _ => Err(ParsingError::unexpected(lexer)),
     }
 }
 

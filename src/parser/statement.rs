@@ -1,5 +1,4 @@
 mod amends;
-mod as_statement;
 mod extends;
 mod identifier;
 mod import;
@@ -31,7 +30,6 @@ pub enum Statement<'a> {
 }
 
 pub use amends::parse_amends;
-pub use as_statement::parse_as;
 pub use extends::parse_extends;
 pub use identifier::parse_identifier_statement;
 pub use import::ImportClause;

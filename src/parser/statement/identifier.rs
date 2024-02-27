@@ -1,5 +1,5 @@
 use crate::{
-    parser::{types::parse_type, value::parse_value},
+    parser::{types::parse_type, utils::retrieve_next_token, value::parse_value},
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
 };
 
@@ -9,14 +9,10 @@ pub fn parse_identifier_statement<'source>(
     lexer: &mut PklLexer<'source>,
     name: &'source str,
 ) -> ParsingResult<Statement<'source>> {
-    let token = lexer.next();
+    let token = retrieve_next_token(lexer)?;
 
-    if token.is_none() {
-        return Err(ParsingError::eof(lexer));
-    }
-
-    let statement = match token.unwrap() {
-        Ok(PklToken::EqualSign) => {
+    let statement = match token {
+        PklToken::EqualSign => {
             let value = parse_value(lexer)?;
 
             Statement::VariableDeclaration {
@@ -25,12 +21,12 @@ pub fn parse_identifier_statement<'source>(
                 optional_type: None,
             }
         }
-        Ok(PklToken::OpenBracket) => {
+        PklToken::OpenBracket => {
             // object definition
 
             todo!()
         }
-        Ok(PklToken::Colon) => {
+        PklToken::Colon => {
             // expect a type
 
             let variable_type = parse_type(lexer)?;
@@ -47,7 +43,6 @@ pub fn parse_identifier_statement<'source>(
 
             statement
         }
-        Err(e) => Err(ParsingError::lexing(lexer, e))?,
         _ => Err(ParsingError::unexpected(lexer))?,
     };
 
