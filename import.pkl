@@ -23,3 +23,10 @@ dodo {
     `class` = "Aves" 
   }
 }
+
+tortoise = (dodo) { 
+  name = "Galápagos tortoise"
+  taxonomy { 
+    `class` = "Reptilia" 
+  }
+}

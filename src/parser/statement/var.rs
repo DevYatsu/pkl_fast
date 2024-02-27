@@ -3,9 +3,9 @@ use crate::{
         operator::parse_equal,
         types::parse_type,
         utils::retrieve_next_token,
-        value::{parse_object, parse_value},
+        value::{object::extract_amended_object, parse_object, parse_value},
     },
-    prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
+    prelude::{lex, ParsingError, ParsingResult, PklLexer, PklToken},
 };
 
 use super::Statement;
@@ -27,7 +27,7 @@ pub fn parse_var_statement<'source>(
             }
         }
         PklToken::OpenBracket => {
-            let value = parse_object(lexer)?;
+            let value = parse_object(lexer, None)?;
 
             Statement::VariableDeclaration {
                 name,

@@ -62,7 +62,6 @@ pub fn parse<'source>(
             }
             Ok(PklToken::ModuleInfo) => parse_module_info(&mut lexer)?,
             Ok(PklToken::DeprecatedInstruction) => parse_deprecated(&mut lexer)?,
-
             Ok(PklToken::TypeAlias) => statement::parse_typealias(&mut lexer)?,
             Err(e) => return Err(parse_lexing_error(&mut lexer, e)),
             _ => continue,

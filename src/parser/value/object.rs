@@ -7,7 +7,10 @@ use crate::{
 };
 
 /// Function called to parse an object, we assume that '{' was already found
-pub fn parse_object<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
+pub fn parse_object<'source>(
+    lexer: &mut PklLexer<'source>,
+    opt_amended_object: Option<&'source str>,
+) -> ParsingResult<PklValue<'source>> {
     let predicate = |lexer: &mut logos::Lexer<'source, PklToken>,
                      token: PklToken|
      -> ParsingResult<(&'source str, PklValue<'source>)> {
@@ -23,7 +26,8 @@ pub fn parse_object<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Pkl
                         value
                     }
                     PklToken::OpenBracket => {
-                        let value = parse_object(lexer)?;
+                        // we sould see whether or not we should put if the initial parent object is amended
+                        let value = parse_object(lexer, None)?;
 
                         value
                     }
@@ -39,5 +43,17 @@ pub fn parse_object<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Pkl
     let object =
         hashmap_while_not_token(lexer, PklToken::NewLine, PklToken::CloseBracket, &predicate)?;
 
-    Ok(PklValue::Object(object))
+    Ok(PklValue::Object {
+        value: object,
+        amended_by: opt_amended_object,
+    })
+}
+
+pub fn extract_amended_object<'a>(raw_token: &'a str) -> &'a str {
+    // we can unwrap as we are sure there is a parenthesis thanks to the initial regex match
+    let end_paren_index = raw_token.find(')').unwrap();
+
+    let result = &raw_token[1..end_paren_index];
+
+    return result;
 }

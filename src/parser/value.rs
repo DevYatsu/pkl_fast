@@ -1,5 +1,6 @@
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
+use self::object::extract_amended_object;
 use super::utils::retrieve_next_token;
 use super::PklLexer;
 use crate::parser::value::datasize::DataSizeUnit;
@@ -9,7 +10,7 @@ use std::collections::HashMap;
 
 mod datasize;
 mod duration;
-mod object;
+pub mod object;
 
 pub use object::parse_object;
 
@@ -20,7 +21,10 @@ pub enum PklValue<'a> {
     Boolean(bool),
     Int(i64),
     Float(f64),
-    Object(HashMap<&'a str, PklValue<'a>>),
+    Object {
+        value: HashMap<&'a str, PklValue<'a>>,
+        amended_by: Option<&'a str>,
+    },
 
     List(Vec<PklValue<'a>>),
     Listing(Vec<PklValue<'a>>),
@@ -74,8 +78,13 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
             Ok(PklValue::Float(clean_value?))
         }
         PklToken::Null => Ok(PklValue::Null),
-        PklToken::OpenBracket => {
-            todo!("Cannot proceed objects for now")
+        PklToken::AmendedObjectBracket => {
+            let raw_value: &str = lexer.slice();
+            let amended_by = extract_amended_object(raw_value);
+
+            let value = parse_object(lexer, Some(amended_by))?;
+
+            Ok(value)
         }
         PklToken::DataSize => match lexer.slice().split('.').collect::<Vec<_>>().as_slice() {
             [value, unit] => {

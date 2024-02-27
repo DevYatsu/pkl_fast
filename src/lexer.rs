@@ -95,6 +95,11 @@ pub enum PklToken {
     SemiColon,
     #[token("{")]
     OpenBracket,
+
+    #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#, priority = 5)]
+    /// Token representing an object definition with the object amending another object, that is for example: ```rust (object_name) {```
+    AmendedObjectBracket,
+
     #[token("}")]
     CloseBracket,
 
