@@ -11,3 +11,4 @@ num2: Float = -1.2e3
 
 test: Map<Float, Number> = 2.5 // no type checking for the moment
 
+typealias Test = Map<Float, Number>
