@@ -18,7 +18,7 @@
 //! ## Example
 //!
 //! ```rust
-//! use pkl_fast::prelude::{parse, lex};
+//! use pkl_fast::prelude::{parse, lex, ParsingResult};
 //! use std::fs;
 //!
 //! fn main() -> ParsingResult<()> {
