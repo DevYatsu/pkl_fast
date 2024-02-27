@@ -1,18 +1,11 @@
-use crate::prelude::{ParsingError, ParsingResult, PklLexer, PklToken};
+use crate::{
+    parser::utils::parse_string_literal,
+    prelude::{ParsingResult, PklLexer},
+};
 
 use super::Statement;
 pub fn parse_extends<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Statement<'source>> {
-    let token = lexer.next();
+    let value = parse_string_literal(lexer)?;
 
-    if let Some(Ok(PklToken::StringLiteral)) = token {
-        let raw_value = lexer.slice(); // retrieve value with quotes: "value"
-        let value = &raw_value[1..raw_value.len() - 1];
-        Ok(Statement::Extends(value))
-    } else {
-        if token.is_some() {
-            Err(ParsingError::invalid_string(lexer))
-        } else {
-            Err(ParsingError::eof(lexer))
-        }
-    }
+    Ok(Statement::Extends(value))
 }

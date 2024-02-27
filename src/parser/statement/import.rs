@@ -1,6 +1,9 @@
 use std::path::Path;
 
-use crate::prelude::{ParsingError, ParsingResult, PklLexer, PklToken};
+use crate::{
+    parser::utils::parse_string_literal,
+    prelude::{ParsingResult, PklLexer},
+};
 
 use super::Statement;
 
@@ -33,19 +36,9 @@ pub fn parse_globbed_import<'source>(
 }
 
 fn parse_import_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {
-    let token = lexer.next();
+    let value = parse_string_literal(lexer)?;
 
-    if let Some(Ok(PklToken::StringLiteral)) = token {
-        let raw_value = lexer.slice(); // retrieve value with quotes: "value"
-        let value = &raw_value[1..raw_value.len() - 1];
-        Ok(value)
-    } else {
-        if token.is_some() {
-            Err(ParsingError::invalid_string(lexer))
-        } else {
-            Err(ParsingError::eof(lexer))
-        }
-    }
+    Ok(value)
 }
 
 fn import_clause(value: &str) -> ImportClause {
