@@ -1,3 +1,7 @@
+@ModuleInfo { minPklVersion = "0.24.0", minPklVersion2 = "1.24.0"} 
+@ModuleInfo { version = "0.55.0" } 
+@Deprecated { message = "Replace with xxx" } 
+
 import* "testt" 
 import "test3.pkl" 
 
@@ -12,3 +16,4 @@ num2: Float = -1.2e3
 test: Map<Float, Number> = 2.5 // no type checking for the moment
 
 typealias Test = Map<Float, Number>
+

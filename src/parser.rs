@@ -4,7 +4,7 @@ use crate::parser::{
         locating::{generate_source, get_error_location},
         InvalidAsStatement, ParsingError,
     },
-    statement::Statement,
+    statement::{parse_deprecated, parse_module_info, Statement},
     utils::parse_identifier,
 };
 
@@ -60,6 +60,9 @@ pub fn parse<'source>(
                 let identifier = lexer.slice();
                 statement::parse_identifier_statement(&mut lexer, identifier)?
             }
+            Ok(PklToken::ModuleInfo) => parse_module_info(&mut lexer)?,
+            Ok(PklToken::DeprecatedInstruction) => parse_deprecated(&mut lexer)?,
+
             Ok(PklToken::TypeAlias) => statement::parse_typealias(&mut lexer)?,
             Err(e) => return Err(parse_lexing_error(&mut lexer, e)),
             _ => continue,

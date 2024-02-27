@@ -32,5 +32,29 @@ pub fn parse_token<'source>(
     }
 }
 
+pub fn list_while_not_token<'source, R>(
+    lexer: &mut PklLexer<'source>,
+    separator_token: PklToken,
+    end_token: PklToken,
+    predicate: &dyn Fn(&mut PklLexer<'source>, PklToken) -> ParsingResult<R>,
+) -> ParsingResult<Vec<R>> {
+    let mut result_vec = Vec::new();
+
+    loop {
+        let token = retrieve_next_token(lexer)?;
+
+        if token == end_token {
+            break;
+        }
+        if token == separator_token {
+            continue;
+        }
+
+        result_vec.push(predicate(lexer, token)?);
+    }
+
+    Ok(result_vec)
+}
+
 pub use identifier::parse_identifier;
 pub use string::parse_string_literal;
