@@ -26,14 +26,6 @@ pub enum PklType<'a> {
     Boolean,
 
     Int,
-    Uri,
-    UInt,
-    UInt16,
-    UInt32,
-    Int8,
-    Int16,
-    Int32,
-
     Float,
     Number,
 
