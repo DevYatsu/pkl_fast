@@ -3,7 +3,7 @@ use crate::{
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
 };
 
-use super::object::parse_object_body;
+use super::object::parse_block;
 
 /// Function called to parse a class instance, we assume that 'new' was already found
 pub fn parse_class_instance<'source>(
@@ -21,7 +21,7 @@ pub fn parse_class_instance<'source>(
         lexer,
         PklToken::NewLine,
         PklToken::CloseBracket,
-        &parse_object_body,
+        &parse_block,
     )?;
 
     Ok(PklValue::ClassInstance { name, arguments })

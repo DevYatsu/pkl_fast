@@ -1,7 +1,7 @@
 use crate::{
     parser::{
         types::parse_type,
-        utils::{retrieve_next_token, expect_token},
+        utils::{expect_token, retrieve_next_token},
         value::{parse_object, parse_value},
     },
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken},

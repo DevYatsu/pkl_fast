@@ -190,8 +190,8 @@ pub enum PklToken<'source> {
     /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
     Identifier(&'source str),
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(")]
-    FunctionCall,
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let raw_value = lex.slice(); &raw_value[1..raw_value.len()-1]})]
+    FunctionCall(&'source str),
 
     #[regex("//.*")]
     LineComment,

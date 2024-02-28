@@ -92,9 +92,10 @@ pub fn parse_class_field<'source>(
             ))
         }
         PklToken::Function => {
-            expect_token(lexer, PklToken::FunctionCall)?;
-            let function_call: &str = lexer.slice();
-            let name = &function_call[0..function_call.len() - 1];
+            let name = match retrieve_next_token(lexer)? {
+                PklToken::FunctionCall(name) => name,
+                _ => return Err(ParsingError::unexpected(lexer)),
+            };
 
             let args = list_while_not_token(
                 lexer,

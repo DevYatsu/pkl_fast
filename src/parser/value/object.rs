@@ -15,7 +15,7 @@ pub fn parse_object<'source>(
         lexer,
         PklToken::NewLine,
         PklToken::CloseBracket,
-        &parse_object_body,
+        &parse_block,
     )?;
 
     Ok(PklValue::Object {
@@ -24,7 +24,7 @@ pub fn parse_object<'source>(
     })
 }
 
-pub fn parse_object_body<'source>(
+pub fn parse_block<'source>(
     lexer: &mut PklLexer<'source>,
     token: PklToken<'source>,
 ) -> ParsingResult<(&'source str, PklValue<'source>)> {
