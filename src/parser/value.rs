@@ -6,6 +6,7 @@ use crate::parser::value::datasize::DataSizeUnit;
 use crate::parser::{errors::ParsingError, ParsingResult};
 use crate::prelude::PklToken;
 use std::collections::HashMap;
+use std::fmt;
 
 mod class;
 mod datasize;
@@ -62,7 +63,10 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
 
     match token {
         PklToken::Boolean(b) => Ok(PklValue::Boolean(b)),
-        PklToken::StringLiteral(value) => Ok(PklValue::String(value)),
+        PklToken::StringLiteral(value) => {
+            // should see how we take care of string literals, do we evaluate them in the step after the parser ? ig yess
+            Ok(PklValue::String(value))
+        },
         PklToken::Integer(i) => Ok(PklValue::Int(i)),
         PklToken::Float(f) => Ok(PklValue::Float(f)),
         PklToken::Null => Ok(PklValue::Null),
@@ -99,5 +103,69 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
         },
         PklToken::New => parse_class_instance(lexer),
         _ => Err(ParsingError::unexpected(lexer)),
+    }
+}
+
+impl<'a> fmt::Display for PklValue<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PklValue::String(s) => write!(f, "{}", s),
+            PklValue::Boolean(b) => write!(f, "{}", b),
+            PklValue::Int(i) => write!(f, "{}", i),
+            PklValue::Float(fl) => write!(f, "{}", fl),
+            PklValue::Object { value, amended_by } => {
+                if let Some(amended_by) = amended_by {
+                    write!(f, "({}) ", amended_by)?;
+                }
+                write!(f, "{{")?;
+                for (key, val) in value {
+                    write!(f, "{}: {}, ", key, val)?;
+                }
+
+                write!(f, "}}")
+            }
+            PklValue::List(list) => {
+                write!(f, "List(")?;
+                for val in list {
+                    write!(f, "{}, ", val)?;
+                }
+                write!(f, ")")
+            }
+            PklValue::Listing(list) => {
+                write!(f, "new Listing {{\n")?;
+                for val in list {
+                    write!(f, "\t{}\n", val)?;
+                }
+                write!(f, "}}")
+            }
+            PklValue::Map(vec) => {
+                write!(f, "Map(")?;
+                for val in vec {
+                    write!(f, "{}, ", val)?;
+                }
+                write!(f, ")")
+            }
+            PklValue::Mapping(map) => {
+                write!(f, "new Mappin {{\n")?;
+                for (key, val) in map {
+                    write!(f, "\t{}: {}\n", key, val)?;
+                }
+                write!(f, "}}")
+            }
+            PklValue::Duration(duration) => write!(f, "{}", duration),
+            PklValue::DataSize(data_size) => write!(f, "{}", data_size),
+            PklValue::Null => write!(f, "null"),
+            PklValue::ClassInstance { name, arguments } => {
+                write!(f, "new {} {{", name.unwrap_or(""))?;
+                if !arguments.is_empty() {
+                    write!(f, "\n")?;
+                    for (key, val) in arguments {
+                        write!(f, "\t{}: {}\n", key, val)?;
+                    }
+                }
+                write!(f, "}}")?;
+                Ok(())
+            }
+        }
     }
 }

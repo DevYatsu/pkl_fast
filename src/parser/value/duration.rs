@@ -50,3 +50,28 @@ impl From<i64> for DurationValue {
         DurationValue::Integer(value)
     }
 }
+
+use std::fmt;
+
+impl fmt::Display for Duration {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.value {
+            DurationValue::Integer(i) => write!(f, "{}", i)?,
+            DurationValue::Float(float) => write!(f, "{}", float)?,
+        };
+
+        write!(f, ".")?;
+
+        let formatted_unit = match self.unit {
+            DurationUnit::NanoSeconds => write!(f, "ns")?,
+            DurationUnit::MicroSeconds => write!(f, "us")?,
+            DurationUnit::MilliSeconds => write!(f, "ms")?,
+            DurationUnit::Seconds => write!(f, "s")?,
+            DurationUnit::Minutes => write!(f, "min")?,
+            DurationUnit::Hours => write!(f, "h")?,
+            DurationUnit::Days => write!(f, "d")?,
+        };
+
+        Ok(())
+    }
+}

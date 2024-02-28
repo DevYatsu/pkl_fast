@@ -63,3 +63,32 @@ impl From<i64> for DataSizeValue {
         DataSizeValue::Integer(value)
     }
 }
+
+use std::fmt;
+
+impl fmt::Display for DataSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.value {
+            DataSizeValue::Integer(i) => write!(f, "{}", i)?,
+            DataSizeValue::Float(float) => write!(f, "{}", float)?,
+        };
+
+        write!(f, ".")?;
+
+        let formatted_unit = match self.unit {
+            DataSizeUnit::Bytes => write!(f, "b")?,
+            DataSizeUnit::Kylobytes => write!(f, "kb")?,
+            DataSizeUnit::Megabytes => write!(f, "mb")?,
+            DataSizeUnit::Gigabytes => write!(f, "gb")?,
+            DataSizeUnit::Terabytes => write!(f, "tb")?,
+            DataSizeUnit::Petabytes => write!(f, "pb")?,
+            DataSizeUnit::KibiBytes => write!(f, "kib")?,
+            DataSizeUnit::MebiBytes => write!(f, "mib")?,
+            DataSizeUnit::GibiBytes => write!(f, "gib")?,
+            DataSizeUnit::Tebibytes => write!(f, "tib")?,
+            DataSizeUnit::Pebibytes => write!(f, "pib")?,
+        };
+
+        Ok(())
+    }
+}

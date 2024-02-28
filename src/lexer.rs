@@ -172,14 +172,9 @@ pub enum PklToken<'source> {
     #[regex(r"(-?((\d*\.\d+(e-?\d+)?)|(Infinity)))|NaN", |lex| lex.slice().parse(), priority = 4)]
     Float(f64),
 
-    #[regex(r#""(?:\\.|[^\\"])*\(\s*\w+\s*\)(?:\\.|[^\\"])*""#)]
-    InterpolatedString,
-    #[token("\\(")]
-    EscapeOpenParenthesis,
-    #[token("\\)")]
-    EscapeCloseParenthesis,
     #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#, |lex| lex.slice())]
     IllegalIdentifier(&'source str),
+
     #[regex(r#""[^"]*""#, |lex| {let raw_value = lex.slice(); &raw_value[1..raw_value.len()-1]})]
     StringLiteral(&'source str),
 

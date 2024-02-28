@@ -1,15 +1,15 @@
-use crate::prelude::{ParsingError, ParsingResult, PklLexer, PklToken};
+use crate::{
+    parser::value::parse_value,
+    prelude::{ParsingError, ParsingResult, PklLexer, PklValue},
+};
 
 pub fn parse_string_literal<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {
-    let token = lexer.next();
+    let value = parse_value(lexer)?;
+    println!("{value}");
 
-    if let Some(Ok(PklToken::StringLiteral(value))) = token {
+    if let PklValue::String(value) = value {
         Ok(value)
     } else {
-        if token.is_some() {
-            Err(ParsingError::invalid_string(lexer))
-        } else {
-            Err(ParsingError::eof(lexer))
-        }
+        Err(ParsingError::unexpected(lexer))
     }
 }

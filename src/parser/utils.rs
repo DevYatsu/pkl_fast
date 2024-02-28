@@ -12,6 +12,7 @@ pub fn retrieve_next_token<'source>(
     if token.is_none() {
         return Err(ParsingError::eof(lexer));
     }
+    println!("{:?}", token);
 
     match token.unwrap() {
         Err(e) => Err(ParsingError::lexing(lexer, e)),

@@ -61,6 +61,10 @@ pub enum ParsingError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     UnexpectedEndOfInput(#[from] UnexpectedEndOfInputError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    UnterminatedString(#[from] UnterminatedStringError),
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -151,6 +155,20 @@ pub struct InvalidAsStatement {
     help("Try putting a string or removing a character")
 )]
 pub struct UnexpectedEndOfInputError {
+    #[label("here")]
+    pub at: SourceSpan,
+
+    #[source_code]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[error("String unexpected never ends")]
+#[diagnostic(
+    code(pkl_fast::unexpected_end_of_input),
+    help("Add a `\"` at the end of the input")
+)]
+pub struct UnterminatedStringError {
     #[label("here")]
     pub at: SourceSpan,
 
