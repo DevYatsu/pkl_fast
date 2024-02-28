@@ -1,5 +1,0 @@
-//thats weird as fuck damn
-
-class X {
-    function y(x: X): Int = 1
-}
