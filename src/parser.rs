@@ -7,6 +7,8 @@ use crate::parser::{
 use crate::lexer::PklToken;
 use logos::Lexer;
 
+use self::{statement::ClassType, utils::expect_token};
+
 pub mod errors;
 mod operator;
 pub mod statement;
@@ -77,7 +79,9 @@ impl<'source> PklParser<'source> {
                 Ok(PklToken::TypeAlias) => self.parse_typealias()?,
                 Ok(PklToken::Class) => self.parse_class_declaration()?,
                 Ok(PklToken::Abstract) => {
-                    todo!()
+                    expect_token(lexer, PklToken::Class)?;
+
+                    self.parse_abstract_class_declaration()?
                 }
                 Ok(PklToken::Open) => {
                     let token = retrieve_next_token(&mut lexer)?;
@@ -119,10 +123,13 @@ impl<'source> PklParser<'source> {
     }
 
     fn parse_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_class_declaration(&mut self.lexer, false)
+        statement::parse_class_declaration(&mut self.lexer, ClassType::None)
     }
     fn parse_open_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_class_declaration(&mut self.lexer, true)
+        statement::parse_class_declaration(&mut self.lexer, ClassType::Open)
+    }
+    fn parse_abstract_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
+        statement::parse_class_declaration(&mut self.lexer, ClassType::Abstract)
     }
 
     fn parse_var_statement(&mut self, id: &'source str) -> ParsingResult<Statement<'source>> {

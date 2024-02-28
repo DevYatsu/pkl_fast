@@ -13,11 +13,25 @@ use crate::{
 use super::Statement;
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum ClassType {
+    Abstract,
+    Open,
+    None,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum FieldType {
+    Fixed,
+    Hidden,
+    None,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 /// A struct representing an field of a @ModuleInfo annotation
 pub enum ClassArgument<'a> {
     Field {
         value: PklType<'a>,
-        hidden: bool,
+        _type: FieldType,
     },
 
     Method {
@@ -29,7 +43,7 @@ pub enum ClassArgument<'a> {
 
 pub fn parse_class_declaration<'source>(
     lexer: &mut PklLexer<'source>,
-    open: bool,
+    _type: ClassType,
 ) -> ParsingResult<Statement<'source>> {
     let name = parse_identifier(lexer)?;
 
@@ -56,7 +70,7 @@ pub fn parse_class_declaration<'source>(
     Ok(Statement::ClassDeclaration {
         name,
         extends,
-        open,
+        _type,
         fields,
     })
 }
@@ -75,7 +89,20 @@ pub fn parse_class_field<'source>(
                 name,
                 ClassArgument::Field {
                     value,
-                    hidden: true,
+                    _type: FieldType::Hidden,
+                },
+            ))
+        }
+        PklToken::Fixed => {
+            let name = parse_identifier(lexer)?;
+            expect_token(lexer, PklToken::Colon)?;
+            let value = parse_type(lexer)?;
+
+            Ok((
+                name,
+                ClassArgument::Field {
+                    value,
+                    _type: FieldType::Fixed,
                 },
             ))
         }
@@ -87,7 +114,7 @@ pub fn parse_class_field<'source>(
                 name,
                 ClassArgument::Field {
                     value,
-                    hidden: false,
+                    _type: FieldType::None,
                 },
             ))
         }

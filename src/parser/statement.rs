@@ -31,7 +31,7 @@ pub enum Statement<'a> {
     ClassDeclaration {
         name: &'a str,
         extends: Option<&'a str>,
-        open: bool,
+        _type: ClassType,
         fields: HashMap<&'a str, ClassArgument<'a>>,
     },
 
@@ -63,6 +63,7 @@ pub use module::parse_module;
 pub use typealias::parse_typealias;
 pub use var::parse_var_statement;
 
+pub use self::class::ClassType;
 use self::info::InfoField;
 
 use super::types::PklType;

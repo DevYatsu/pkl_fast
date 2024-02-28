@@ -63,6 +63,8 @@ pub enum PklToken<'source> {
 
     #[token("hidden")]
     Hidden,
+    #[token("fixed")]
+    Fixed,
 
     #[token("function")]
     Function,

@@ -86,6 +86,11 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
             }
         }
 
+        PklToken::StringLiteral(value) => Ok(PklType::String {
+            matches: Some(value),
+            contains: None,
+            allowed_empty: true,
+        }),
         PklToken::PotentiallyNullType(value) => {
             Ok(PklType::PotentiallyNull(Box::new(value.into())))
         }
