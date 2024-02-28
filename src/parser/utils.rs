@@ -12,7 +12,6 @@ pub fn retrieve_next_token<'source>(
     if token.is_none() {
         return Err(ParsingError::eof(lexer));
     }
-    println!("{:?}", token);
 
     match token.unwrap() {
         Err(e) => Err(ParsingError::lexing(lexer, e)),
@@ -29,7 +28,7 @@ pub fn expect_token<'source>(
     if token.is_none() {
         return Err(ParsingError::eof(lexer));
     }
-    println!("{}", lexer.slice());
+
     match token.unwrap() {
         Err(e) => Err(ParsingError::lexing(lexer, e))?,
         Ok(token) if token == target_token => Ok(()),

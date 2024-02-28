@@ -17,8 +17,7 @@ fn main() -> miette::Result<()> {
         .file_name()
         .ok_or_else(|| ProgramError::InvalidFilePath)?;
 
-    let statements = parse(lexer)?;
-    println!("{:?}", statements);
+    let _statements = parse(lexer)?;
 
     let end = Instant::now();
     println!("Total time: {} microseconds", (end - start).as_micros());
