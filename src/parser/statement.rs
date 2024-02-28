@@ -1,4 +1,5 @@
 mod amends;
+mod class;
 mod extends;
 mod import;
 mod info;
@@ -17,13 +18,23 @@ pub enum Statement<'a> {
         imported_as: Option<&'a str>,
     },
     Amends(&'a str),
-    Module(&'a str),
+    Module {
+        value: &'a str,
+        open: bool,
+    },
     Extends(&'a str),
     VariableDeclaration {
         name: &'a str,
         optional_type: Option<PklType<'a>>,
         value: PklValue<'a>,
     },
+    ClassDeclaration {
+        name: &'a str,
+        extends: Option<&'a str>,
+        open: bool,
+        fields: HashMap<&'a str, ClassArgument<'a>>,
+    },
+
     TypeAlias {
         alias: &'a str,
         equivalent_type: PklType<'a>,
@@ -38,7 +49,11 @@ pub enum Statement<'a> {
     },
 }
 
+use std::collections::HashMap;
+
 pub use amends::parse_amends;
+pub use class::parse_class_declaration;
+pub use class::ClassArgument;
 pub use extends::parse_extends;
 pub use import::ImportClause;
 pub use import::{parse_globbed_import, parse_import};

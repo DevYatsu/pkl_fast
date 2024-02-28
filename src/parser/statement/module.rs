@@ -4,8 +4,11 @@ use crate::{
 };
 
 use super::Statement;
-pub fn parse_module<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Statement<'source>> {
+pub fn parse_module<'source>(
+    lexer: &mut PklLexer<'source>,
+    open: bool,
+) -> ParsingResult<Statement<'source>> {
     let value = parse_identifier(lexer)?;
 
-    Ok(Statement::Module(value))
+    Ok(Statement::Module { value, open })
 }

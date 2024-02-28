@@ -4,8 +4,8 @@ use crate::parser::{
         locating::{generate_source, get_error_location},
         InvalidAsStatement, ParsingError,
     },
-    statement::{parse_deprecated, parse_module_info, Statement},
-    utils::parse_identifier,
+    statement::{parse_class_declaration, parse_deprecated, parse_module_info, Statement},
+    utils::{parse_identifier, retrieve_next_token},
 };
 
 use crate::lexer::PklToken;
@@ -27,12 +27,12 @@ pub fn parse<'source>(
     let mut statements = vec![];
 
     while let Some(token) = lexer.next() {
-        println!("{:?}", token);
+        
         let statement = match token {
             Ok(PklToken::Import) => statement::parse_import(&mut lexer)?,
             Ok(PklToken::GlobbedImport) => statement::parse_globbed_import(&mut lexer)?,
             Ok(PklToken::Amends) => statement::parse_amends(&mut lexer)?,
-            Ok(PklToken::Module) => statement::parse_module(&mut lexer)?,
+            Ok(PklToken::Module) => statement::parse_module(&mut lexer, false)?,
             Ok(PklToken::Extends) => statement::parse_extends(&mut lexer)?,
             Ok(PklToken::As) => {
                 let imported_as_new_value = parse_identifier(&mut lexer)?;
@@ -63,6 +63,21 @@ pub fn parse<'source>(
             Ok(PklToken::ModuleInfo) => parse_module_info(&mut lexer)?,
             Ok(PklToken::DeprecatedInstruction) => parse_deprecated(&mut lexer)?,
             Ok(PklToken::TypeAlias) => statement::parse_typealias(&mut lexer)?,
+            Ok(PklToken::Class) => {
+                parse_class_declaration(&mut lexer, false)?
+            }
+            Ok(PklToken::Abstract) => {
+                todo!()
+            }
+            Ok(PklToken::Open) => {
+                let token = retrieve_next_token(&mut lexer)?;
+
+                match token {
+                    PklToken::Module => statement::parse_module(&mut lexer, true)?,
+                    PklToken::Class => parse_class_declaration(&mut lexer, true)?,
+                    _ => return Err(ParsingError::unexpected(&mut lexer)),
+                }
+            }
             Err(e) => return Err(parse_lexing_error(&mut lexer, e)),
             _ => continue,
         };

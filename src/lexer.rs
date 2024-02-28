@@ -15,6 +15,20 @@ pub enum PklToken {
     #[token("\t")]
     Tab,
 
+    #[token("{")]
+    OpenBracket,
+    #[token("}")]
+    CloseBracket,
+
+    #[token("[")]
+    OpenBrace,
+    #[token("]")]
+    CloseBrace,
+    #[token("(")]
+    OpenParenthesis,
+    #[token(")")]
+    CloseParenthesis,
+
     #[token("module")]
     Module,
     #[token("@ModuleInfo")]
@@ -93,24 +107,10 @@ pub enum PklToken {
     Dot,
     #[token(";")]
     SemiColon,
-    #[token("{")]
-    OpenBracket,
 
-    #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#, priority = 5)]
+    #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#)]
     /// Token representing an object definition with the object amending another object, that is for example: ```rust (object_name) {```
     AmendedObjectBracket,
-
-    #[token("}")]
-    CloseBracket,
-
-    #[token("[")]
-    OpenBrace,
-    #[token("]")]
-    CloseBrace,
-    #[token("(")]
-    OpenParenthesis,
-    #[token(")")]
-    CloseParenthesis,
 
     #[token("typealias")]
     TypeAlias,
@@ -167,8 +167,8 @@ pub enum PklToken {
     // PascalCaseValue,
     // #[regex("[a-z][a-zA-Z]*")]
     // CamelCaseValue, // in pkl words written in camelCase are meant to be used as values
-    ///Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
-    #[regex(r"([a-zA-Z_][a-zA-Z0-9_]*)(\.([a-zA-Z_][a-zA-Z0-9_]*))*")]
+    /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*")]
     Identifier,
 
     #[regex("//.*")]
@@ -192,9 +192,9 @@ pub enum LexingError {
     #[error("Invalid Float")]
     InvalidFloat,
 
-    #[error("Not a valid ASCII Character")]
+    #[error("UnknownError")]
     #[default]
-    NonAsciiCharacter,
+    UnknownError,
 }
 
 impl From<ParseIntError> for LexingError {

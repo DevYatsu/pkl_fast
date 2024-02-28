@@ -130,9 +130,7 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
             }
             _ => unreachable!("Cannot be reached!"),
         },
-        PklToken::New => {
-            parse_class_instance(lexer)
-        }
+        PklToken::New => parse_class_instance(lexer),
         _ => Err(ParsingError::unexpected(lexer)),
     }
 }

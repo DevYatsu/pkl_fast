@@ -15,7 +15,7 @@ pub fn parse_lexing_error<'source>(
             src: generate_source("main.pkl", lexer.source()),
             at: get_error_location(lexer).into(),
         }),
-        LexingError::NonAsciiCharacter => ParsingError::UnexpectedToken(UnexpectedError {
+        LexingError::UnknownError => ParsingError::UnexpectedToken(UnexpectedError {
             src: generate_source("main.pkl", lexer.source()),
             at: get_error_location(lexer).into(),
         }),

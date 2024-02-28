@@ -1,7 +1,7 @@
 use crate::{
     parser::{
         operator::parse_equal,
-        utils::{list_while_not_token, parse_token},
+        utils::{expect_token, list_while_not_token},
         value::parse_value,
     },
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
@@ -35,7 +35,7 @@ pub fn parse_deprecated<'source>(
 }
 
 fn parse_info<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Vec<InfoField<'source>>> {
-    parse_token(lexer, PklToken::OpenBracket)?;
+    expect_token(lexer, PklToken::OpenBracket)?;
 
     let predicate =
         |lexer: &mut PklLexer<'source>, token: PklToken| -> ParsingResult<InfoField<'source>> {

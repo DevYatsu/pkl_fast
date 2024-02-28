@@ -17,7 +17,7 @@ pub fn retrieve_next_token<'source>(lexer: &mut PklLexer<'source>) -> ParsingRes
     }
 }
 
-pub fn parse_token<'source>(
+pub fn expect_token<'source>(
     lexer: &mut PklLexer<'source>,
     target_token: PklToken,
 ) -> ParsingResult<()> {
@@ -26,7 +26,7 @@ pub fn parse_token<'source>(
     if token.is_none() {
         return Err(ParsingError::eof(lexer));
     }
-
+println!("{}", lexer.slice());
     match token.unwrap() {
         Err(e) => Err(ParsingError::lexing(lexer, e))?,
         Ok(token) if token == target_token => Ok(()),
