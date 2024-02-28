@@ -54,13 +54,13 @@ pub enum PklToken<'source> {
     New,
     #[token("class")]
     Class,
-    #[token("local")]
-    Local,
     #[token("this")]
     This,
     #[token("default")]
     Default,
 
+    #[token("local")]
+    Local,
     #[token("hidden")]
     Hidden,
     #[token("fixed")]

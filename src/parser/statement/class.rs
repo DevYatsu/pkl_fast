@@ -23,6 +23,7 @@ pub enum ClassType {
 pub enum FieldType {
     Fixed,
     Hidden,
+    Local,
     None,
 }
 
@@ -103,6 +104,19 @@ pub fn parse_class_field<'source>(
                 ClassArgument::Field {
                     value,
                     _type: FieldType::Fixed,
+                },
+            ))
+        }
+        PklToken::Local => {
+            let name = parse_identifier(lexer)?;
+            expect_token(lexer, PklToken::Colon)?;
+            let value = parse_type(lexer)?;
+
+            Ok((
+                name,
+                ClassArgument::Field {
+                    value,
+                    _type: FieldType::Local,
                 },
             ))
         }

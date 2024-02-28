@@ -13,11 +13,23 @@ class Osprey extends Bird {
 class Bird2 {
   name: String
   lifespan: Int
-}";
+}
+pigeon = new Bird2 {
+  name = \"Pigeon\"
+  lifespan = 8
+}
+
+class Bird3 {
+  name: String
+  lifespan: Int
+  local separator: String
+  hidden nameAndLifespanInIndex: String 
+}
+";
 
     let tokens = lex(S);
     let statements = parse(tokens);
 
     assert_eq!(statements.is_ok(), true);
-    assert_eq!(statements.unwrap().len() == 3, true)
+    assert_eq!(statements.unwrap().len() == 5, true)
 }

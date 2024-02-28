@@ -1,5 +1,5 @@
 use crate::{
-    parser::utils::{hashmap_while_not_token, retrieve_next_token},
+    parser::utils::{expect_token, hashmap_while_not_token, retrieve_next_token},
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
 };
 
@@ -12,7 +12,10 @@ pub fn parse_class_instance<'source>(
     let next_token = retrieve_next_token(lexer)?;
 
     let name = match next_token {
-        PklToken::Identifier(value) => Some(value),
+        PklToken::Identifier(value) => {
+            expect_token(lexer, PklToken::OpenBracket)?;
+            Some(value)
+        },
         PklToken::OpenBracket => None,
         _ => return Err(ParsingError::unexpected(lexer)),
     };
