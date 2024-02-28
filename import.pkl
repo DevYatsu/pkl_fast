@@ -18,6 +18,7 @@ num2: Float = -1.2e3
 typealias NumbersDictionnary = Map<Float, Number>
 test: NumbersDictionnary = 2.5 // no type checking for the moment
 
+x: Int? = null
 
 dodo {
   name = "Dodo"
