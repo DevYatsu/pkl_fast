@@ -159,8 +159,7 @@ impl<'a> PklType<'a> {
         match self {
             PklType::String {
                 matches,
-                contains,
-                allowed_empty,
+                ..
             } => {
                 if let Some(value) = matches {
                     return Ok(PklValue::String(*value));
@@ -251,14 +250,12 @@ impl<'a> fmt::Display for PklType<'a> {
             PklType::Unknown => write!(f, "unknown"),
             PklType::Nothing => write!(f, "nothing"),
             PklType::String {
-                matches,
-                contains,
-                allowed_empty,
+                ..
             } => {
                 write!(f, "String")
             }
             PklType::Boolean => write!(f, "Boolean"),
-            PklType::Int { between } => write!(f, "Int"),
+            PklType::Int { .. } => write!(f, "Int"),
             PklType::Float => write!(f, "Float"),
             PklType::Number => write!(f, "Number"),
             PklType::Duration => write!(f, "Duration"),
