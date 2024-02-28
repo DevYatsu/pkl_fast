@@ -94,9 +94,9 @@ pub fn parse_class_field<'source>(
             ))
         }
         PklToken::Function => {
-            let name = parse_identifier(lexer)?;
-            println!("{}", name);
-            expect_token(lexer, PklToken::OpenParenthesis)?;
+            expect_token(lexer, PklToken::FunctionCall)?;
+            let function_call: &str = lexer.slice();
+            let name = &function_call[0..function_call.len()-1];
 
             let args = list_while_not_token(
                 lexer,

@@ -170,6 +170,8 @@ pub enum PklToken {
     /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*")]
     Identifier,
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(")]
+    FunctionCall,
 
     #[regex("//.*")]
     LineComment,

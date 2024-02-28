@@ -35,7 +35,7 @@ tortoise = (dodo) {
 
 class Bird {
   name: String
-  function greet (bird: Bird): String = "Hello World!" 
+  function greet(bird: Bird ): String = "Hello World!" 
 }
 
 class Bird2 extends Bird {
