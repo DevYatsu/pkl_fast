@@ -1,7 +1,7 @@
 mod amends;
 mod class;
 mod extends;
-mod import;
+pub mod import;
 mod info;
 mod module;
 mod typealias;
@@ -55,7 +55,6 @@ pub use class::parse_class_declaration;
 pub use class::ClassArgument;
 pub use extends::parse_extends;
 pub use import::ImportClause;
-pub use import::{parse_globbed_import, parse_import};
 pub use info::parse_deprecated;
 pub use info::parse_module_info;
 pub use module::parse_module;

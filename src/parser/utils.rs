@@ -1,6 +1,9 @@
 use std::{collections::HashMap, hash::Hash};
 
-use crate::prelude::{ParsingError, ParsingResult, PklToken};
+use crate::{
+    expect_tokens,
+    prelude::{ParsingError, ParsingResult, PklToken},
+};
 mod identifier;
 mod string;
 
@@ -34,6 +37,15 @@ pub fn expect_token<'source>(
         Ok(token) if token == target_token => Ok(()),
         _ => Err(ParsingError::unexpected(lexer))?,
     }
+}
+
+pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<()> {
+    expect_tokens!(
+        lexer,
+        PklToken::NewLine,
+        PklToken::LineComment,
+        PklToken::BlockComment
+    )
 }
 
 pub fn list_while_not_token<'source, R>(

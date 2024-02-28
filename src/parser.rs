@@ -1,23 +1,29 @@
 use crate::parser::{
     errors::{lexing::parse_lexing_error, ParsingError},
     statement::Statement,
-    utils::{parse_identifier, retrieve_next_token},
+    utils::retrieve_next_token,
 };
 
 use crate::lexer::PklToken;
 use logos::Lexer;
 
 use self::{
-    statement::ClassType,
+    statement::{
+        import::{import_clause, parse_import_value},
+        ClassType,
+    },
     types::parse_type,
-    utils::expect_token,
+    utils::{expect_statement_end, expect_token, parse_identifier},
     value::{parse_object, parse_value},
 };
 
 pub mod errors;
+mod macros;
 mod operator;
 pub mod statement;
 mod types;
+
+#[macro_use]
 mod utils;
 pub mod value;
 
@@ -52,42 +58,60 @@ impl<'source> PklParser<'source> {
     pub fn parse(&mut self) -> ParsingResult<()> {
         while let Some(token) = self.lexer.next() {
             let statement = match token {
-                Ok(PklToken::Import) => self.parse_import()?,
-                Ok(PklToken::GlobbedImport) => self.parse_globbed_import()?,
-                Ok(PklToken::Amends) => self.parse_amends()?,
-                Ok(PklToken::Module) => self.parse_module()?,
-                Ok(PklToken::Extends) => self.parse_extends()?,
-                Ok(PklToken::As) => {
-                    if let Some(statement) = self.statements.last_mut() {
-                        match statement {
-                            Statement::Import { imported_as, .. }
-                            | Statement::GlobbedImport { imported_as, .. } => {
-                                let imported_as_new_value = parse_identifier(&mut self.lexer)?;
-                                *imported_as = Some(imported_as_new_value);
-                            }
-                            _ => return Err(ParsingError::invalid_as_statement(&mut self.lexer)),
-                        }
-                    } else {
-                        return Err(ParsingError::unexpected(&mut self.lexer));
-                    }
-
-                    continue;
+                Ok(PklToken::Import) => {
+                    // no need to check if there is a statement end next, it was already checked in the function call below
+                    self.parse_import()?
+                }
+                Ok(PklToken::GlobbedImport) => {
+                    // no need to check if there is a statement end next, it was already checked in the function call below
+                    self.parse_globbed_import()?
+                }
+                Ok(PklToken::Amends) => {
+                    let stmt = self.parse_amends()?;
+                    expect_statement_end(&mut self.lexer)?;
+                    stmt
+                }
+                Ok(PklToken::Module) => {
+                    let stmt = self.parse_module()?;
+                    expect_statement_end(&mut self.lexer)?;
+                    stmt
+                }
+                Ok(PklToken::Extends) => {
+                    let stmt = self.parse_extends()?;
+                    expect_statement_end(&mut self.lexer)?;
+                    stmt
                 }
                 Ok(PklToken::Identifier(id)) => {
                     // match for variable declaration, object declaration and variable assignment
-                    let statement = self.parse_var_statement(id)?;
+                    let stmt = self.parse_var_statement(id)?;
 
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
-                    }else {
-                        expect_token(&mut self.lexer, PklToken::NewLine)?;
+                    } else {
+                        // skipping comments and newline
+                        expect_statement_end(&mut self.lexer)?;
                     }
 
-                    statement
+                    stmt
                 }
-                Ok(PklToken::ModuleInfo) => self.parse_module_info()?,
-                Ok(PklToken::DeprecatedInstruction) => self.parse_deprecated()?,
-                Ok(PklToken::TypeAlias) => self.parse_typealias()?,
+                Ok(PklToken::ModuleInfo) => {
+                    let stmt = self.parse_module_info()?;
+                    expect_statement_end(&mut self.lexer)?;
+
+                    stmt
+                }
+                Ok(PklToken::DeprecatedInstruction) => {
+                    let stmt = self.parse_deprecated()?;
+                    expect_statement_end(&mut self.lexer)?;
+
+                    stmt
+                }
+                Ok(PklToken::TypeAlias) => {
+                    let stmt = self.parse_typealias()?;
+                    expect_statement_end(&mut self.lexer)?;
+
+                    stmt
+                }
                 Ok(PklToken::Class) => self.parse_class_declaration()?,
                 Ok(PklToken::Abstract) => {
                     expect_token(&mut self.lexer, PklToken::Class)?;
@@ -114,10 +138,36 @@ impl<'source> PklParser<'source> {
     }
 
     fn parse_import(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_import(&mut self.lexer)
+        let value = parse_import_value(&mut self.lexer)?;
+
+        let next_token = retrieve_next_token(&mut self.lexer)?;
+
+        let imported_as = match next_token {
+            PklToken::As => Some(parse_identifier(&mut self.lexer)?),
+            PklToken::NewLine | PklToken::LineComment | PklToken::BlockComment => None,
+            _ => return Err(ParsingError::unexpected(&mut self.lexer)),
+        };
+
+        Ok(Statement::Import {
+            clause: import_clause(value),
+            imported_as,
+        })
     }
     fn parse_globbed_import(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_globbed_import(&mut self.lexer)
+        let value = parse_import_value(&mut self.lexer)?;
+
+        let next_token = retrieve_next_token(&mut self.lexer)?;
+
+        let imported_as = match next_token {
+            PklToken::As => Some(parse_identifier(&mut self.lexer)?),
+            PklToken::NewLine | PklToken::LineComment | PklToken::BlockComment => None,
+            _ => return Err(ParsingError::unexpected(&mut self.lexer)),
+        };
+
+        Ok(Statement::GlobbedImport {
+            clause: import_clause(value),
+            imported_as,
+        })
     }
     fn parse_amends(&mut self) -> ParsingResult<Statement<'source>> {
         statement::parse_amends(&mut self.lexer)
@@ -160,7 +210,8 @@ impl<'source> PklParser<'source> {
             }
             PklToken::OpenBracket => {
                 let value = parse_object(lexer, None)?;
-
+                self.new_line_parsed = true;
+                
                 Statement::VariableDeclaration {
                     name,
                     value,
