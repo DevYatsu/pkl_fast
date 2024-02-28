@@ -12,7 +12,7 @@ pub fn parse_class_instance<'source>(
     let next_token = retrieve_next_token(lexer)?;
 
     let name = match next_token {
-        PklToken::Identifier => Some(lexer.slice()),
+        PklToken::Identifier(value) => Some(value),
         PklToken::OpenBracket => None,
         _ => return Err(ParsingError::unexpected(lexer)),
     };

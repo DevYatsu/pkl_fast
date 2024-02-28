@@ -1,6 +1,5 @@
 use crate::{
     parser::{
-        operator::parse_equal,
         utils::{expect_token, list_while_not_token},
         value::parse_value,
     },
@@ -37,20 +36,20 @@ pub fn parse_deprecated<'source>(
 fn parse_info<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Vec<InfoField<'source>>> {
     expect_token(lexer, PklToken::OpenBracket)?;
 
-    let predicate =
-        |lexer: &mut PklLexer<'source>, token: PklToken| -> ParsingResult<InfoField<'source>> {
-            match token {
-                PklToken::Identifier => {
-                    let name: &str = lexer.slice();
-                    parse_equal(lexer)?;
+    let predicate = |lexer: &mut PklLexer<'source>,
+                     token: PklToken<'source>|
+     -> ParsingResult<InfoField<'source>> {
+        match token {
+            PklToken::Identifier(name) => {
+                expect_token(lexer, PklToken::EqualSign)?;
 
-                    let value = parse_value(lexer)?;
+                let value = parse_value(lexer)?;
 
-                    Ok(InfoField { name, value })
-                }
-                _ => Err(ParsingError::unexpected(lexer)),
+                Ok(InfoField { name, value })
             }
-        };
+            _ => Err(ParsingError::unexpected(lexer)),
+        }
+    };
 
     let infos = list_while_not_token(lexer, PklToken::Comma, PklToken::CloseBracket, &predicate)?;
 

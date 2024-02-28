@@ -25,12 +25,11 @@ pub fn parse_object<'source>(
 }
 
 pub fn parse_object_body<'source>(
-    lexer: &mut logos::Lexer<'source, PklToken>,
-    token: PklToken,
+    lexer: &mut PklLexer<'source>,
+    token: PklToken<'source>,
 ) -> ParsingResult<(&'source str, PklValue<'source>)> {
     match token {
-        PklToken::Identifier | PklToken::IllegalIdentifier => {
-            let name: &str = lexer.slice();
+        PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
             let next_token = retrieve_next_token(lexer)?;
 
             let value = match next_token {
@@ -52,13 +51,4 @@ pub fn parse_object_body<'source>(
         }
         _ => Err(ParsingError::unexpected(lexer)),
     }
-}
-
-pub fn extract_amended_object_name<'a>(raw_token: &'a str) -> &'a str {
-    // we can unwrap as we are sure there is a parenthesis thanks to the initial regex match
-    let end_paren_index = raw_token.find(')').unwrap();
-
-    let result = &raw_token[1..end_paren_index];
-
-    return result;
 }

@@ -1,8 +1,7 @@
 use crate::{
     parser::{
-        operator::parse_equal,
         types::parse_type,
-        utils::retrieve_next_token,
+        utils::{retrieve_next_token, expect_token},
         value::{parse_object, parse_value},
     },
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
@@ -39,7 +38,7 @@ pub fn parse_var_statement<'source>(
             // expect a type
 
             let variable_type = parse_type(lexer)?;
-            parse_equal(lexer)?;
+            expect_token(lexer, PklToken::EqualSign)?;
             let value = parse_value(lexer)?;
 
             Statement::VariableDeclaration {

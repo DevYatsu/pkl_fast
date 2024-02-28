@@ -9,7 +9,7 @@ PklToken enum possesses a `lexer` method that lexes an input into tokens constit
 #[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(error = LexingError)]
 #[logos(skip r"[\f\ ]+")]
-pub enum PklToken {
+pub enum PklToken<'source> {
     #[token("\n")]
     NewLine,
     #[token("\t")]
@@ -90,12 +90,12 @@ pub enum PklToken {
     /// - ==, <=, >=, >
     /// - !, !!, ?, ??
     /// - &&, ||, |
-    #[regex(r#"==|<=|<|>=|>|!=|!!|!|\?\?|\?|\&\&|\&|\|\||\||"#)]
-    Operators,
+    #[regex(r#"==|<=|<|>=|>|!=|!!|!|\?\?|\?|\&\&|\&|\|\||\||"#, |lex| lex.slice())]
+    Operator(&'source str),
     #[token("=")]
     EqualSign,
-    #[regex(r#"\+|-|\*|\*\*|\|>|%|~/"#)]
-    ArithmeticOperation,
+    #[regex(r#"\+|-|\*|\*\*|\|>|%|~/"#, |lex| lex.slice())]
+    ArithmeticOperation(&'source str),
 
     #[token(":")]
     Colon,
@@ -108,9 +108,9 @@ pub enum PklToken {
     #[token(";")]
     SemiColon,
 
-    #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#)]
+    #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#, |lex| {let raw_value = lex.slice(); &raw_value[1..raw_value.find(')').unwrap()]})]
     /// Token representing an object definition with the object amending another object, that is for example: ```rust (object_name) {```
-    AmendedObjectBracket,
+    AmendedObjectBracket(&'source str),
 
     #[token("typealias")]
     TypeAlias,
@@ -139,8 +139,28 @@ pub enum PklToken {
     /// - 0x012AFF, 0x0_12_.AFF
     /// - 0b00010111, 0b000_101_11
     /// - 0o755, 0o75_5
-    #[regex(r"-?(\d(?:_?\d)*)|0[xX]([0-9a-fA-F](?:_?[0-9a-fA-F])*)|0b([01](?:_?[01])*)|0o([0-7](?:_?[0-7])*)", priority = 3)]
-    Integer,
+    #[regex(r"-?(\d(?:_?\d)*)|0[xX]([0-9a-fA-F](?:_?[0-9a-fA-F])*)|0b([01](?:_?[01])*)|0o([0-7](?:_?[0-7])*)", |lex| {
+        let raw_value = lex.slice();
+
+        // Remove underscores from the string
+        let clean_value = raw_value.replace("_", "");
+        // Check if the value starts with a radix specifier
+        let parsed_value = if clean_value.starts_with("0x") {
+            // Parse hexadecimal value
+            i64::from_str_radix(&clean_value[2..], 16)
+        } else if clean_value.starts_with("0b") {
+            // Parse binary value
+            i64::from_str_radix(&clean_value[2..], 2)
+        } else if clean_value.starts_with("0o") {
+            // Parse octal value
+            i64::from_str_radix(&clean_value[2..], 8)
+        } else {
+            // Parse decimal value
+            clean_value.parse::<i64>()
+        };
+        parsed_value
+    }, priority = 3)]
+    Integer(i64),
 
     /// Float variant includes float number with optional decimal part and/or exponent
     /// Infinity, -Infinity and NaN are also valid floats
@@ -149,8 +169,8 @@ pub enum PklToken {
     /// - .5e-2,  2.12e9
     /// - Infinity, -Infinity
     /// - Nan
-    #[regex(r"(-?((\d*\.\d+(e-?\d+)?)|(Infinity)))|NaN", priority = 4)]
-    Float,
+    #[regex(r"(-?((\d*\.\d+(e-?\d+)?)|(Infinity)))|NaN", |lex| lex.slice().parse(), priority = 4)]
+    Float(f64),
 
     #[regex(r#""(?:\\.|[^\\"])*\(\s*\w+\s*\)(?:\\.|[^\\"])*""#)]
     InterpolatedString,
@@ -158,18 +178,18 @@ pub enum PklToken {
     EscapeOpenParenthesis,
     #[token("\\)")]
     EscapeCloseParenthesis,
-    #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#)]
-    IllegalIdentifier,
-    #[regex(r#""[^"]*""#)]
-    StringLiteral,
+    #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#, |lex| lex.slice())]
+    IllegalIdentifier(&'source str),
+    #[regex(r#""[^"]*""#, |lex| {let raw_value = lex.slice(); &raw_value[1..raw_value.len()-1]})]
+    StringLiteral(&'source str),
 
     // #[regex("[A-Z][a-zA-Z]*")]
     // PascalCaseValue,
     // #[regex("[a-z][a-zA-Z]*")]
     // CamelCaseValue, // in pkl words written in camelCase are meant to be used as values
     /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*")]
-    Identifier,
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
+    Identifier(&'source str),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(")]
     FunctionCall,
 

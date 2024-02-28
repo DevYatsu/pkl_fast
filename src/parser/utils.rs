@@ -4,7 +4,9 @@ use crate::prelude::{ParsingError, ParsingResult, PklLexer, PklToken};
 mod identifier;
 mod string;
 
-pub fn retrieve_next_token<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklToken> {
+pub fn retrieve_next_token<'source>(
+    lexer: &mut PklLexer<'source>,
+) -> ParsingResult<PklToken<'source>> {
     let token = lexer.next();
 
     if token.is_none() {
@@ -19,14 +21,14 @@ pub fn retrieve_next_token<'source>(lexer: &mut PklLexer<'source>) -> ParsingRes
 
 pub fn expect_token<'source>(
     lexer: &mut PklLexer<'source>,
-    target_token: PklToken,
+    target_token: PklToken<'source>,
 ) -> ParsingResult<()> {
     let token = lexer.next();
 
     if token.is_none() {
         return Err(ParsingError::eof(lexer));
     }
-println!("{}", lexer.slice());
+    println!("{}", lexer.slice());
     match token.unwrap() {
         Err(e) => Err(ParsingError::lexing(lexer, e))?,
         Ok(token) if token == target_token => Ok(()),
@@ -36,9 +38,9 @@ println!("{}", lexer.slice());
 
 pub fn list_while_not_token<'source, R>(
     lexer: &mut PklLexer<'source>,
-    separator_token: PklToken,
-    end_token: PklToken,
-    predicate: &dyn Fn(&mut PklLexer<'source>, PklToken) -> ParsingResult<R>,
+    separator_token: PklToken<'source>,
+    end_token: PklToken<'source>,
+    predicate: &dyn Fn(&mut PklLexer<'source>, PklToken<'source>) -> ParsingResult<R>,
 ) -> ParsingResult<Vec<R>> {
     let mut result_vec = Vec::new();
 
@@ -60,9 +62,9 @@ pub fn list_while_not_token<'source, R>(
 
 pub fn hashmap_while_not_token<'source, K, V>(
     lexer: &mut PklLexer<'source>,
-    separator_token: PklToken,
-    end_token: PklToken,
-    predicate: &dyn Fn(&mut PklLexer<'source>, PklToken) -> ParsingResult<(K, V)>,
+    separator_token: PklToken<'source>,
+    end_token: PklToken<'source>,
+    predicate: &dyn Fn(&mut PklLexer<'source>, PklToken<'source>) -> ParsingResult<(K, V)>,
 ) -> ParsingResult<HashMap<K, V>>
 where
     K: Eq + Hash,

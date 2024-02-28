@@ -51,10 +51,7 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
     let token = retrieve_next_token(lexer)?;
 
     match token {
-        PklToken::Identifier => {
-            let value: &str = lexer.slice();
-            Ok(value.into())
-        }
+        PklToken::Identifier(value) => Ok(value.into()),
         PklToken::GenericTypeAnnotation => {
             let raw_value: &str = lexer.slice();
 

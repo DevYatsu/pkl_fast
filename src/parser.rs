@@ -19,7 +19,7 @@ mod utils;
 pub mod value;
 
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;
-pub type PklLexer<'source> = Lexer<'source, PklToken>;
+pub type PklLexer<'source> = Lexer<'source, PklToken<'source>>;
 
 pub fn parse<'source>(
     mut lexer: PklLexer<'source>,
@@ -27,7 +27,6 @@ pub fn parse<'source>(
     let mut statements = vec![];
 
     while let Some(token) = lexer.next() {
-        
         let statement = match token {
             Ok(PklToken::Import) => statement::parse_import(&mut lexer)?,
             Ok(PklToken::GlobbedImport) => statement::parse_globbed_import(&mut lexer)?,
@@ -55,17 +54,14 @@ pub fn parse<'source>(
 
                 continue;
             }
-            Ok(PklToken::Identifier) => {
+            Ok(PklToken::Identifier(id)) => {
                 // match for variable declaration, object declaration and variable assignment
-                let identifier = lexer.slice();
-                statement::parse_var_statement(&mut lexer, identifier)?
+                statement::parse_var_statement(&mut lexer, id)?
             }
             Ok(PklToken::ModuleInfo) => parse_module_info(&mut lexer)?,
             Ok(PklToken::DeprecatedInstruction) => parse_deprecated(&mut lexer)?,
             Ok(PklToken::TypeAlias) => statement::parse_typealias(&mut lexer)?,
-            Ok(PklToken::Class) => {
-                parse_class_declaration(&mut lexer, false)?
-            }
+            Ok(PklToken::Class) => parse_class_declaration(&mut lexer, false)?,
             Ok(PklToken::Abstract) => {
                 todo!()
             }

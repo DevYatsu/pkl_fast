@@ -1,6 +1,5 @@
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
-use self::object::extract_amended_object_name;
 use super::utils::retrieve_next_token;
 use super::PklLexer;
 use crate::parser::value::datasize::DataSizeUnit;
@@ -63,43 +62,11 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
 
     match token {
         PklToken::Boolean(b) => Ok(PklValue::Boolean(b)),
-        PklToken::StringLiteral => {
-            let raw_value = lexer.slice();
-            Ok(PklValue::String(&raw_value[1..raw_value.len() - 1]))
-        }
-        PklToken::Integer => {
-            let raw_value: &str = lexer.slice();
-
-            // Remove underscores from the string
-            let clean_value = raw_value.replace("_", "");
-
-            // Check if the value starts with a radix specifier
-            let parsed_value = if clean_value.starts_with("0x") {
-                // Parse hexadecimal value
-                i64::from_str_radix(&clean_value[2..], 16)
-            } else if clean_value.starts_with("0b") {
-                // Parse binary value
-                i64::from_str_radix(&clean_value[2..], 2)
-            } else if clean_value.starts_with("0o") {
-                // Parse octal value
-                i64::from_str_radix(&clean_value[2..], 8)
-            } else {
-                // Parse decimal value
-                clean_value.parse::<i64>()
-            };
-
-            Ok(PklValue::Int(parsed_value?))
-        }
-        PklToken::Float => {
-            let raw_value = lexer.slice();
-            let clean_value = raw_value.parse::<f64>();
-            Ok(PklValue::Float(clean_value?))
-        }
+        PklToken::StringLiteral(value) => Ok(PklValue::String(value)),
+        PklToken::Integer(i) => Ok(PklValue::Int(i)),
+        PklToken::Float(f) => Ok(PklValue::Float(f)),
         PklToken::Null => Ok(PklValue::Null),
-        PklToken::AmendedObjectBracket => {
-            let raw_value: &str = lexer.slice();
-            let amended_by = extract_amended_object_name(raw_value);
-
+        PklToken::AmendedObjectBracket(amended_by) => {
             let value = parse_object(lexer, Some(amended_by))?;
 
             Ok(value)

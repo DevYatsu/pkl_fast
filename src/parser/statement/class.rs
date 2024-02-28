@@ -1,6 +1,5 @@
 use crate::{
     parser::{
-        operator::parse_equal,
         types::{parse_type, PklType},
         utils::{
             expect_token, hashmap_while_not_token, list_while_not_token, parse_identifier,
@@ -40,7 +39,7 @@ pub fn parse_class_declaration<'source>(
         PklToken::Extends => {
             let value = parse_identifier(lexer)?;
             expect_token(lexer, PklToken::OpenBracket)?;
-            
+
             Some(value)
         }
         PklToken::OpenBracket => None,
@@ -64,7 +63,7 @@ pub fn parse_class_declaration<'source>(
 
 pub fn parse_class_field<'source>(
     lexer: &mut PklLexer<'source>,
-    token: PklToken,
+    token: PklToken<'source>,
 ) -> ParsingResult<(&'source str, ClassArgument<'source>)> {
     match token {
         PklToken::Hidden => {
@@ -80,8 +79,7 @@ pub fn parse_class_field<'source>(
                 },
             ))
         }
-        PklToken::Identifier | PklToken::IllegalIdentifier => {
-            let name = lexer.slice();
+        PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
             expect_token(lexer, PklToken::Colon)?;
             let value = parse_type(lexer)?;
 
@@ -96,7 +94,7 @@ pub fn parse_class_field<'source>(
         PklToken::Function => {
             expect_token(lexer, PklToken::FunctionCall)?;
             let function_call: &str = lexer.slice();
-            let name = &function_call[0..function_call.len()-1];
+            let name = &function_call[0..function_call.len() - 1];
 
             let args = list_while_not_token(
                 lexer,
@@ -108,7 +106,7 @@ pub fn parse_class_field<'source>(
 
             let return_type = parse_type(lexer)?;
 
-            parse_equal(lexer)?;
+            expect_token(lexer, PklToken::EqualSign)?;
 
             let return_value = parse_value(lexer)?;
 
@@ -127,10 +125,10 @@ pub fn parse_class_field<'source>(
 
 fn parse_fn_arg<'a>(
     lexer: &mut PklLexer<'a>,
-    token: PklToken,
+    token: PklToken<'a>,
 ) -> ParsingResult<(&'a str, PklType<'a>)> {
     let name = match token {
-        PklToken::Identifier => lexer.slice(),
+        PklToken::Identifier(value) => value,
         _ => return Err(ParsingError::unexpected(lexer)),
     };
 
