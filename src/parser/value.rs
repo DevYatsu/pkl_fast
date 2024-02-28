@@ -66,7 +66,7 @@ pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklV
         PklToken::StringLiteral(value) => {
             // should see how we take care of string literals, do we evaluate them in the step after the parser ? ig yess
             Ok(PklValue::String(value))
-        },
+        }
         PklToken::Integer(i) => Ok(PklValue::Int(i)),
         PklToken::Float(f) => Ok(PklValue::Float(f)),
         PklToken::Null => Ok(PklValue::Null),
