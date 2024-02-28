@@ -75,7 +75,7 @@ impl fmt::Display for DataSize {
 
         write!(f, ".")?;
 
-        let formatted_unit = match self.unit {
+        match self.unit {
             DataSizeUnit::Bytes => write!(f, "b")?,
             DataSizeUnit::Kylobytes => write!(f, "kb")?,
             DataSizeUnit::Megabytes => write!(f, "mb")?,

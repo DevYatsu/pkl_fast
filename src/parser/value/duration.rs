@@ -62,7 +62,7 @@ impl fmt::Display for Duration {
 
         write!(f, ".")?;
 
-        let formatted_unit = match self.unit {
+        match self.unit {
             DurationUnit::NanoSeconds => write!(f, "ns")?,
             DurationUnit::MicroSeconds => write!(f, "us")?,
             DurationUnit::MilliSeconds => write!(f, "ms")?,

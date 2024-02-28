@@ -1,9 +1,5 @@
 use crate::parser::{
-    errors::{
-        lexing::parse_lexing_error,
-        locating::{generate_source, get_error_location},
-        InvalidAsStatement, ParsingError,
-    },
+    errors::{lexing::parse_lexing_error, ParsingError},
     statement::Statement,
     utils::{parse_identifier, retrieve_next_token},
 };
@@ -57,21 +53,14 @@ impl<'source> PklParser<'source> {
                 Ok(PklToken::Module) => self.parse_module()?,
                 Ok(PklToken::Extends) => self.parse_extends()?,
                 Ok(PklToken::As) => {
-                    let imported_as_new_value = parse_identifier(&mut lexer)?;
                     if let Some(statement) = self.statements.last_mut() {
                         match statement {
                             Statement::Import { imported_as, .. }
                             | Statement::GlobbedImport { imported_as, .. } => {
+                                let imported_as_new_value = parse_identifier(&mut lexer)?;
                                 *imported_as = Some(imported_as_new_value);
                             }
-                            _ => {
-                                return Err(ParsingError::AsStatementUnsupported(
-                                    InvalidAsStatement {
-                                        src: generate_source("main.pkl", lexer.source()),
-                                        at: get_error_location(&mut lexer).into(),
-                                    },
-                                ));
-                            }
+                            _ => return Err(ParsingError::invalid_as_statement(lexer)),
                         }
                     } else {
                         return Err(ParsingError::unexpected(&mut lexer));
