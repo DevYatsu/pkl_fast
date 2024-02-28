@@ -116,8 +116,15 @@ pub enum PklToken<'source> {
     TypeAlias,
 
     /// This variant shall represent types with a given generic such as `Listing<Bird>` or `Map<Int, String>`  
-    #[regex(r"[A-Za-z][A-Za-z0-9]*<([A-Za-z_][A-Za-z0-9_]*)(?:,\s*([A-Za-z_][A-Za-z0-9_]*))?>")]
+    #[regex(
+        r"[A-Za-z][A-Za-z0-9]*<\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:,\s*([A-Za-z_][A-Za-z0-9_]*))?\s*>"
+    )]
     GenericTypeAnnotation,
+
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\?", |lex| {let raw_value=lex.slice(); &raw_value[..raw_value.len()-1]})]
+    PotentiallyNullType(&'source str),
+    #[regex(r"\*[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| {let raw_value=lex.slice(); &raw_value[1..]})]
+    DefaultUnionType(&'source str),
 
     #[token("null")]
     Null,

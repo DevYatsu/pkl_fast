@@ -22,10 +22,16 @@ pub enum PklType<'a> {
     Unknown,
     Nothing,
 
-    String,
+    String {
+        matches: Option<&'a str>,
+        contains: Option<&'a str>,
+        allowed_empty: bool,
+    },
     Boolean,
 
-    Int,
+    Int {
+        between: Option<(i64, i64)>,
+    },
     Float,
     Number,
 
@@ -44,6 +50,9 @@ pub enum PklType<'a> {
     Set(Box<PklType<'a>>),
 
     Class(&'a str),
+
+    Union(Vec<PklType<'a>>),
+    PotentiallyNull(Box<PklType<'a>>),
 }
 
 pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklType<'source>> {
@@ -76,6 +85,10 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
                 )?)
             }
         }
+
+        PklToken::PotentiallyNullType(value) => {
+            Ok(PklType::PotentiallyNull(Box::new(value.into())))
+        }
         _ => Err(ParsingError::unexpected(lexer)),
     }
 }
@@ -86,10 +99,34 @@ impl<'a> From<&'a str> for PklType<'a> {
             "Any" => PklType::Any,
             "unknown" => PklType::Unknown,
             "nothing" => PklType::Nothing,
-            "String" => PklType::String,
+            "String" => PklType::String {
+                matches: None,
+                contains: None,
+                allowed_empty: true,
+            },
             "Boolean" => PklType::Boolean,
-            "Int" => PklType::Int,
-            "UInt16" => PklType::UInt16,
+            "Int" => PklType::Int { between: None },
+            "UInt" => PklType::Int {
+                between: Some((0, i64::MAX)),
+            },
+            "UInt8" => PklType::Int {
+                between: Some((0, 255)),
+            },
+            "UInt16" => PklType::Int {
+                between: Some((0, 65_535)),
+            },
+            "UInt32" => PklType::Int {
+                between: Some((0, 4_294_967_295)),
+            },
+            "Int8" => PklType::Int {
+                between: Some((-128, 127)),
+            },
+            "Int16" => PklType::Int {
+                between: Some((-32_768, 32_767)),
+            },
+            "Int32" => PklType::Int {
+                between: Some((-2_147_483_648, 2_147_483_647)),
+            },
             "Float" => PklType::Float,
             "Number" => PklType::Number,
             "Duration" => PklType::Duration,

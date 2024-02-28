@@ -15,7 +15,7 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 ## Todo List
 
 - [x] Parsing basic values (e.g., int, float, boolean, string, datasize, duration)
-- [X] Parsing objects declaration
+- [x] Parsing objects declaration
 - [ ] Parsing `Map`, `Mapping`, `Set`, `Listing`
 
 - [x] Parsing simple type annotations (`Int`, `Float`, `UInt16`, `unknown`, `Any`)
@@ -28,7 +28,7 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 - [x] Parsing `module` statement
 
 - [ ] Parsing variable declaration statement (partially done)
-- [X] Parsing `class` statement
+- [x] Parsing `class` statement
 - [ ] Parsing `function` statement
 
 - [x] Parsing `@ModuleInfo`/`@Deprecated` annotation
@@ -40,6 +40,12 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 - [ ] Parsing InterpolatedString expressions
 
 - [ ] Generating a symbol table from the statements
+
+## How to implement in Rust ?
+
+Here is a list of pkl's features that should be implemented in rust, but which are not obvious to implement.
+
+- UInt, Uint32, Int32 typealiases: for now the max value is set to i64::MAX
 
 ## Contact
 

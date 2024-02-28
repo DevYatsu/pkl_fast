@@ -1,6 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 
-use crate::prelude::{ParsingError, ParsingResult, PklLexer, PklToken};
+use crate::prelude::{ParsingError, ParsingResult, PklToken};
 mod identifier;
 mod string;
 
@@ -91,3 +91,5 @@ where
 
 pub use identifier::parse_identifier;
 pub use string::parse_string_literal;
+
+use super::PklLexer;
