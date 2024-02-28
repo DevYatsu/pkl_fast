@@ -15,7 +15,7 @@ pub fn parse_class_instance<'source>(
         PklToken::Identifier(value) => {
             expect_token(lexer, PklToken::OpenBracket)?;
             Some(value)
-        },
+        }
         PklToken::OpenBracket => None,
         _ => return Err(ParsingError::unexpected(lexer)),
     };

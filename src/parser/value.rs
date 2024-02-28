@@ -33,6 +33,8 @@ pub enum PklValue<'a> {
 
     Map(Vec<PklValue<'a>>),
 
+    Set(Vec<PklValue<'a>>),
+
     /// For now, only indexing with &str is supported.
     /// In the future we shall support other any data type as key!
     Mapping(HashMap<&'a str, PklValue<'a>>),
@@ -40,6 +42,8 @@ pub enum PklValue<'a> {
     Duration(Duration),
     DataSize(DataSize),
     Null,
+
+    Nullable(Box<PklValue<'a>>),
 
     /// You may ask why `name` is optional ?
     /// pkl allows to specify the class in only the type and not in the instantiation
@@ -165,6 +169,10 @@ impl<'a> fmt::Display for PklValue<'a> {
                 }
                 write!(f, "}}")?;
                 Ok(())
+            }
+            PklValue::Set(_) => todo!(),
+            PklValue::Nullable(value) => {
+                write!(f, "Null({})", *value)
             }
         }
     }

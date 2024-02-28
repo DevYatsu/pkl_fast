@@ -7,7 +7,12 @@ use crate::parser::{
 use crate::lexer::PklToken;
 use logos::Lexer;
 
-use self::{statement::ClassType, utils::expect_token};
+use self::{
+    statement::ClassType,
+    types::parse_type,
+    utils::expect_token,
+    value::{parse_object, parse_value},
+};
 
 pub mod errors;
 mod operator;
@@ -31,23 +36,21 @@ pub fn parse<'source>(
 #[derive(Debug, Clone)]
 pub struct PklParser<'source> {
     pub statements: Vec<Statement<'source>>,
-    stored_value: Option<&'source str>,
     lexer: PklLexer<'source>,
+    new_line_parsed: bool,
 }
 
 impl<'source> PklParser<'source> {
     pub fn new(lexer: PklLexer<'source>) -> Self {
         Self {
-            stored_value: None,
             statements: vec![],
+            new_line_parsed: false,
             lexer,
         }
     }
 
     pub fn parse(&mut self) -> ParsingResult<()> {
         while let Some(token) = self.lexer.next() {
-            let mut lexer = &mut self.lexer;
-
             let statement = match token {
                 Ok(PklToken::Import) => self.parse_import()?,
                 Ok(PklToken::GlobbedImport) => self.parse_globbed_import()?,
@@ -59,40 +62,48 @@ impl<'source> PklParser<'source> {
                         match statement {
                             Statement::Import { imported_as, .. }
                             | Statement::GlobbedImport { imported_as, .. } => {
-                                let imported_as_new_value = parse_identifier(&mut lexer)?;
+                                let imported_as_new_value = parse_identifier(&mut self.lexer)?;
                                 *imported_as = Some(imported_as_new_value);
                             }
-                            _ => return Err(ParsingError::invalid_as_statement(lexer)),
+                            _ => return Err(ParsingError::invalid_as_statement(&mut self.lexer)),
                         }
                     } else {
-                        return Err(ParsingError::unexpected(&mut lexer));
+                        return Err(ParsingError::unexpected(&mut self.lexer));
                     }
 
                     continue;
                 }
                 Ok(PklToken::Identifier(id)) => {
                     // match for variable declaration, object declaration and variable assignment
-                    self.parse_var_statement(id)?
+                    let statement = self.parse_var_statement(id)?;
+
+                    if self.new_line_parsed {
+                        self.new_line_parsed = !self.new_line_parsed;
+                    }else {
+                        expect_token(&mut self.lexer, PklToken::NewLine)?;
+                    }
+
+                    statement
                 }
                 Ok(PklToken::ModuleInfo) => self.parse_module_info()?,
                 Ok(PklToken::DeprecatedInstruction) => self.parse_deprecated()?,
                 Ok(PklToken::TypeAlias) => self.parse_typealias()?,
                 Ok(PklToken::Class) => self.parse_class_declaration()?,
                 Ok(PklToken::Abstract) => {
-                    expect_token(lexer, PklToken::Class)?;
+                    expect_token(&mut self.lexer, PklToken::Class)?;
 
                     self.parse_abstract_class_declaration()?
                 }
                 Ok(PklToken::Open) => {
-                    let token = retrieve_next_token(&mut lexer)?;
+                    let token = retrieve_next_token(&mut self.lexer)?;
 
                     match token {
                         PklToken::Module => self.parse_open_module()?,
                         PklToken::Class => self.parse_open_class_declaration()?,
-                        _ => return Err(ParsingError::unexpected(&mut lexer)),
+                        _ => return Err(ParsingError::unexpected(&mut self.lexer)),
                     }
                 }
-                Err(e) => return Err(parse_lexing_error(&mut lexer, e)),
+                Err(e) => return Err(parse_lexing_error(&mut self.lexer, e)),
                 _ => continue,
             };
 
@@ -132,8 +143,61 @@ impl<'source> PklParser<'source> {
         statement::parse_class_declaration(&mut self.lexer, ClassType::Abstract)
     }
 
-    fn parse_var_statement(&mut self, id: &'source str) -> ParsingResult<Statement<'source>> {
-        statement::parse_var_statement(&mut self.lexer, id)
+    // this function is defined here as it uses self.new_line_parsed
+    fn parse_var_statement(&mut self, name: &'source str) -> ParsingResult<Statement<'source>> {
+        let lexer = &mut self.lexer;
+        let token = retrieve_next_token(lexer)?;
+
+        let statement = match token {
+            PklToken::EqualSign => {
+                let value = parse_value(lexer)?;
+
+                Statement::VariableDeclaration {
+                    name,
+                    value,
+                    optional_type: None,
+                }
+            }
+            PklToken::OpenBracket => {
+                let value = parse_object(lexer, None)?;
+
+                Statement::VariableDeclaration {
+                    name,
+                    value,
+                    optional_type: None,
+                }
+            }
+            PklToken::Colon => {
+                let variable_type = parse_type(lexer)?;
+
+                let next_token = retrieve_next_token(lexer)?;
+
+                match next_token {
+                    PklToken::EqualSign => {}
+                    PklToken::NewLine => {
+                        self.new_line_parsed = true;
+
+                        return Ok(Statement::VariableDeclaration {
+                            name,
+                            value: variable_type.default_value(lexer)?,
+                            optional_type: Some(variable_type),
+                        });
+                    }
+                    _ => return Err(ParsingError::unexpected(lexer)),
+                };
+
+                let value = parse_value(lexer)?;
+
+                Statement::VariableDeclaration {
+                    name,
+                    value,
+                    optional_type: Some(variable_type),
+                }
+            }
+            _ => Err(ParsingError::unexpected(lexer))?,
+        };
+
+        Ok(statement)
     }
     fn parse_typealias(&mut self) -> ParsingResult<Statement<'source>> {
         statement::parse_typealias(&mut self.lexer)

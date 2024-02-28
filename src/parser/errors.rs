@@ -65,6 +65,10 @@ pub enum ParsingError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     UnterminatedString(#[from] UnterminatedStringError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    NoDefaultValue(#[from] NoDefaultValueError),
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -163,6 +167,20 @@ pub struct UnexpectedEndOfInputError {
 }
 
 #[derive(Error, Diagnostic, Debug)]
+#[error("No default value for given type")]
+#[diagnostic(code(pkl_fast::unexpected_end_of_input))]
+pub struct NoDefaultValueError {
+    #[label("here")]
+    pub at: SourceSpan,
+
+    #[source_code]
+    pub src: NamedSource<String>,
+
+    #[help]
+    advice: String,
+}
+
+#[derive(Error, Diagnostic, Debug)]
 #[error("String unexpected never ends")]
 #[diagnostic(
     code(pkl_fast::unexpected_end_of_input),
@@ -208,6 +226,13 @@ impl ParsingError {
         ParsingError::AsStatementUnsupported(InvalidAsStatement {
             src: generate_source("main.pkl", lexer.source()),
             at: get_error_location(lexer),
+        })
+    }
+    pub fn no_default_value(lexer: &mut PklLexer<'_>, type_name: &str) -> Self {
+        ParsingError::NoDefaultValue(NoDefaultValueError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer),
+            advice: format!("Type `{type_name}` does not possess a default value"),
         })
     }
 }

@@ -9,6 +9,7 @@ use super::{
         ParsingError,
     },
     utils::retrieve_next_token,
+    value::PklValue,
     ParsingResult, PklLexer,
 };
 use crate::prelude::PklToken;
@@ -19,6 +20,7 @@ mod generics;
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub enum PklType<'a> {
     Any,
+    NotNull,
     Unknown,
     Nothing,
 
@@ -39,6 +41,8 @@ pub enum PklType<'a> {
     DataSize,
     Null,
 
+    Regex,
+
     Collection(Box<PklType<'a>>),
     Listing(Box<PklType<'a>>),
     List(Box<PklType<'a>>),
@@ -52,6 +56,7 @@ pub enum PklType<'a> {
     Class(&'a str),
 
     Union(Vec<PklType<'a>>),
+    UnionDefault(Box<PklType<'a>>),
     PotentiallyNull(Box<PklType<'a>>),
 }
 
@@ -150,6 +155,52 @@ impl<'a> From<&'a str> for PklType<'a> {
 }
 
 impl<'a> PklType<'a> {
+    pub fn default_value(&self, lexer: &mut PklLexer<'a>) -> ParsingResult<PklValue<'a>> {
+        match self {
+            PklType::String {
+                matches,
+                contains,
+                allowed_empty,
+            } => {
+                if let Some(value) = matches {
+                    return Ok(PklValue::String(*value));
+                }
+
+                Err(ParsingError::no_default_value(lexer, &self.to_string()))
+            }
+            PklType::Null => Ok(PklValue::Null),
+            PklType::Collection(_) => Ok(PklValue::List(vec![])),
+            PklType::Listing(_) => Ok(PklValue::List(vec![])),
+            PklType::List(_) => Ok(PklValue::List(vec![])),
+            PklType::Map(_, _) => Ok(PklValue::Map(vec![])),
+            PklType::Mapping(_, _) => todo!(),
+            PklType::Set(_) => Ok(PklValue::Set(vec![])),
+            PklType::Class(name) => Ok(PklValue::ClassInstance {
+                name: Some(*name),
+                arguments: HashMap::new(),
+            }),
+            PklType::PotentiallyNull(t) => {
+                Ok(PklValue::Nullable(Box::new(t.default_value(lexer)?)))
+            }
+            PklType::Union(values) => {
+                let result = values
+                    .iter()
+                    .filter(|value| match value {
+                        PklType::UnionDefault(_) => true,
+                        _ => false,
+                    })
+                    .collect::<Vec<_>>();
+
+                if result.len() != 1 {
+                    return Err(ParsingError::no_default_value(lexer, &self.to_string()));
+                }
+
+                result[0].default_value(lexer)
+            }
+            _ => Err(ParsingError::no_default_value(lexer, &self.to_string())),
+        }
+    }
+
     pub fn generate_from_1_generic(
         lexer: &mut PklLexer<'a>,
         base_type: &'a str,
@@ -187,6 +238,51 @@ impl<'a> PklType<'a> {
                     at: get_error_location(lexer).into(),
                 }))
             }
+        }
+    }
+}
+
+use std::{collections::HashMap, fmt};
+
+impl<'a> fmt::Display for PklType<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PklType::Any => write!(f, "Any"),
+            PklType::Unknown => write!(f, "unknown"),
+            PklType::Nothing => write!(f, "nothing"),
+            PklType::String {
+                matches,
+                contains,
+                allowed_empty,
+            } => {
+                write!(f, "String")
+            }
+            PklType::Boolean => write!(f, "Boolean"),
+            PklType::Int { between } => write!(f, "Int"),
+            PklType::Float => write!(f, "Float"),
+            PklType::Number => write!(f, "Number"),
+            PklType::Duration => write!(f, "Duration"),
+            PklType::DataSize => write!(f, "DataSize"),
+            PklType::Null => write!(f, "Null"),
+            PklType::Collection(x) => write!(f, "Collection<{}>", x),
+            PklType::Listing(x) => write!(f, "Listing<{}>", x),
+            PklType::List(x) => write!(f, "List<{}>", x),
+            PklType::Pair(x, y) => write!(f, "Pair<{}, {}>", x, y),
+            PklType::Map(x, y) => write!(f, "Map<{}, {}>", x, y),
+            PklType::Mapping(x, y) => write!(f, "Mapping<{}, {}>", x, y),
+            PklType::Set(x) => write!(f, "Set<{}>", x),
+            PklType::Class(name) => write!(f, "{name}"),
+            PklType::Union(values) => {
+                write!(f, "{}", values[0])?;
+                for value in &values[1..] {
+                    write!(f, "|{}", value)?;
+                }
+                Ok(())
+            }
+            PklType::PotentiallyNull(t) => write!(f, "{t}?"),
+            PklType::NotNull => write!(f, "NotNull"),
+            PklType::Regex => write!(f, "Regex"),
+            PklType::UnionDefault(t) => write!(f, "*{t}"),
         }
     }
 }
