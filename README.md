@@ -45,7 +45,7 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 
 Here is a list of pkl's features that should be implemented in rust, but which are not obvious to implement.
 
-- UInt, Uint32, Int32 typealiases: for now the max value is set to i64::MAX
+None for the moment, but there will be for sure...
 
 ## Contact
 
