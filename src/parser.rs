@@ -68,12 +68,26 @@ impl<'source> PklParser<'source> {
         while let Some(token) = self.lexer.next() {
             let statement = match token {
                 Ok(PklToken::Import) => {
-                    // no need to check if there is a statement end next, it was already checked in the function call below
-                    self.parse_import()?
+                    let stmt = self.parse_import()?;
+
+                    if self.new_line_parsed {
+                        self.new_line_parsed = !self.new_line_parsed;
+                    } else {
+                        expect_statement_end(&mut self.lexer)?;
+                    }
+
+                    stmt
                 }
                 Ok(PklToken::GlobbedImport) => {
-                    // no need to check if there is a statement end next, it was already checked in the function call below
-                    self.parse_globbed_import()?
+                    let stmt = self.parse_globbed_import()?;
+
+                    if self.new_line_parsed {
+                        self.new_line_parsed = !self.new_line_parsed;
+                    } else {
+                        expect_statement_end(&mut self.lexer)?;
+                    }
+
+                    stmt
                 }
                 Ok(PklToken::Amends) => {
                     let stmt = self.parse_amends()?;
@@ -97,7 +111,6 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        // skipping comments and newline
                         expect_statement_end(&mut self.lexer)?;
                     }
 
@@ -156,7 +169,10 @@ impl<'source> PklParser<'source> {
             Some(PklToken::NewLine)
             | Some(PklToken::LineComment)
             | Some(PklToken::BlockComment)
-            | None => None,
+            | None => {
+                self.new_line_parsed = true;
+                None
+            }
             _ => return Err(ParsingError::unexpected(&mut self.lexer)),
         };
 
@@ -175,7 +191,10 @@ impl<'source> PklParser<'source> {
             Some(PklToken::NewLine)
             | Some(PklToken::LineComment)
             | Some(PklToken::BlockComment)
-            | None => None,
+            | None => {
+                self.new_line_parsed = true;
+                None
+            }
             _ => return Err(ParsingError::unexpected(&mut self.lexer)),
         };
 
@@ -251,14 +270,13 @@ impl<'source> PklParser<'source> {
                         });
                     }
                     None => {
-                        self.new_line_parsed = true;
                         return Ok(Statement::VariableDeclaration {
                             name,
                             value: expression::Expression::Value(
                                 variable_type.default_value(lexer)?,
                             ),
                             optional_type: Some(variable_type),
-                        });
+                        })
                     }
                     _ => return Err(ParsingError::unexpected(lexer)),
                 };

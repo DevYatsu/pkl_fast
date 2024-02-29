@@ -1,9 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 
-use crate::{
-    expect_tokens,
-    prelude::{ParsingError, ParsingResult, PklToken},
-};
+use crate::prelude::{ParsingError, ParsingResult, PklToken};
 mod identifier;
 mod string;
 
@@ -52,12 +49,18 @@ pub fn expect_token<'source>(
 }
 
 pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<()> {
-    expect_tokens!(
-        lexer,
-        PklToken::NewLine,
-        PklToken::LineComment,
-        PklToken::BlockComment
-    )
+    match lexer.next() {
+        Some(Err(e)) => Err(ParsingError::lexing(lexer, e)),
+        Some(Ok(token))
+            if token == PklToken::NewLine
+                || token == PklToken::LineComment
+                || token == PklToken::BlockComment =>
+        {
+            Ok(())
+        }
+        Some(_) => Err(ParsingError::unexpected(lexer)),
+        None => Ok(()),
+    }
 }
 
 /// This function creates a list out of a `predicate` that will be ran the `end_token` is encountered.
