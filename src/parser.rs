@@ -14,7 +14,7 @@ use self::{
         ClassType,
     },
     types::parse_type,
-    utils::{expect_statement_end, expect_token, parse_identifier},
+    utils::{expect_statement_end, expect_token, parse_identifier, retrieve_opt_next_token},
     value::parse_object,
 };
 
@@ -142,18 +142,21 @@ impl<'source> PklParser<'source> {
 
             self.statements.push(statement);
         }
-        println!("{:?}", self.statements);
+
         Ok(())
     }
 
     fn parse_import(&mut self) -> ParsingResult<Statement<'source>> {
         let value = parse_import_value(&mut self.lexer)?;
 
-        let next_token = retrieve_next_token(&mut self.lexer)?;
+        let next_token = retrieve_opt_next_token(&mut self.lexer)?;
 
         let imported_as = match next_token {
-            PklToken::As => Some(parse_identifier(&mut self.lexer)?),
-            PklToken::NewLine | PklToken::LineComment | PklToken::BlockComment => None,
+            Some(PklToken::As) => Some(parse_identifier(&mut self.lexer)?),
+            Some(PklToken::NewLine)
+            | Some(PklToken::LineComment)
+            | Some(PklToken::BlockComment)
+            | None => None,
             _ => return Err(ParsingError::unexpected(&mut self.lexer)),
         };
 
@@ -165,11 +168,14 @@ impl<'source> PklParser<'source> {
     fn parse_globbed_import(&mut self) -> ParsingResult<Statement<'source>> {
         let value = parse_import_value(&mut self.lexer)?;
 
-        let next_token = retrieve_next_token(&mut self.lexer)?;
+        let next_token = retrieve_opt_next_token(&mut self.lexer)?;
 
         let imported_as = match next_token {
-            PklToken::As => Some(parse_identifier(&mut self.lexer)?),
-            PklToken::NewLine | PklToken::LineComment | PklToken::BlockComment => None,
+            Some(PklToken::As) => Some(parse_identifier(&mut self.lexer)?),
+            Some(PklToken::NewLine)
+            | Some(PklToken::LineComment)
+            | Some(PklToken::BlockComment)
+            | None => None,
             _ => return Err(ParsingError::unexpected(&mut self.lexer)),
         };
 
@@ -229,13 +235,23 @@ impl<'source> PklParser<'source> {
             PklToken::Colon => {
                 let variable_type = parse_type(lexer)?;
 
-                let next_token = retrieve_next_token(lexer)?;
+                let next_token = retrieve_opt_next_token(lexer)?;
 
                 match next_token {
-                    PklToken::EqualSign => {}
-                    PklToken::NewLine => {
+                    Some(PklToken::EqualSign) => {}
+                    Some(PklToken::NewLine) => {
                         self.new_line_parsed = true;
 
+                        return Ok(Statement::VariableDeclaration {
+                            name,
+                            value: expression::Expression::Value(
+                                variable_type.default_value(lexer)?,
+                            ),
+                            optional_type: Some(variable_type),
+                        });
+                    }
+                    None => {
+                        self.new_line_parsed = true;
                         return Ok(Statement::VariableDeclaration {
                             name,
                             value: expression::Expression::Value(

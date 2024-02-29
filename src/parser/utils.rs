@@ -22,6 +22,18 @@ pub fn retrieve_next_token<'source>(
     }
 }
 
+pub fn retrieve_opt_next_token<'source>(
+    lexer: &mut PklLexer<'source>,
+) -> ParsingResult<Option<PklToken<'source>>> {
+    let token = lexer.next();
+
+    match token {
+        Some(Err(e)) => Err(ParsingError::lexing(lexer, e)),
+        Some(token) => Ok(Some(token?)),
+        None => Ok(None),
+    }
+}
+
 pub fn expect_token<'source>(
     lexer: &mut PklLexer<'source>,
     target_token: PklToken<'source>,

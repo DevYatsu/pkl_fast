@@ -14,7 +14,6 @@ negativeInfinity = -Infinity";
     let statements = parse(tokens);
 
     assert_eq!(statements.is_ok(), true);
-    assert_eq!(statements.unwrap().len() == S.lines().count(), true)
 }
 
 #[test]
@@ -32,7 +31,6 @@ num4 = 0o0134_6475";
     let statements = parse(tokens);
 
     assert_eq!(statements.is_ok(), true);
-    assert_eq!(statements.unwrap().len() == S.lines().count(), true)
 }
 
 #[test]

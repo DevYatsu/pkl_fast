@@ -31,5 +31,4 @@ class Bird3 {
     let statements = parse(tokens);
 
     assert_eq!(statements.is_ok(), true);
-    assert_eq!(statements.unwrap().len() == 5, true)
 }

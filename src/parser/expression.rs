@@ -42,6 +42,9 @@ pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expre
             Expression::Parenthesised(expr.into())
         }
         PklToken::Identifier(ident) => Expression::Identifier(ident),
+        PklToken::NonNullIdentifier(name) => {
+            return Ok(Expression::NonNull(Expression::Identifier(name).into()))
+        }
         PklToken::FunctionCall(func_name) => {
             let args = parse_fn_call_arguments(lexer)?;
 
@@ -53,13 +56,6 @@ pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expre
             }
         }
         current_token => Expression::Value(parse_value(lexer, current_token)?),
-    };
-    let token = retrieve_next_token(lexer)?;
-
-    match token {
-        PklToken::NonNullValue => return Ok(Expression::NonNull(Box::new(expr))),
-        PklToken::Operator(op) => unimplemented!(),
-        _ => (), // move the functon inside of the main struct and use new_line_parsed if necessary
     };
 
     Ok(expr)

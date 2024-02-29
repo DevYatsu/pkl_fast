@@ -110,7 +110,7 @@ pub enum PklToken<'source> {
     #[token(";")]
     SemiColon,
 
-    #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#, |lex| {let raw_value = lex.slice(); &raw_value[1..raw_value.find(')').unwrap()]})]
+    #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#, |lex| {let val = lex.slice(); &val[1..val.find(')').unwrap()]})]
     /// Token representing an object definition with the object amending another object, that is for example: ```(object_name) {```
     AmendedObjectBracket(&'source str),
 
@@ -123,19 +123,19 @@ pub enum PklToken<'source> {
     )]
     GenericTypeAnnotation,
 
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\?", |lex| {let raw_value=lex.slice(); &raw_value[..raw_value.len()-1]})]
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*\?", |lex| {let val=lex.slice(); &val[..val.len()-1]})]
     PotentiallyNullType(&'source str),
 
-    /// This variant represents '!!', meaning that the preceding value cannot be null, otherwise throwing an error
-    #[regex(r"!!")]
-    NonNullValue,
+    /// This variant represents a identifier followed by '!!', meaning that the variable cannot be null, otherwise throwing an error
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*!!", |lex| {let val=lex.slice(); &val[0..val.len()-2]})]
+    NonNullIdentifier(&'source str),
 
     /// This variant represents '!', the logical NOT operator
     #[regex(r"!")]
     LogicalNotOperator,
 
     /// This variant represents a type preceded by '*', meaning that the type is the default one in an union.
-    #[regex(r"\*[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| {let raw_value=lex.slice(); &raw_value[1..]})]
+    #[regex(r"\*[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| {let val=lex.slice(); &val[1..]})]
     DefaultUnionType(&'source str),
 
     #[token("null")]
@@ -159,10 +159,10 @@ pub enum PklToken<'source> {
     /// - 0b00010111, 0b000_101_11
     /// - 0o755, 0o75_5
     #[regex(r"-?(\d(?:_?\d)*)|0[xX]([0-9a-fA-F](?:_?[0-9a-fA-F])*)|0b([01](?:_?[01])*)|0o([0-7](?:_?[0-7])*)", |lex| {
-        let raw_value = lex.slice();
+        let val = lex.slice();
 
         // Remove underscores from the string
-        let clean_value = raw_value.replace("_", "");
+        let clean_value = val.replace("_", "");
         // Check if the value starts with a radix specifier
         let parsed_value = if clean_value.starts_with("0x") {
             // Parse hexadecimal value
@@ -194,7 +194,7 @@ pub enum PklToken<'source> {
     #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#, |lex| lex.slice())]
     IllegalIdentifier(&'source str),
 
-    #[regex(r#""[^"]*""#, |lex| {let raw_value = lex.slice(); &raw_value[1..raw_value.len()-1]})]
+    #[regex(r#""[^"]*""#, |lex| {let val = lex.slice(); &val[1..val.len()-1]})]
     StringLiteral(&'source str),
 
     // #[regex("[A-Z][a-zA-Z]*")]
@@ -204,7 +204,7 @@ pub enum PklToken<'source> {
     /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
     Identifier(&'source str),
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let raw_value = lex.slice(); &raw_value[1..raw_value.len()-1]})]
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let val = lex.slice(); &val[1..val.len()-1]})]
     FunctionCall(&'source str),
 
     #[regex("//.*")]
