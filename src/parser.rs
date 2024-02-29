@@ -18,6 +18,7 @@ use self::{
 };
 
 pub mod errors;
+mod expression;
 mod macros;
 mod operator;
 pub mod statement;
@@ -133,7 +134,7 @@ impl<'source> PklParser<'source> {
 
             self.statements.push(statement);
         }
-
+        println!("{:?}", self.statements);
         Ok(())
     }
 
@@ -211,7 +212,7 @@ impl<'source> PklParser<'source> {
             PklToken::OpenBracket => {
                 let value = parse_object(lexer, None)?;
                 self.new_line_parsed = true;
-                
+
                 Statement::VariableDeclaration {
                     name,
                     value,

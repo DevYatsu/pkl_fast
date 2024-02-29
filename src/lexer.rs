@@ -90,9 +90,9 @@ pub enum PklToken<'source> {
 
     /// support for:
     /// - ==, <=, >=, >
-    /// - !, !!, ?, ??
+    /// - ??
     /// - &&, ||, |
-    #[regex(r#"==|<=|<|>=|>|!=|!!|!|\?\?|\?|\&\&|\&|\|\||\||"#, |lex| lex.slice())]
+    #[regex(r#"==|<=|<|>=|>|!=|\?\?|\&\&|\&|\|\||\||"#, |lex| lex.slice())]
     Operator(&'source str),
     #[token("=")]
     EqualSign,
@@ -111,7 +111,7 @@ pub enum PklToken<'source> {
     SemiColon,
 
     #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#, |lex| {let raw_value = lex.slice(); &raw_value[1..raw_value.find(')').unwrap()]})]
-    /// Token representing an object definition with the object amending another object, that is for example: ```rust (object_name) {```
+    /// Token representing an object definition with the object amending another object, that is for example: ```(object_name) {```
     AmendedObjectBracket(&'source str),
 
     #[token("typealias")]
@@ -125,6 +125,16 @@ pub enum PklToken<'source> {
 
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\?", |lex| {let raw_value=lex.slice(); &raw_value[..raw_value.len()-1]})]
     PotentiallyNullType(&'source str),
+
+    /// This variant represents '!!', meaning that the preceding value cannot be null, otherwise throwing an error
+    #[regex(r"!!")]
+    NonNullValue,
+
+    /// This variant represents '!', the logical NOT operator
+    #[regex(r"!")]
+    LogicalNotOperator,
+
+    /// This variant represents a type preceded by '*', meaning that the type is the default one in an union.
     #[regex(r"\*[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| {let raw_value=lex.slice(); &raw_value[1..]})]
     DefaultUnionType(&'source str),
 

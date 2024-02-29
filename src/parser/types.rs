@@ -12,7 +12,10 @@ use super::{
     value::PklValue,
     ParsingResult, PklLexer,
 };
-use crate::prelude::PklToken;
+use crate::{
+    parser::{expression::parse_expr, value::parse_value},
+    prelude::PklToken,
+};
 
 pub mod errors;
 mod generics;
@@ -91,6 +94,13 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
             }
         }
 
+        PklToken::FunctionCall(name) => {
+            let base_type: PklType = name.into();
+
+            let value = parse_expr(lexer)?;
+
+            todo!()
+        }
         PklToken::StringLiteral(value) => Ok(PklType::String {
             matches: Some(value),
             contains: None,
@@ -157,10 +167,7 @@ impl<'a> From<&'a str> for PklType<'a> {
 impl<'a> PklType<'a> {
     pub fn default_value(&self, lexer: &mut PklLexer<'a>) -> ParsingResult<PklValue<'a>> {
         match self {
-            PklType::String {
-                matches,
-                ..
-            } => {
+            PklType::String { matches, .. } => {
                 if let Some(value) = matches {
                     return Ok(PklValue::String(*value));
                 }
@@ -249,9 +256,7 @@ impl<'a> fmt::Display for PklType<'a> {
             PklType::Any => write!(f, "Any"),
             PklType::Unknown => write!(f, "unknown"),
             PklType::Nothing => write!(f, "nothing"),
-            PklType::String {
-                ..
-            } => {
+            PklType::String { .. } => {
                 write!(f, "String")
             }
             PklType::Boolean => write!(f, "Boolean"),

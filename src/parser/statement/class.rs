@@ -2,7 +2,7 @@ use crate::{
     parser::{
         types::{parse_type, PklType},
         utils::{
-            expect_token, hashmap_while_not_token, list_while_not_token, parse_identifier,
+            expect_token, hashmap_while_not_token, list_while_not_token0, parse_identifier,
             retrieve_next_token,
         },
         value::parse_value,
@@ -138,7 +138,7 @@ pub fn parse_class_field<'source>(
                 _ => return Err(ParsingError::unexpected(lexer)),
             };
 
-            let args = list_while_not_token(
+            let args = list_while_not_token0(
                 lexer,
                 PklToken::Comma,
                 PklToken::CloseParenthesis,
@@ -165,17 +165,9 @@ pub fn parse_class_field<'source>(
     }
 }
 
-fn parse_fn_arg<'a>(
-    lexer: &mut PklLexer<'a>,
-    token: PklToken<'a>,
-) -> ParsingResult<(&'a str, PklType<'a>)> {
-    let name = match token {
-        PklToken::Identifier(value) => value,
-        _ => return Err(ParsingError::unexpected(lexer)),
-    };
-
+fn parse_fn_arg<'a>(lexer: &mut PklLexer<'a>) -> ParsingResult<(&'a str, PklType<'a>)> {
+    let name = parse_identifier(lexer)?;
     expect_token(lexer, PklToken::Colon)?;
-
     let value = parse_type(lexer)?;
 
     Ok((name, value))

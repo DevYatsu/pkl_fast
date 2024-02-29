@@ -1,9 +1,9 @@
 use crate::{
     parser::{
-        utils::{expect_token, list_while_not_token},
+        utils::{expect_token, list_while_not_token0, parse_identifier},
         value::parse_value,
     },
-    prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
+    prelude::{ParsingResult, PklLexer, PklToken, PklValue},
 };
 
 use super::Statement;
@@ -36,22 +36,16 @@ pub fn parse_deprecated<'source>(
 fn parse_info<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Vec<InfoField<'source>>> {
     expect_token(lexer, PklToken::OpenBracket)?;
 
-    let predicate = |lexer: &mut PklLexer<'source>,
-                     token: PklToken<'source>|
-     -> ParsingResult<InfoField<'source>> {
-        match token {
-            PklToken::Identifier(name) => {
-                expect_token(lexer, PklToken::EqualSign)?;
+    let predicate = |lexer: &mut PklLexer<'source>| -> ParsingResult<InfoField<'source>> {
+        let name = parse_identifier(lexer)?;
+        expect_token(lexer, PklToken::EqualSign)?;
 
-                let value = parse_value(lexer)?;
+        let value = parse_value(lexer)?;
 
-                Ok(InfoField { name, value })
-            }
-            _ => Err(ParsingError::unexpected(lexer)),
-        }
+        Ok(InfoField { name, value })
     };
 
-    let infos = list_while_not_token(lexer, PklToken::Comma, PklToken::CloseBracket, &predicate)?;
+    let infos = list_while_not_token0(lexer, PklToken::Comma, PklToken::CloseBracket, &predicate)?;
 
     Ok(infos)
 }

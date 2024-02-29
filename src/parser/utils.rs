@@ -48,48 +48,95 @@ pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingRe
     )
 }
 
-pub fn list_while_not_token<'source, R>(
+/// This function creates a list out of a `predicate` that will be ran the `end_token` is encountered.
+/// The `separator_token` will be skipped **ONCE**, after each time the `predicate` is ran.
+///
+/// *NOTE*: This function also skips the `separator_token` before running the predicate for the first time
+pub fn list_while_not_token1<'source, R, F>(
     lexer: &mut PklLexer<'source>,
     separator_token: PklToken<'source>,
     end_token: PklToken<'source>,
-    predicate: &dyn Fn(&mut PklLexer<'source>, PklToken<'source>) -> ParsingResult<R>,
-) -> ParsingResult<Vec<R>> {
+    predicate: &F,
+) -> ParsingResult<Vec<R>>
+where
+    F: Fn(&mut PklLexer<'source>, PklToken<'source>) -> ParsingResult<R> + 'static,
+{
     let mut result_vec = Vec::new();
+    let mut was_separator_token_encountered = false;
 
     loop {
         let token = retrieve_next_token(lexer)?;
 
-        if token == end_token {
+        if end_token == token {
             break;
         }
-        if token == separator_token {
+        if separator_token == token {
+            if was_separator_token_encountered {
+                return Err(ParsingError::unexpected(lexer));
+            }
+            was_separator_token_encountered = true;
             continue;
         }
-
+        was_separator_token_encountered = false;
         result_vec.push(predicate(lexer, token)?);
     }
 
     Ok(result_vec)
 }
 
-pub fn hashmap_while_not_token<'source, K, V>(
+/// This function creates a list out of a `predicate` that will be ran until one of the `end_token` is encountered.
+/// The `separator_token` will be skipped after each time the `predicate` is ran.
+///
+/// *NOTE*: Contrary to `list_while_not_token1` function, this function does not skip the `separator_token` before running the predicate for the first time
+pub fn list_while_not_token0<'source, R, F>(
     lexer: &mut PklLexer<'source>,
     separator_token: PklToken<'source>,
     end_token: PklToken<'source>,
-    predicate: &dyn Fn(&mut PklLexer<'source>, PklToken<'source>) -> ParsingResult<(K, V)>,
+    predicate: &F,
+) -> ParsingResult<Vec<R>>
+where
+    F: Fn(&mut PklLexer<'source>) -> ParsingResult<R> + 'static,
+{
+    let mut result_vec = Vec::new();
+
+    loop {
+        result_vec.push(predicate(lexer)?);
+
+        let token = retrieve_next_token(lexer)?;
+
+        if end_token == token {
+            break;
+        }
+        if separator_token == token {
+            continue;
+        }
+    }
+
+    Ok(result_vec)
+}
+/// This function creates a HashMap out of a `predicate` that will be ran until the `end_token` is encountered.
+/// The `separator_token` will be skipped indefinitely, after each time the `predicate` is ran.
+///
+/// *NOTE*: This function also skips the `separator_tokens` before running the predicate for the first time
+pub fn hashmap_while_not_token<'source, K, V, F>(
+    lexer: &mut PklLexer<'source>,
+    separator_token: PklToken<'source>,
+    end_token: PklToken<'source>,
+    predicate: &F,
 ) -> ParsingResult<HashMap<K, V>>
 where
     K: Eq + Hash,
+    F: Fn(&mut PklLexer<'source>, PklToken<'source>) -> ParsingResult<(K, V)> + 'static,
 {
     let mut result_vec = HashMap::new();
 
     loop {
         let token = retrieve_next_token(lexer)?;
 
-        if token == end_token {
+        if end_token == token {
             break;
         }
-        if token == separator_token {
+        if separator_token == token {
             continue;
         }
 
