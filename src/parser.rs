@@ -14,7 +14,8 @@ use self::{
         ClassType,
     },
     types::parse_type,
-    utils::{expect_statement_end, expect_token, parse_identifier}, value::{parse_object},
+    utils::{expect_statement_end, expect_token, parse_identifier},
+    value::parse_object,
 };
 
 pub mod errors;
