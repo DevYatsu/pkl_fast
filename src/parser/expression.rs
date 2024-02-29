@@ -24,20 +24,37 @@ pub enum Expression<'a> {
         lhs: Box<Expression<'a>>,
         rhs: Box<Expression<'a>>,
     },
+
+    LogicalNot(Box<Expression<'a>>),
+    NonNull(Box<Expression<'a>>),
 }
 
 pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expression<'source>> {
     let token = retrieve_next_token(lexer)?;
 
-    match token {
-        PklToken::Identifier(ident) => Ok(Expression::Identifier(ident)),
+    let expr = match token {
+        PklToken::LogicalNotOperator => Expression::LogicalNot(parse_expr(lexer)?.into()),
+        PklToken::Identifier(ident) => Expression::Identifier(ident),
         PklToken::FunctionCall(func_name) => {
             let args = parse_fn_call_arguments(lexer)?;
-            Ok(Expression::FunctionCall { func_name, args })
-        }
 
-        current_token => Ok(Expression::Value(parse_value(lexer, current_token)?)),
-    }
+            match func_name {
+                "List" => Expression::Value(PklValue::List(args)),
+                "Map" => Expression::Value(PklValue::Map(args)),
+                "Set" => Expression::Value(PklValue::Set(args)),
+                _ => Expression::FunctionCall { func_name, args },
+            }
+        }
+        current_token => Expression::Value(parse_value(lexer, current_token)?),
+    };
+    let token = retrieve_next_token(lexer)?;
+
+    match token {
+        PklToken::NonNullValue => return Ok(Expression::NonNull(Box::new(expr))),
+        _ => unimplemented!(),
+    };
+
+    Ok(expr)
 }
 
 use std::fmt;
@@ -60,6 +77,8 @@ impl<'a> fmt::Display for Expression<'a> {
             Expression::Operation { operator, lhs, rhs } => {
                 write!(f, "{} {} {}", lhs, operator, rhs)
             }
+            Expression::LogicalNot(x) => write!(f, "!{x}"),
+            Expression::NonNull(x) => write!(f, "{x}!!"),
         }
     }
 }

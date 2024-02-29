@@ -42,6 +42,9 @@ pub fn parse<'source>(
 }
 
 #[derive(Debug, Clone)]
+/// PklParser is the main parser struct, possessing the `parse` method to parse the tokens in the lexer.
+///
+/// **IMPORTANT NOTE**: All parsing functions (in the entire library) are designed to operate on the next token from the lexer, except for the function that requires a specific token as a second argument.
 pub struct PklParser<'source> {
     pub statements: Vec<Statement<'source>>,
     lexer: PklLexer<'source>,
@@ -49,6 +52,7 @@ pub struct PklParser<'source> {
 }
 
 impl<'source> PklParser<'source> {
+    /// The function to initialize an instance of PklParser.
     pub fn new(lexer: PklLexer<'source>) -> Self {
         Self {
             statements: vec![],
@@ -57,6 +61,9 @@ impl<'source> PklParser<'source> {
         }
     }
 
+    /// This function parses the tokens in the lexer.
+    ///
+    /// To access the parsed statements, use the `statements` field.
     pub fn parse(&mut self) -> ParsingResult<()> {
         while let Some(token) = self.lexer.next() {
             let statement = match token {

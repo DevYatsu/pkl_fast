@@ -13,6 +13,12 @@ pub fn parse_class_instance<'source>(
 
     let name = match next_token {
         PklToken::Identifier(value) => {
+            match value {
+                "Listing" => unimplemented!(),
+                "Mapping" => unimplemented!(),
+                _ => ()
+            }
+
             expect_token(lexer, PklToken::OpenBracket)?;
             Some(value)
         }
