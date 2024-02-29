@@ -8,13 +8,13 @@ use crate::lexer::PklToken;
 use logos::Lexer;
 
 use self::{
+    expression::{parse_expr, Expression},
     statement::{
         import::{import_clause, parse_import_value},
         ClassType,
     },
     types::parse_type,
-    utils::{expect_statement_end, expect_token, parse_identifier},
-    value::{parse_object, parse_value},
+    utils::{expect_statement_end, expect_token, parse_identifier}, value::{parse_object},
 };
 
 pub mod errors;
@@ -201,7 +201,7 @@ impl<'source> PklParser<'source> {
 
         let statement = match token {
             PklToken::EqualSign => {
-                let value = parse_value(lexer)?;
+                let value = parse_expr(lexer)?;
 
                 Statement::VariableDeclaration {
                     name,
@@ -210,8 +210,7 @@ impl<'source> PklParser<'source> {
                 }
             }
             PklToken::OpenBracket => {
-                let value = parse_object(lexer, None)?;
-                self.new_line_parsed = true;
+                let value = Expression::Value(parse_object(lexer, None)?);
 
                 Statement::VariableDeclaration {
                     name,
@@ -231,14 +230,16 @@ impl<'source> PklParser<'source> {
 
                         return Ok(Statement::VariableDeclaration {
                             name,
-                            value: variable_type.default_value(lexer)?,
+                            value: expression::Expression::Value(
+                                variable_type.default_value(lexer)?,
+                            ),
                             optional_type: Some(variable_type),
                         });
                     }
                     _ => return Err(ParsingError::unexpected(lexer)),
                 };
 
-                let value = parse_value(lexer)?;
+                let value = parse_expr(lexer)?;
 
                 Statement::VariableDeclaration {
                     name,

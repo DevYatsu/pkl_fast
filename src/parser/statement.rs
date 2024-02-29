@@ -25,7 +25,7 @@ pub enum Statement<'a> {
     VariableDeclaration {
         name: &'a str,
         optional_type: Option<PklType<'a>>,
-        value: PklValue<'a>,
+        value: Expression<'a>,
     },
     ClassDeclaration {
         name: &'a str,
@@ -63,5 +63,5 @@ pub use typealias::parse_typealias;
 pub use self::class::ClassType;
 use self::info::InfoField;
 
+use super::expression::Expression;
 use super::types::PklType;
-use super::value::PklValue;

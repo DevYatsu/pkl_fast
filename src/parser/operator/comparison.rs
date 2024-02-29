@@ -52,3 +52,27 @@ impl From<&str> for ComparisonOperator {
         }
     }
 }
+
+use std::fmt;
+
+impl fmt::Display for ComparisonOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let symbol = match self {
+            ComparisonOperator::Equal => "==",
+            ComparisonOperator::LessThanOrEqual => "<=",
+            ComparisonOperator::LessThan => "<",
+            ComparisonOperator::GreaterThanOrEqual => ">=",
+            ComparisonOperator::GreaterThan => ">",
+            ComparisonOperator::NotEqual => "!=",
+            ComparisonOperator::NotNot => "!!",
+            ComparisonOperator::Not => "!",
+            ComparisonOperator::DoubleQuestion => "??",
+            ComparisonOperator::Question => "?",
+            ComparisonOperator::LogicalAnd => "&&",
+            ComparisonOperator::BitwiseAnd => "&",
+            ComparisonOperator::LogicalOr => "||",
+            ComparisonOperator::BitwiseOr => "|",
+        };
+        write!(f, "{}", symbol)
+    }
+}

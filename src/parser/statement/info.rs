@@ -1,6 +1,6 @@
 use crate::{
     parser::{
-        utils::{expect_token, list_while_not_token0, parse_identifier},
+        utils::{expect_token, list_while_not_token0, parse_identifier, retrieve_next_token},
         value::parse_value,
     },
     prelude::{ParsingResult, PklLexer, PklToken, PklValue},
@@ -40,7 +40,8 @@ fn parse_info<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Vec<InfoF
         let name = parse_identifier(lexer)?;
         expect_token(lexer, PklToken::EqualSign)?;
 
-        let value = parse_value(lexer)?;
+        let next_token = retrieve_next_token(lexer)?;
+        let value = parse_value(lexer, next_token)?;
 
         Ok(InfoField { name, value })
     };

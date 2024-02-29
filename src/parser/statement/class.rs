@@ -149,8 +149,8 @@ pub fn parse_class_field<'source>(
             let return_type = parse_type(lexer)?;
 
             expect_token(lexer, PklToken::EqualSign)?;
-
-            let return_value = parse_value(lexer)?;
+            let next_token = retrieve_next_token(lexer)?;
+            let return_value = parse_value(lexer, next_token)?;
 
             Ok((
                 name,

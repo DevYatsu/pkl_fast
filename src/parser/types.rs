@@ -8,14 +8,12 @@ use super::{
         locating::{generate_source, get_error_location},
         ParsingError,
     },
+    expression::Expression,
     utils::retrieve_next_token,
     value::PklValue,
     ParsingResult, PklLexer,
 };
-use crate::{
-    parser::{expression::parse_expr, value::parse_value},
-    prelude::PklToken,
-};
+use crate::{parser::expression::parse_expr, prelude::PklToken};
 
 pub mod errors;
 mod generics;
@@ -185,9 +183,9 @@ impl<'a> PklType<'a> {
                 name: Some(*name),
                 arguments: HashMap::new(),
             }),
-            PklType::PotentiallyNull(t) => {
-                Ok(PklValue::Nullable(Box::new(t.default_value(lexer)?)))
-            }
+            PklType::PotentiallyNull(t) => Ok(PklValue::Nullable(Box::new(Expression::Value(
+                t.default_value(lexer)?,
+            )))),
             PklType::Union(values) => {
                 let result = values
                     .iter()

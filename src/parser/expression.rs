@@ -1,11 +1,12 @@
-use crate::{
-    parser::utils::retrieve_next_token,
-    prelude::{ParsingError, PklToken},
-};
+use crate::{parser::utils::retrieve_next_token, prelude::PklToken};
 
 use self::fn_call::parse_fn_call_arguments;
 
-use super::{operator::Operator, value::PklValue, ParsingResult, PklLexer};
+use super::{
+    operator::Operator,
+    value::{parse_value, PklValue},
+    ParsingResult, PklLexer,
+};
 
 mod fn_call;
 
@@ -35,6 +36,30 @@ pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expre
             Ok(Expression::FunctionCall { func_name, args })
         }
 
-        _ => return Err(ParsingError::unexpected(lexer)),
+        current_token => Ok(Expression::Value(parse_value(lexer, current_token)?)),
+    }
+}
+
+use std::fmt;
+
+impl<'a> fmt::Display for Expression<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Expression::Value(value) => write!(f, "{}", value),
+            Expression::Identifier(identifier) => write!(f, "{}", identifier),
+            Expression::FunctionCall { func_name, args } => {
+                write!(f, "{}(", func_name)?;
+                for (i, arg) in args.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", arg)?;
+                }
+                write!(f, ")")
+            }
+            Expression::Operation { operator, lhs, rhs } => {
+                write!(f, "{} {} {}", lhs, operator, rhs)
+            }
+        }
     }
 }

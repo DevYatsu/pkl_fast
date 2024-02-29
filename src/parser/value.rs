@@ -1,6 +1,6 @@
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
-use super::utils::retrieve_next_token;
+use super::expression::Expression;
 use super::PklLexer;
 use crate::parser::value::datasize::DataSizeUnit;
 use crate::parser::{errors::ParsingError, ParsingResult};
@@ -24,26 +24,26 @@ pub enum PklValue<'a> {
     Int(i64),
     Float(f64),
     Object {
-        value: HashMap<&'a str, PklValue<'a>>,
+        value: HashMap<&'a str, Expression<'a>>,
         amended_by: Option<&'a str>,
     },
 
-    List(Vec<PklValue<'a>>),
-    Listing(Vec<PklValue<'a>>),
+    List(Vec<Expression<'a>>),
+    Listing(Vec<Expression<'a>>),
 
-    Map(Vec<PklValue<'a>>),
+    Map(Vec<Expression<'a>>),
 
-    Set(Vec<PklValue<'a>>),
+    Set(Vec<Expression<'a>>),
 
     /// For now, only indexing with &str is supported.
     /// In the future we shall support other any data type as key!
-    Mapping(HashMap<&'a str, PklValue<'a>>),
+    Mapping(HashMap<&'a str, Expression<'a>>),
 
     Duration(Duration),
     DataSize(DataSize),
     Null,
 
-    Nullable(Box<PklValue<'a>>),
+    Nullable(Box<Expression<'a>>),
 
     /// You may ask why `name` is optional ?
     /// pkl allows to specify the class in only the type and not in the instantiation
@@ -58,14 +58,15 @@ pub enum PklValue<'a> {
     /// }
     ClassInstance {
         name: Option<&'a str>,
-        arguments: HashMap<&'a str, PklValue<'a>>,
+        arguments: HashMap<&'a str, Expression<'a>>,
     },
 }
 
-pub fn parse_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklValue<'source>> {
-    let token = retrieve_next_token(lexer)?;
-
-    match token {
+pub fn parse_value<'source>(
+    lexer: &mut PklLexer<'source>,
+    current_token: PklToken<'source>,
+) -> ParsingResult<PklValue<'source>> {
+    match current_token {
         PklToken::Boolean(b) => Ok(PklValue::Boolean(b)),
         PklToken::StringLiteral(value) => {
             // should see how we take care of string literals, do we evaluate them in the step after the parser ? ig yess

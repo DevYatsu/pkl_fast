@@ -34,3 +34,21 @@ impl From<&str> for ArithmeticOperator {
         }
     }
 }
+
+use std::fmt;
+
+impl fmt::Display for ArithmeticOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let symbol = match self {
+            ArithmeticOperator::Addition => "+",
+            ArithmeticOperator::Subtraction => "-",
+            ArithmeticOperator::Multiplication => "*",
+            ArithmeticOperator::Exponentiation => "**",
+            ArithmeticOperator::Division => "/",
+            ArithmeticOperator::Modulo => "%",
+            ArithmeticOperator::BitwiseOr => "|",
+            ArithmeticOperator::BitwiseNot => "~/",
+        };
+        write!(f, "{}", symbol)
+    }
+}

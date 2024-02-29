@@ -1,7 +1,7 @@
 use crate::{
     parser::{
+        expression::{parse_expr, Expression},
         utils::{hashmap_while_not_token, retrieve_next_token},
-        value::parse_value,
     },
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
 };
@@ -11,7 +11,7 @@ pub fn parse_object<'source>(
     lexer: &mut PklLexer<'source>,
     opt_amended_object: Option<&'source str>,
 ) -> ParsingResult<PklValue<'source>> {
-    let object = hashmap_while_not_token(
+    let value = hashmap_while_not_token(
         lexer,
         PklToken::NewLine,
         PklToken::CloseBracket,
@@ -19,7 +19,7 @@ pub fn parse_object<'source>(
     )?;
 
     Ok(PklValue::Object {
-        value: object,
+        value,
         amended_by: opt_amended_object,
     })
 }
@@ -27,14 +27,14 @@ pub fn parse_object<'source>(
 pub fn parse_block<'source>(
     lexer: &mut PklLexer<'source>,
     token: PklToken<'source>,
-) -> ParsingResult<(&'source str, PklValue<'source>)> {
+) -> ParsingResult<(&'source str, Expression<'source>)> {
     match token {
         PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
             let next_token = retrieve_next_token(lexer)?;
 
             let value = match next_token {
                 PklToken::EqualSign => {
-                    let value = parse_value(lexer)?;
+                    let value = parse_expr(lexer)?;
 
                     value
                 }
@@ -42,7 +42,7 @@ pub fn parse_block<'source>(
                     // we sould see whether or not we should put if the initial parent object is amended
                     let value = parse_object(lexer, None)?;
 
-                    value
+                    Expression::Value(value)
                 }
                 _ => return Err(ParsingError::unexpected(lexer)),
             };
