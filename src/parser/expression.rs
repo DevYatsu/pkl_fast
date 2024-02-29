@@ -4,6 +4,7 @@ use self::fn_call::parse_fn_call_arguments;
 
 use super::{
     operator::Operator,
+    utils::expect_token,
     value::{parse_value, PklValue},
     ParsingResult, PklLexer,
 };
@@ -27,6 +28,7 @@ pub enum Expression<'a> {
 
     LogicalNot(Box<Expression<'a>>),
     NonNull(Box<Expression<'a>>),
+    Parenthesised(Box<Expression<'a>>),
 }
 
 pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expression<'source>> {
@@ -34,6 +36,11 @@ pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expre
 
     let expr = match token {
         PklToken::LogicalNotOperator => Expression::LogicalNot(parse_expr(lexer)?.into()),
+        PklToken::OpenParenthesis => {
+            let expr = parse_expr(lexer)?;
+            expect_token(lexer, PklToken::CloseParenthesis)?;
+            Expression::Parenthesised(expr.into())
+        }
         PklToken::Identifier(ident) => Expression::Identifier(ident),
         PklToken::FunctionCall(func_name) => {
             let args = parse_fn_call_arguments(lexer)?;
@@ -51,7 +58,8 @@ pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expre
 
     match token {
         PklToken::NonNullValue => return Ok(Expression::NonNull(Box::new(expr))),
-        _ => unimplemented!(),
+        PklToken::Operator(op) => unimplemented!(),
+        _ => (), // move the functon inside of the main struct and use new_line_parsed if necessary
     };
 
     Ok(expr)
@@ -79,6 +87,7 @@ impl<'a> fmt::Display for Expression<'a> {
             }
             Expression::LogicalNot(x) => write!(f, "!{x}"),
             Expression::NonNull(x) => write!(f, "{x}!!"),
+            Expression::Parenthesised(x) => write!(f, "({x})"),
         }
     }
 }

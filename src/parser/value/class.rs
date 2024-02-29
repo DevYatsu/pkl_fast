@@ -16,7 +16,7 @@ pub fn parse_class_instance<'source>(
             match value {
                 "Listing" => unimplemented!(),
                 "Mapping" => unimplemented!(),
-                _ => ()
+                _ => (),
             }
 
             expect_token(lexer, PklToken::OpenBracket)?;
