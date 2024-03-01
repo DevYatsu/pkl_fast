@@ -9,6 +9,7 @@ use logos::Lexer;
 
 use self::{
     expression::{parse_expr, Expression},
+    operator::parse_opt_operation,
     statement::{
         import::{import_clause, parse_import_value},
         ClassType,
@@ -111,7 +112,6 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
                     }
 
                     stmt
@@ -234,7 +234,18 @@ impl<'source> PklParser<'source> {
 
         let statement = match token {
             PklToken::EqualSign => {
-                let value = parse_expr(lexer)?;
+                let expr = parse_expr(lexer)?;
+                let (value, next_token) = parse_opt_operation(lexer, expr)?;
+
+                match next_token {
+                    Some(PklToken::NewLine)
+                    | Some(PklToken::BlockComment)
+                    | Some(PklToken::LineComment) => {
+                        self.new_line_parsed = true;
+                    }
+                    None => (),
+                    _ => return Err(ParsingError::unexpected(lexer)),
+                }
 
                 Statement::VariableDeclaration {
                     name,

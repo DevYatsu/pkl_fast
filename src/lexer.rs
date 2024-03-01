@@ -92,7 +92,7 @@ pub enum PklToken<'source> {
     /// - ==, <=, >=, >
     /// - ??
     /// - &&, ||, |
-    #[regex(r#"==|<=|<|>=|>|!=|\?\?|\&\&|\&|\|\||\||"#, |lex| lex.slice())]
+    #[regex(r#"==|<=|<|>=|>|!=|\?\?|\&\&|\&|\|\||\||/"#, |lex| lex.slice())]
     Operator(&'source str),
     #[token("=")]
     EqualSign,
@@ -188,7 +188,7 @@ pub enum PklToken<'source> {
     /// - .5e-2,  2.12e9
     /// - Infinity, -Infinity
     /// - Nan
-    #[regex(r"(-?((\d*\.\d+(e-?\d+)?)|(Infinity)))|NaN", |lex| lex.slice().parse(), priority = 4)]
+    #[regex(r"(-?((\d*\.\d+((e|E)-?\d+)?)|(Infinity)))|NaN", |lex| lex.slice().parse(), priority = 4)]
     Float(f64),
 
     #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#, |lex| lex.slice())]

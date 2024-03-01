@@ -19,6 +19,21 @@ pub enum ArithmeticOperator {
     BitwiseNot,
 }
 
+impl ArithmeticOperator {
+    /// Returns the precedence of the arithmetic operator.
+    pub fn get_precedence(&self) -> u8 {
+        match self {
+            ArithmeticOperator::Addition | ArithmeticOperator::Subtraction => 1,
+            ArithmeticOperator::Multiplication
+            | ArithmeticOperator::Division
+            | ArithmeticOperator::Modulo => 2,
+            ArithmeticOperator::Exponentiation => 3,
+            ArithmeticOperator::BitwiseOr => 4,
+            ArithmeticOperator::BitwiseNot => 5,
+        }
+    }
+}
+
 impl From<&str> for ArithmeticOperator {
     fn from(value: &str) -> Self {
         match value {

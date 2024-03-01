@@ -31,6 +31,24 @@ pub enum ComparisonOperator {
     BitwiseOr,
 }
 
+impl ComparisonOperator {
+    /// Returns the precedence of the comparison operator.
+    pub fn get_precedence(&self) -> u8 {
+        match self {
+            ComparisonOperator::Equal
+            | ComparisonOperator::LessThanOrEqual
+            | ComparisonOperator::LessThan
+            | ComparisonOperator::GreaterThanOrEqual
+            | ComparisonOperator::GreaterThan
+            | ComparisonOperator::NotEqual => 1,
+            ComparisonOperator::NotNot | ComparisonOperator::Not => 2,
+            ComparisonOperator::DoubleQuestion | ComparisonOperator::Question => 3,
+            ComparisonOperator::LogicalAnd | ComparisonOperator::BitwiseAnd => 4,
+            ComparisonOperator::LogicalOr | ComparisonOperator::BitwiseOr => 5,
+        }
+    }
+}
+
 impl From<&str> for ComparisonOperator {
     fn from(value: &str) -> Self {
         match value {
