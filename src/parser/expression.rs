@@ -3,8 +3,8 @@ use crate::{parser::utils::retrieve_next_token, prelude::PklToken};
 use std::fmt;
 
 use super::{
+    errors::ParsingError,
     operator::{parse_opt_operation, Operator},
-    utils::expect_token,
     value::{parse_value, PklValue},
     ParsingResult, PklLexer,
 };
@@ -47,8 +47,13 @@ pub fn parse_basic_expr<'source>(
     let expr = match token {
         PklToken::LogicalNotOperator => Expression::LogicalNot(parse_basic_expr(lexer)?.into()),
         PklToken::OpenParenthesis => {
-            let expr = parse_basic_expr(lexer)?;
-            expect_token(lexer, PklToken::CloseParenthesis)?;
+            let (expr, next_token) = parse_expr(lexer)?;
+
+            match next_token {
+                Some(PklToken::CloseParenthesis) => (),
+                _ => return Err(ParsingError::unexpected(lexer)),
+            };
+
             Expression::Parenthesised(expr.into())
         }
         PklToken::Identifier(ident) => Expression::Identifier(ident),
