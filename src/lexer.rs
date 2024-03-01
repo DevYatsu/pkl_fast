@@ -118,15 +118,18 @@ pub enum PklToken<'source> {
     TypeAlias,
 
     /// This variant shall represent types with a given generic such as `Listing<Bird>` or `Map<Int, String>`  
+    // We assume a type starts with an UpperCase
     #[regex(
-        r"[A-Za-z][A-Za-z0-9]*<\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:,\s*([A-Za-z_][A-Za-z0-9_]*))?\s*>"
+        r"[A-Z][A-Za-z0-9]*<\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:,\s*([A-Za-z_][A-Za-z0-9_]*))?\s*>"
     )]
     GenericTypeAnnotation,
 
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*\?", |lex| {let val=lex.slice(); &val[..val.len()-1]})]
+    // We assume a type starts with an UpperCase
+    #[regex(r"[A-Z][a-zA-Z0-9_]*\?", |lex| {let val=lex.slice(); &val[..val.len()-1]})]
     PotentiallyNullType(&'source str),
 
     /// This variant represents a identifier followed by '!!', meaning that the variable cannot be null, otherwise throwing an error
+    // We assume a type starts with an UpperCase
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*!!", |lex| {let val=lex.slice(); &val[0..val.len()-2]})]
     NonNullIdentifier(&'source str),
 
@@ -135,7 +138,7 @@ pub enum PklToken<'source> {
     LogicalNotOperator,
 
     /// This variant represents a type preceded by '*', meaning that the type is the default one in an union.
-    #[regex(r"\*[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| {let val=lex.slice(); &val[1..]})]
+    #[regex(r"\*[A-Z][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| {let val=lex.slice(); &val[1..]})]
     DefaultUnionType(&'source str),
 
     #[token("null")]
