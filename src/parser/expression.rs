@@ -1,9 +1,9 @@
-use crate::{parser::utils::retrieve_next_token, prelude::PklToken};
-
 use self::fn_call::parse_fn_call_arguments;
+use crate::{parser::utils::retrieve_next_token, prelude::PklToken};
+use std::fmt;
 
 use super::{
-    operator::Operator,
+    operator::{parse_opt_operation, Operator},
     utils::expect_token,
     value::{parse_value, PklValue},
     ParsingResult, PklLexer,
@@ -31,19 +31,29 @@ pub enum Expression<'a> {
     Parenthesised(Box<Expression<'a>>),
 }
 
-pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expression<'source>> {
+pub fn parse_expr<'source>(
+    lexer: &mut PklLexer<'source>,
+) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
+    let expr = parse_basic_expr(lexer)?;
+
+    parse_opt_operation(lexer, expr)
+}
+
+pub fn parse_basic_expr<'source>(
+    lexer: &mut PklLexer<'source>,
+) -> ParsingResult<Expression<'source>> {
     let token = retrieve_next_token(lexer)?;
 
     let expr = match token {
-        PklToken::LogicalNotOperator => Expression::LogicalNot(parse_expr(lexer)?.into()),
+        PklToken::LogicalNotOperator => Expression::LogicalNot(parse_basic_expr(lexer)?.into()),
         PklToken::OpenParenthesis => {
-            let expr = parse_expr(lexer)?;
+            let expr = parse_basic_expr(lexer)?;
             expect_token(lexer, PklToken::CloseParenthesis)?;
             Expression::Parenthesised(expr.into())
         }
         PklToken::Identifier(ident) => Expression::Identifier(ident),
         PklToken::NonNullIdentifier(name) => {
-            return Ok(Expression::NonNull(Expression::Identifier(name).into()))
+            Expression::NonNull(Expression::Identifier(name).into())
         }
         PklToken::FunctionCall(func_name) => {
             let args = parse_fn_call_arguments(lexer)?;
@@ -60,8 +70,6 @@ pub fn parse_expr<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Expre
 
     Ok(expr)
 }
-
-use std::fmt;
 
 impl<'a> fmt::Display for Expression<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

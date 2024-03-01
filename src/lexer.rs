@@ -92,12 +92,12 @@ pub enum PklToken<'source> {
     /// - ==, <=, >=, >
     /// - ??
     /// - &&, ||, |
-    #[regex(r#"==|<=|<|>=|>|!=|\?\?|\&\&|\&|\|\||\||/"#, |lex| lex.slice())]
+    /// - +,-,*,/
+    /// - **, %,|>, ~/
+    #[regex(r#"==|<=|<|>=|>|!=|\?\?|\&\&|\&|\|\||\||/|\+|-|\*|\*\*|\|>|%|~/"#, |lex| lex.slice())]
     Operator(&'source str),
     #[token("=")]
     EqualSign,
-    #[regex(r#"\+|-|\*|\*\*|\|>|%|~/"#, |lex| lex.slice())]
-    ArithmeticOperation(&'source str),
 
     #[token(":")]
     Colon,

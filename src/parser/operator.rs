@@ -1,6 +1,10 @@
-use super::{expression::Expression, utils::retrieve_opt_next_token, ParsingResult, PklLexer};
-use crate::{parser::expression::parse_expr, prelude::PklToken};
-use std::{fmt, ops::Index};
+use super::{
+    expression::{parse_basic_expr, Expression},
+    utils::retrieve_opt_next_token,
+    ParsingResult, PklLexer,
+};
+use crate::prelude::PklToken;
+use std::fmt;
 
 mod arithmetic;
 mod comparison;
@@ -32,7 +36,7 @@ pub fn parse_opt_operation<'source>(
         match next_token {
             Some(PklToken::Operator(op)) => {
                 let new_operator = Operator::from(op);
-                let new_expr = parse_expr(lexer)?;
+                let new_expr = parse_basic_expr(lexer)?;
                 output_queue.push(new_expr);
                 // If the operator stack is not empty and the precedence of the new operator
                 // is less than or equal to the precedence of the operator on top of the stack,
@@ -126,12 +130,12 @@ impl From<&str> for Operator {
             "!=" => ComparisonOperator::NotEqual.into(),
             "!!" => ComparisonOperator::NotNot.into(),
             "!" => ComparisonOperator::Not.into(),
-            "??" => ComparisonOperator::DoubleQuestion.into(),
             "?" => ComparisonOperator::Question.into(),
+            "??" => ComparisonOperator::DoubleQuestion.into(),
             "&&" => ComparisonOperator::LogicalAnd.into(),
             "&" => ComparisonOperator::BitwiseAnd.into(),
-            "||" => ComparisonOperator::LogicalOr.into(),
             "|" => ComparisonOperator::BitwiseOr.into(),
+            "||" => ComparisonOperator::LogicalOr.into(),
             _ => unreachable!("Should not be reached! (in Operator)"),
         }
     }

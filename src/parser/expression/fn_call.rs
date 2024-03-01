@@ -1,5 +1,5 @@
 use crate::{
-    parser::{expression::parse_expr, utils::list_while_not_token0},
+    parser::{expression::parse_expr, utils::list_while_not_token2},
     prelude::{ParsingResult, PklLexer, PklToken},
 };
 
@@ -8,7 +8,7 @@ use super::Expression;
 pub fn parse_fn_call_arguments<'source>(
     lexer: &mut PklLexer<'source>,
 ) -> ParsingResult<Vec<Expression<'source>>> {
-    list_while_not_token0(
+    list_while_not_token2(
         lexer,
         PklToken::Comma,
         PklToken::CloseParenthesis,

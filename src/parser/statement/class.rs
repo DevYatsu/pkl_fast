@@ -2,7 +2,7 @@ use crate::{
     parser::{
         types::{parse_type, PklType},
         utils::{
-            expect_token, hashmap_while_not_token, list_while_not_token0, parse_identifier,
+            expect_token, hashmap_while_not_token0, list_while_not_token0, parse_identifier,
             retrieve_next_token,
         },
         value::parse_value,
@@ -61,7 +61,7 @@ pub fn parse_class_declaration<'source>(
         _ => return Err(ParsingError::unexpected(lexer)),
     };
 
-    let fields = hashmap_while_not_token(
+    let fields = hashmap_while_not_token0(
         lexer,
         PklToken::NewLine,
         PklToken::CloseBracket,

@@ -9,7 +9,6 @@ use logos::Lexer;
 
 use self::{
     expression::{parse_expr, Expression},
-    operator::parse_opt_operation,
     statement::{
         import::{import_clause, parse_import_value},
         ClassType,
@@ -232,35 +231,15 @@ impl<'source> PklParser<'source> {
         let lexer = &mut self.lexer;
         let token = retrieve_next_token(lexer)?;
 
-        let statement = match token {
-            PklToken::EqualSign => {
-                let expr = parse_expr(lexer)?;
-                let (value, next_token) = parse_opt_operation(lexer, expr)?;
-
-                match next_token {
-                    Some(PklToken::NewLine)
-                    | Some(PklToken::BlockComment)
-                    | Some(PklToken::LineComment) => {
-                        self.new_line_parsed = true;
-                    }
-                    None => (),
-                    _ => return Err(ParsingError::unexpected(lexer)),
-                }
-
-                Statement::VariableDeclaration {
-                    name,
-                    value,
-                    optional_type: None,
-                }
-            }
+        let optional_type = match token {
             PklToken::OpenBracket => {
                 let value = Expression::Value(parse_object(lexer, None)?);
 
-                Statement::VariableDeclaration {
+                return Ok(Statement::VariableDeclaration {
                     name,
                     value,
                     optional_type: None,
-                }
+                });
             }
             PklToken::Colon => {
                 let variable_type = parse_type(lexer)?;
@@ -292,18 +271,29 @@ impl<'source> PklParser<'source> {
                     _ => return Err(ParsingError::unexpected(lexer)),
                 };
 
-                let value = parse_expr(lexer)?;
-
-                Statement::VariableDeclaration {
-                    name,
-                    value,
-                    optional_type: Some(variable_type),
-                }
+                Some(variable_type)
             }
+            PklToken::EqualSign => None,
             _ => Err(ParsingError::unexpected(lexer))?,
         };
 
-        Ok(statement)
+        let (value, next_token) = parse_expr(lexer)?;
+
+        match next_token {
+            Some(PklToken::NewLine)
+            | Some(PklToken::BlockComment)
+            | Some(PklToken::LineComment) => {
+                self.new_line_parsed = true;
+            }
+            None => (),
+            _ => return Err(ParsingError::unexpected(lexer)),
+        }
+
+        Ok(Statement::VariableDeclaration {
+            name,
+            value,
+            optional_type,
+        })
     }
     fn parse_typealias(&mut self) -> ParsingResult<Statement<'source>> {
         statement::parse_typealias(&mut self.lexer)
