@@ -200,6 +200,9 @@ pub enum PklToken<'source> {
     #[regex(r#""[^"]*""#, |lex| {let val = lex.slice(); &val[1..val.len()-1]})]
     StringLiteral(&'source str),
 
+    #[regex(r#""""[^"]*""""#, |lex| {let val = lex.slice(); &val[3..val.len()-3]})]
+    MultipleLinesString(&'source str),
+
     // #[regex("[A-Z][a-zA-Z]*")]
     // PascalCaseValue,
     // #[regex("[a-z][a-zA-Z]*")]

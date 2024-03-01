@@ -72,6 +72,7 @@ pub fn parse_value<'source>(
             // should see how we take care of string literals, do we evaluate them in the step after the parser ? ig yess
             Ok(PklValue::String(value))
         }
+        PklToken::MultipleLinesString(value) => Ok(PklValue::String(value)),
         PklToken::Integer(i) => Ok(PklValue::Int(i)),
         PklToken::Float(f) => Ok(PklValue::Float(f)),
         PklToken::Null => Ok(PklValue::Null),
