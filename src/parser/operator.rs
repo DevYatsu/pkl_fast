@@ -134,7 +134,7 @@ impl From<&str> for Operator {
             "??" => ComparisonOperator::DoubleQuestion.into(),
             "&&" => ComparisonOperator::LogicalAnd.into(),
             "&" => ComparisonOperator::BitwiseAnd.into(),
-            "|" => ComparisonOperator::BitwiseOr.into(),
+            r"\|" => ComparisonOperator::BitwiseOr.into(),
             "||" => ComparisonOperator::LogicalOr.into(),
             _ => unreachable!("Should not be reached! (in Operator)"),
         }

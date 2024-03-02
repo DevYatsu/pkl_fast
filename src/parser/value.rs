@@ -120,7 +120,7 @@ impl<'a> fmt::Display for PklValue<'a> {
         match self {
             PklValue::String(fragments) => {
                 for frag in fragments {
-                    write!(f, "{}", frag);
+                    write!(f, "{}", frag)?;
                 }
 
                 Ok(())

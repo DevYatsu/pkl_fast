@@ -251,8 +251,6 @@ impl From<ParseFloatError> for LexingError {
     }
 }
 
-use std::fmt;
-
 impl<'source> std::fmt::Display for PklToken<'source> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // THIS SHOULD ONLY BE USED IN ORDER TO PRINT ERRORS
