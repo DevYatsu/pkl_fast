@@ -25,9 +25,10 @@ pub enum StringLexer<'source> {
 impl<'source> StringFragment<'source> {
     pub fn from_raw_string(
         lexer: &mut PklLexer<'source>,
-        mut raw_string: &'source str,
+        initial_string: &'source str,
     ) -> Result<Vec<Self>, ParsingError> {
         let mut fragments = Vec::new();
+        let mut raw_string = initial_string;
 
         while let Some(index) = raw_string.find("\\") {
             // Push raw text before the backslash
@@ -44,6 +45,8 @@ impl<'source> StringFragment<'source> {
 
                     // no opening brace following u, raise an error
                     if let Some(next_char) = raw_string.chars().nth(index + 2) {
+                        // we can unwrap safely as we are sure the sequence exists in the string
+                        let index = initial_string.find(&format!("\\u{}", next_char)).unwrap();
                         if next_char != '{' {
                             return Err(ParsingError::invalid_unicode(lexer, index + 1, 2));
                         }
@@ -53,6 +56,11 @@ impl<'source> StringFragment<'source> {
                         let hex_value = &raw_string[index + 3..index + 2 + close_index];
 
                         if hex_value.len() > 6 || hex_value.is_empty() {
+                            // we can unwrap safely as we are sure the sequence exists in the string
+                            let index = initial_string
+                                .find(&format!("\\u{{{}}}", hex_value))
+                                .unwrap();
+
                             // hex_value.len() for highlighting the entire hex_value and +1 to highlight the } following
                             return Err(ParsingError::invalid_unicode(
                                 lexer,
@@ -71,6 +79,10 @@ impl<'source> StringFragment<'source> {
                     const ALLOWED_ESCAPE: [char; 5] = ['t', 'n', 'r', '"', '\\'];
 
                     if !ALLOWED_ESCAPE.contains(&after_backslash) {
+                        // we can unwrap safely as we are sure the sequence exists in the string
+                        let index = initial_string
+                            .find(&format!("\\{}", after_backslash))
+                            .unwrap();
                         return Err(ParsingError::invalid_char_escape(lexer, index + 1));
                     }
 
@@ -82,7 +94,10 @@ impl<'source> StringFragment<'source> {
                 raw_string = &raw_string[new_index..];
             } else {
                 // Backslash is at the end of the string, raise an error
-                return Err(ParsingError::invalid_char_escape(lexer, index + 1));
+                return Err(ParsingError::invalid_char_escape(
+                    lexer,
+                    initial_string.len(),
+                ));
             }
         }
 
