@@ -18,6 +18,7 @@ pub fn parse_lexing_error<'source>(
         LexingError::UnknownError => ParsingError::UnexpectedToken(UnexpectedError {
             src: generate_source("main.pkl", lexer.source()),
             at: get_error_location(lexer).into(),
+            advice: "Error is unknown, contact the library maintainers to report it! (the error takes place in the lexer)".to_string(),
         }),
     }
 }

@@ -44,7 +44,7 @@ pub fn expect_token<'source>(
     match token.unwrap() {
         Err(e) => Err(ParsingError::lexing(lexer, e))?,
         Ok(token) if token == target_token => Ok(()),
-        _ => Err(ParsingError::unexpected(lexer))?,
+        _ => Err(ParsingError::unexpected(lexer, target_token.to_string()))?,
     }
 }
 
@@ -58,7 +58,7 @@ pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingRe
         {
             Ok(())
         }
-        Some(_) => Err(ParsingError::unexpected(lexer)),
+        Some(_) => Err(ParsingError::unexpected(lexer, "line ending".to_string())),
         None => Ok(()),
     }
 }
@@ -89,7 +89,10 @@ where
         if separator_token == token {
             continue;
         }
-        return Err(ParsingError::unexpected(lexer));
+        return Err(ParsingError::unexpected(
+            lexer,
+            format!("{} or {}", end_token, separator_token),
+        ));
     }
 
     Ok(result_vec)
@@ -119,7 +122,7 @@ where
         }
         if separator_token == token {
             if was_separator_token_encountered {
-                return Err(ParsingError::unexpected(lexer));
+                return Err(ParsingError::unexpected(lexer, format!("{}", end_token)));
             }
             was_separator_token_encountered = true;
             continue;
@@ -151,6 +154,7 @@ where
         let (result, next_token) = predicate(lexer)?;
         result_vec.push(result);
 
+        // if None, does not necessarily mean that there is no token next in the lexer
         if let Some(token) = next_token {
             if end_token == token {
                 break;
@@ -158,7 +162,10 @@ where
             if separator_token == token {
                 continue;
             }
-            return Err(ParsingError::unexpected(lexer));
+            return Err(ParsingError::unexpected(
+                lexer,
+                format!("{} or {}", end_token, separator_token),
+            ));
         }
     }
 
@@ -247,7 +254,10 @@ where
                 continue;
             }
 
-            return Err(ParsingError::unexpected(lexer));
+            return Err(ParsingError::unexpected(
+                lexer,
+                format!("{} or {}", end_token, separator_token),
+            ));
         }
     }
 

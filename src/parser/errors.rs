@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::lexer::LexingError;
-use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
+use miette::{diagnostic, Diagnostic, NamedSource, SourceOffset, SourceSpan};
 use thiserror::Error;
 
 use self::{
@@ -69,17 +69,28 @@ pub enum ParsingError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     NoDefaultValue(#[from] NoDefaultValueError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidEscapedChar(#[from] EscapedCharError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidUnicodeEscape(#[from] UnicodeEscapeError),
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(pkl_fast::unexpected), help("try removing a character"))]
-#[error("Unexpected character")]
+#[diagnostic(code(pkl_fast::unexpected))]
+#[error("Unexpected token")]
 pub struct UnexpectedError {
     #[label("here")]
     pub at: SourceSpan,
 
     #[source_code]
     pub src: NamedSource<String>,
+
+    #[help]
+    advice: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -194,6 +205,34 @@ pub struct UnterminatedStringError {
     pub src: NamedSource<String>,
 }
 
+#[derive(Error, Diagnostic, Debug)]
+#[error("Invalid Character Escape")]
+#[diagnostic(
+    code(pkl_fast::unexpected_end_of_input),
+    help("Valid character escape: \\n, \\t, \\r, \\\", \\\\")
+)]
+pub struct EscapedCharError {
+    #[label("here")]
+    pub at: SourceSpan,
+
+    #[source_code]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[error("Invalid Unicode Escape")]
+#[diagnostic(
+    code(pkl_fast::unexpected_end_of_input),
+    help("A unicode escape should have '\\u{{HEX}}' format")
+)]
+pub struct UnicodeEscapeError {
+    #[label("here")]
+    pub at: SourceSpan,
+
+    #[source_code]
+    pub src: NamedSource<String>,
+}
+
 impl ParsingError {
     pub fn eof(lexer: &mut PklLexer<'_>) -> Self {
         ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError {
@@ -201,10 +240,11 @@ impl ParsingError {
             at: get_error_location(lexer),
         })
     }
-    pub fn unexpected(lexer: &mut PklLexer<'_>) -> Self {
+    pub fn unexpected(lexer: &mut PklLexer<'_>, advice: String) -> Self {
         ParsingError::UnexpectedToken(UnexpectedError {
             src: generate_source("main.pkl", lexer.source()),
             at: get_error_location(lexer),
+            advice,
         })
     }
     pub fn invalid_string(lexer: &mut PklLexer<'_>) -> Self {
@@ -234,5 +274,47 @@ impl ParsingError {
             at: get_error_location(lexer),
             advice: format!("Type `{type_name}` does not possess a default value"),
         })
+    }
+    pub fn invalid_char_escape(lexer: &mut PklLexer<'_>, index: usize) -> Self {
+        let offset: SourceOffset = lexer.span().start.into();
+
+        ParsingError::InvalidEscapedChar(EscapedCharError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: SourceSpan::new((offset.offset() + index).into(), 2),
+        })
+    }
+    pub fn invalid_unicode(lexer: &mut PklLexer<'_>, index: usize, length: usize) -> Self {
+        let offset: SourceOffset = lexer.span().start.into();
+        ParsingError::InvalidUnicodeEscape(UnicodeEscapeError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: SourceSpan::new((offset.offset() + index).into(), length),
+        })
+    }
+
+    fn unexpected_token(lexer: &mut PklLexer<'_>, expected: &str) -> Self {
+        ParsingError::UnexpectedToken(UnexpectedError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer),
+            advice: format!("Expected `{expected}`"),
+        })
+    }
+
+    pub fn expected_simple_string(lexer: &mut PklLexer<'_>) -> Self {
+        ParsingError::UnexpectedToken(UnexpectedError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(lexer),
+            advice: format!(
+                "Expected a simple `String` without characters escape or interpolation"
+            ),
+        })
+    }
+    pub fn expected_string(lexer: &mut PklLexer<'_>) -> Self {
+        Self::unexpected_token(lexer, "String")
+    }
+    pub fn expected_identifier(lexer: &mut PklLexer<'_>) -> Self {
+        Self::unexpected_token(lexer, "Identifier")
+    }
+    pub fn expected_expression(lexer: &mut PklLexer<'_>) -> Self {
+        Self::unexpected_token(lexer, "Expression")
     }
 }

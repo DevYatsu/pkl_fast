@@ -1,5 +1,6 @@
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
+use self::string::StringFragment;
 use super::expression::Expression;
 use super::PklLexer;
 use crate::parser::value::datasize::DataSizeUnit;
@@ -12,6 +13,7 @@ mod class;
 mod datasize;
 mod duration;
 pub mod object;
+pub mod string;
 
 pub use class::parse_class_instance;
 pub use object::parse_object;
@@ -19,7 +21,7 @@ pub use object::parse_object;
 #[derive(Debug, PartialEq, Clone)]
 /// An enum representing any Pkl value
 pub enum PklValue<'a> {
-    String(&'a str),
+    String(Vec<StringFragment<'a>>),
     Boolean(bool),
     Int(i64),
     Float(f64),
@@ -68,11 +70,12 @@ pub fn parse_value<'source>(
 ) -> ParsingResult<PklValue<'source>> {
     match current_token {
         PklToken::Boolean(b) => Ok(PklValue::Boolean(b)),
-        PklToken::StringLiteral(value) => {
-            // should see how we take care of string literals, do we evaluate them in the step after the parser ? ig yess
-            Ok(PklValue::String(value))
-        }
-        PklToken::MultipleLinesString(value) => Ok(PklValue::String(value)),
+        PklToken::StringLiteral(value) => Ok(PklValue::String(StringFragment::from_raw_string(
+            lexer, value,
+        )?)),
+        PklToken::MultipleLinesString(value) => Ok(PklValue::String(
+            StringFragment::from_raw_string(lexer, value)?,
+        )),
         PklToken::Integer(i) => Ok(PklValue::Int(i)),
         PklToken::Float(f) => Ok(PklValue::Float(f)),
         PklToken::Null => Ok(PklValue::Null),
@@ -108,14 +111,20 @@ pub fn parse_value<'source>(
             _ => unreachable!("Cannot be reached!"),
         },
         PklToken::New => parse_class_instance(lexer),
-        _ => Err(ParsingError::unexpected(lexer)),
+        _ => Err(ParsingError::expected_expression(lexer)),
     }
 }
 
 impl<'a> fmt::Display for PklValue<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PklValue::String(s) => write!(f, "{}", s),
+            PklValue::String(fragments) => {
+                for frag in fragments {
+                    write!(f, "{}", frag);
+                }
+
+                Ok(())
+            }
             PklValue::Boolean(b) => write!(f, "{}", b),
             PklValue::Int(i) => write!(f, "{}", i),
             PklValue::Float(fl) => write!(f, "{}", fl),

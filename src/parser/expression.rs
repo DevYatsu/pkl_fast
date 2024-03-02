@@ -51,7 +51,7 @@ pub fn parse_basic_expr<'source>(
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),
-                _ => return Err(ParsingError::unexpected(lexer)),
+                _ => return Err(ParsingError::unexpected(lexer, "'('".to_owned())),
             };
 
             Expression::Parenthesised(expr.into())

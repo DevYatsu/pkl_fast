@@ -58,7 +58,7 @@ pub fn parse_class_declaration<'source>(
             Some(value)
         }
         PklToken::OpenBracket => None,
-        _ => return Err(ParsingError::unexpected(lexer)),
+        _ => return Err(ParsingError::unexpected(lexer, "'{'".to_owned())),
     };
 
     let fields = hashmap_while_not_token0(
@@ -135,7 +135,7 @@ pub fn parse_class_field<'source>(
         PklToken::Function => {
             let name = match retrieve_next_token(lexer)? {
                 PklToken::FunctionCall(name) => name,
-                _ => return Err(ParsingError::unexpected(lexer)),
+                _ => return Err(ParsingError::unexpected(lexer, "function name".to_owned())),
             };
 
             let args = list_while_not_token0(
@@ -161,7 +161,10 @@ pub fn parse_class_field<'source>(
                 },
             ))
         }
-        _ => Err(ParsingError::unexpected(lexer)),
+        _ => Err(ParsingError::unexpected(
+            lexer,
+            "field or method definition".to_string(),
+        )),
     }
 }
 

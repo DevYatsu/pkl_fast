@@ -23,7 +23,7 @@ pub fn parse_class_instance<'source>(
             Some(value)
         }
         PklToken::OpenBracket => None,
-        _ => return Err(ParsingError::unexpected(lexer)),
+        _ => return Err(ParsingError::unexpected(lexer, "classname".to_owned())),
     };
 
     let arguments = hashmap_while_not_token1(

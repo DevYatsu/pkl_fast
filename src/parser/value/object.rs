@@ -44,11 +44,11 @@ pub fn parse_block<'source>(
 
                     (Expression::Value(value), None)
                 }
-                _ => return Err(ParsingError::unexpected(lexer)),
+                _ => return Err(ParsingError::unexpected(lexer, "'='".to_owned())),
             };
 
             Ok((name, value, next_token))
         }
-        _ => Err(ParsingError::unexpected(lexer)),
+        _ => Err(ParsingError::expected_identifier(lexer)),
     }
 }

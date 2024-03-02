@@ -12,9 +12,7 @@ PklToken enum possesses a `lexer` method that lexes an input into tokens constit
 pub enum PklToken<'source> {
     #[token("\n")]
     NewLine,
-    #[token("\t")]
-    Tab,
-
+    // if necessary add Tab
     #[token("{")]
     OpenBracket,
     #[token("}")]
@@ -197,9 +195,11 @@ pub enum PklToken<'source> {
     #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#, |lex| lex.slice())]
     IllegalIdentifier(&'source str),
 
+    // we retrieve the string like this and we pass it through a sub lexer to obtain a Vec<StringFragment>
     #[regex(r#""[^"]*""#, |lex| {let val = lex.slice(); &val[1..val.len()-1]})]
     StringLiteral(&'source str),
 
+    /// This variant needs to be changed fast
     #[regex(r#""""[^"]*""""#, |lex| {let val = lex.slice(); &val[3..val.len()-3]})]
     MultipleLinesString(&'source str),
 
@@ -248,5 +248,78 @@ impl From<ParseIntError> for LexingError {
 impl From<ParseFloatError> for LexingError {
     fn from(_err: ParseFloatError) -> Self {
         LexingError::InvalidFloat
+    }
+}
+
+use std::fmt;
+
+impl<'source> std::fmt::Display for PklToken<'source> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // THIS SHOULD ONLY BE USED IN ORDER TO PRINT ERRORS
+        match self {
+            PklToken::NewLine => write!(f, "line end"),
+            PklToken::OpenBracket => write!(f, "'{{'"),
+            PklToken::CloseBracket => write!(f, "'}}'"),
+            PklToken::OpenBrace => write!(f, "'['"),
+            PklToken::CloseBrace => write!(f, "']'"),
+            PklToken::OpenParenthesis => write!(f, "'('"),
+            PklToken::CloseParenthesis => write!(f, "')'"),
+            PklToken::Module => write!(f, "'module'"),
+            PklToken::ModuleInfo => write!(f, "@ModuleInfo"),
+            PklToken::DeprecatedInstruction => write!(f, "@Deprecated"),
+            PklToken::GlobbedImport => write!(f, "import*"),
+            PklToken::Import => write!(f, "import"),
+            PklToken::Extends => write!(f, "extends"),
+            PklToken::Amends => write!(f, "amends"),
+            PklToken::Abstract => write!(f, "abstract"),
+            PklToken::Open => write!(f, "open"),
+            PklToken::New => write!(f, "new"),
+            PklToken::Class => write!(f, "class"),
+            PklToken::This => write!(f, "this"),
+            PklToken::Default => write!(f, "default"),
+            PklToken::Local => write!(f, "local"),
+            PklToken::Hidden => write!(f, "hidden"),
+            PklToken::Fixed => write!(f, "fixed"),
+            PklToken::Function => write!(f, "function"),
+            PklToken::ArrowOperator => write!(f, "->"),
+            PklToken::If => write!(f, "if"),
+            PklToken::Else => write!(f, "else"),
+            PklToken::Let => write!(f, "let"),
+            PklToken::As => write!(f, "as"),
+            PklToken::For => write!(f, "for"),
+            PklToken::In => write!(f, "in"),
+            PklToken::When => write!(f, "when"),
+            PklToken::Is => write!(f, "is"),
+            PklToken::Operator(op) => write!(f, "'{}'", op),
+            PklToken::EqualSign => write!(f, "'='"),
+            PklToken::Colon => write!(f, "':'"),
+            PklToken::Comma => write!(f, "','"),
+            PklToken::SpreadSyntax => write!(f, "'...'"),
+            PklToken::Dot => write!(f, "'.'"),
+            PklToken::SemiColon => write!(f, "';'"),
+            PklToken::AmendedObjectBracket(s) => write!(f, "({{}} {} {{)", s),
+            PklToken::TypeAlias => write!(f, "typealias"),
+            PklToken::GenericTypeAnnotation => {
+                write!(f, "'GenericType Annotation: Type<Annotation>'")
+            }
+            PklToken::PotentiallyNullType(s) => write!(f, "{}?", s),
+            PklToken::NonNullIdentifier(s) => write!(f, "{}!!", s),
+            PklToken::LogicalNotOperator => write!(f, "'!'"),
+            PklToken::DefaultUnionType(s) => write!(f, "*{}", s),
+            PklToken::Null => write!(f, "null"),
+            PklToken::Boolean(b) => write!(f, "{}", if *b { "true" } else { "false" }),
+            PklToken::Duration => write!(f, "Duration"),
+            PklToken::DataSize => write!(f, "DataSize"),
+            PklToken::Integer(i) => write!(f, "{}", i),
+            PklToken::Float(fl) => write!(f, "{}", fl),
+            PklToken::IllegalIdentifier(s) => write!(f, "`{}`", s),
+            PklToken::StringLiteral(s) => write!(f, "\"{}\"", s),
+            PklToken::MultipleLinesString(s) => write!(f, "\"\"\"{}\"\"\"", s),
+            PklToken::Identifier(s) => write!(f, "{}", s),
+            PklToken::FunctionCall(s) => write!(f, "{}(", s),
+            PklToken::LineComment => write!(f, "//"),
+            PklToken::DocComment => write!(f, "///"),
+            PklToken::BlockComment => write!(f, "/* ... */"),
+        }
     }
 }

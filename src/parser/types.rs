@@ -10,7 +10,7 @@ use super::{
     },
     expression::Expression,
     utils::retrieve_next_token,
-    value::PklValue,
+    value::{string::StringFragment, PklValue},
     ParsingResult, PklLexer,
 };
 use crate::{parser::expression::parse_expr, prelude::PklToken};
@@ -107,7 +107,10 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
         PklToken::PotentiallyNullType(value) => {
             Ok(PklType::PotentiallyNull(Box::new(value.into())))
         }
-        _ => Err(ParsingError::unexpected(lexer)),
+        _ => Err(ParsingError::unexpected(
+            lexer,
+            "a valid type definition".to_owned(),
+        )),
     }
 }
 
@@ -167,7 +170,9 @@ impl<'a> PklType<'a> {
         match self {
             PklType::String { matches, .. } => {
                 if let Some(value) = matches {
-                    return Ok(PklValue::String(*value));
+                    return Ok(PklValue::String(StringFragment::from_raw_string(
+                        lexer, value,
+                    )?));
                 }
 
                 Err(ParsingError::no_default_value(lexer, &self.to_string()))

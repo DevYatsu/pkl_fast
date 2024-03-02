@@ -145,7 +145,12 @@ impl<'source> PklParser<'source> {
                     match token {
                         PklToken::Module => self.parse_open_module()?,
                         PklToken::Class => self.parse_open_class_declaration()?,
-                        _ => return Err(ParsingError::unexpected(&mut self.lexer)),
+                        _ => {
+                            return Err(ParsingError::unexpected(
+                                &mut self.lexer,
+                                "class declaration or module declaration".to_owned(),
+                            ))
+                        }
                     }
                 }
                 Err(e) => return Err(parse_lexing_error(&mut self.lexer, e)),
@@ -172,7 +177,12 @@ impl<'source> PklParser<'source> {
                 self.new_line_parsed = true;
                 None
             }
-            _ => return Err(ParsingError::unexpected(&mut self.lexer)),
+            _ => {
+                return Err(ParsingError::unexpected(
+                    &mut self.lexer,
+                    "'as <identifier>' or line end".to_owned(),
+                ))
+            }
         };
 
         Ok(Statement::Import {
@@ -194,7 +204,12 @@ impl<'source> PklParser<'source> {
                 self.new_line_parsed = true;
                 None
             }
-            _ => return Err(ParsingError::unexpected(&mut self.lexer)),
+            _ => {
+                return Err(ParsingError::unexpected(
+                    &mut self.lexer,
+                    "'as <identifier>' or line end".to_owned(),
+                ))
+            }
         };
 
         Ok(Statement::GlobbedImport {
@@ -268,13 +283,16 @@ impl<'source> PklParser<'source> {
                             optional_type: Some(variable_type),
                         })
                     }
-                    _ => return Err(ParsingError::unexpected(lexer)),
+                    _ => return Err(ParsingError::unexpected(lexer, "'='".to_owned())),
                 };
 
                 Some(variable_type)
             }
             PklToken::EqualSign => None,
-            _ => Err(ParsingError::unexpected(lexer))?,
+            _ => Err(ParsingError::unexpected(
+                lexer,
+                "'=', ':' or '{'".to_owned(),
+            ))?,
         };
 
         let (value, next_token) = parse_expr(lexer)?;
@@ -286,7 +304,7 @@ impl<'source> PklParser<'source> {
                 self.new_line_parsed = true;
             }
             None => (),
-            _ => return Err(ParsingError::unexpected(lexer)),
+            _ => return Err(ParsingError::unexpected(lexer, "line end".to_owned())),
         }
 
         Ok(Statement::VariableDeclaration {

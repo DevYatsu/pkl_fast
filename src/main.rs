@@ -13,11 +13,16 @@ fn main() -> miette::Result<()> {
     let start = Instant::now();
 
     let lexer: Lexer<PklToken> = PklToken::lexer(&pkl_code);
+
     let _file_name = target_path
         .file_name()
         .ok_or_else(|| ProgramError::InvalidFilePath)?;
 
     let _statements = parse(lexer)?;
+
+    for s in _statements {
+        println!("{:?}", s);
+    }
 
     let end = Instant::now();
     println!("Total time: {} microseconds", (end - start).as_micros());
