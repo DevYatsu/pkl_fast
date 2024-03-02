@@ -34,8 +34,10 @@ res5 = true.implies(false)
 
 #[test]
 fn other() {
-    let src = "name = \"Dodo\"
-greeting = \"Hi, \\(name)!\" ";
+    let src = r#"name = "Dodo"
+greeting = "Hi, \\(name)!" 
+greeting = "Hi,\u{1F60A} \t efefef \refefef! \u{1F60A}"
+"#;
 
     let lexer = lex(src);
     let parser = parse(lexer);
