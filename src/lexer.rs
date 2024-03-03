@@ -195,7 +195,7 @@ pub enum PklToken<'source> {
     #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#, |lex| lex.slice())]
     IllegalIdentifier(&'source str),
 
-    // we retrieve the string like this and we pass it through a sub lexer to obtain a Vec<StringFragment>
+    // we retrieve the string like this and we pass it through a lexing fn to obtain a Vec<StringFragment>
     #[regex(r#""[^"]*""#, |lex| {let val = lex.slice(); &val[1..val.len()-1]})]
     StringLiteral(&'source str),
 

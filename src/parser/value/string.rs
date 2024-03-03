@@ -1,11 +1,17 @@
-use crate::prelude::{ParsingError, PklLexer};
+use crate::{
+    parser::{
+        errors::locating::{generate_source, set_error_location},
+        expression::{parse_expr, Expression},
+    },
+    prelude::{lex, ParsingError, PklLexer},
+};
 use logos::Logos;
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum StringFragment<'source> {
     Escaped(char),
-    Interpolated(&'source str),
+    Interpolated(Expression<'source>),
     RawText(&'source str),
     UnicodeEscape(&'source str),
 }
@@ -30,21 +36,90 @@ impl<'source> StringFragment<'source> {
         let mut fragments = Vec::new();
         let mut raw_string = initial_string;
 
-        while let Some(index) = raw_string.find("\\") {
+        while let Some(backlash_index) = raw_string.find("\\") {
             // Push raw text before the backslash
-            if index > 0 {
-                fragments.push(StringFragment::RawText(&raw_string[..index]));
+            if backlash_index > 0 {
+                fragments.push(StringFragment::RawText(&raw_string[..backlash_index]));
             }
 
             // Check the character after the backslash
-            if let Some(after_backslash) = raw_string.chars().nth(index + 1) {
+            if let Some(after_backslash) = raw_string.chars().nth(backlash_index + 1) {
                 let new_index = if after_backslash == '(' {
-                    todo!()
+                    let rest_of_string = &raw_string[backlash_index + 2..];
+                    let mut open_paren_count = 1;
+                    let mut expr_end_index = None;
+
+                    for (i, c) in rest_of_string.chars().enumerate() {
+                        if c == '(' {
+                            open_paren_count += 1;
+                        }
+
+                        if c == ')' {
+                            open_paren_count -= 1;
+                            if open_paren_count == 0 {
+                                let expr_str = &rest_of_string[..i];
+                                let result = parse_expr(&mut lex(expr_str));
+
+                                if result.is_err() {
+                                    let string_in_main_str =
+                                        &raw_string[backlash_index..backlash_index + 2 + i];
+                                    let index_in_main_str =
+                                        initial_string.find(string_in_main_str).unwrap() + 1;
+
+                                    match result {
+                                        Err(e) => {
+                                            let at = e.get_at();
+
+                                            let offset_in_expr = at.offset();
+                                            let expr_start_index = index_in_main_str + 2;
+                                            println!("{:?}", e);
+                                            return Err(e.with_attributes(
+                                                generate_source("main.pkl", lexer.source()),
+                                                set_error_location(
+                                                    lexer,
+                                                    expr_start_index + offset_in_expr,
+                                                    at.len(),
+                                                ),
+                                            ));
+                                        }
+                                        _ => unreachable!(),
+                                    }
+                                }
+
+                                let (expr, next_token) = result?;
+                                if next_token.is_some() {
+                                    let string_in_main_str =
+                                        &raw_string[backlash_index..backlash_index + 2 + i];
+                                    let index_in_main_str =
+                                        initial_string.find(string_in_main_str).unwrap() + 1;
+                                    return Err(ParsingError::invalid_interpolated_expr(
+                                        lexer,
+                                        index_in_main_str + 2,
+                                        i,
+                                    ));
+                                }
+
+                                fragments.push(StringFragment::Interpolated(expr));
+                                expr_end_index = Some(backlash_index + 2 + i + 1);
+                                break;
+                            }
+                        }
+                    }
+
+                    if expr_end_index.is_none() {
+                        return Err(ParsingError::invalid_interpolated_expr(
+                            lexer,
+                            backlash_index + 2,
+                            rest_of_string.len(),
+                        ));
+                    }
+
+                    expr_end_index.unwrap()
                 } else if after_backslash == 'u' {
                     // Handle Unicode escape
 
                     // no opening brace following u, raise an error
-                    if let Some(next_char) = raw_string.chars().nth(index + 2) {
+                    if let Some(next_char) = raw_string.chars().nth(backlash_index + 2) {
                         // we can unwrap safely as we are sure the sequence exists in the string
                         let index = initial_string.find(&format!("\\u{}", next_char)).unwrap();
                         if next_char != '{' {
@@ -52,8 +127,9 @@ impl<'source> StringFragment<'source> {
                         }
                     }
 
-                    if let Some(close_index) = raw_string[index + 2..].find('}') {
-                        let hex_value = &raw_string[index + 3..index + 2 + close_index];
+                    if let Some(close_index) = raw_string[backlash_index + 2..].find('}') {
+                        let hex_value =
+                            &raw_string[backlash_index + 3..backlash_index + 2 + close_index];
 
                         if hex_value.len() > 6 || hex_value.is_empty() {
                             // we can unwrap safely as we are sure the sequence exists in the string
@@ -70,10 +146,10 @@ impl<'source> StringFragment<'source> {
                         }
 
                         fragments.push(StringFragment::UnicodeEscape(&hex_value));
-                        index + 2 + close_index + 1
+                        backlash_index + 2 + close_index + 1
                     } else {
                         // No closing brace found, raise an error
-                        return Err(ParsingError::invalid_unicode(lexer, index + 1, 3));
+                        return Err(ParsingError::invalid_unicode(lexer, backlash_index + 1, 3));
                     }
                 } else {
                     const ALLOWED_ESCAPE: [char; 5] = ['t', 'n', 'r', '"', '\\'];
@@ -88,7 +164,7 @@ impl<'source> StringFragment<'source> {
 
                     // Handle other escaped characters
                     fragments.push(StringFragment::Escaped(after_backslash));
-                    index + 2
+                    backlash_index + 2
                 };
 
                 raw_string = &raw_string[new_index..];

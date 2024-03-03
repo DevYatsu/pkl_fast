@@ -9,7 +9,7 @@ use thiserror::Error;
 
 use self::{
     lexing::parse_lexing_error,
-    locating::{generate_source, get_error_location},
+    locating::{generate_source, get_error_location, set_error_location},
 };
 
 use super::{types::errors::TypeError, PklLexer};
@@ -77,10 +77,14 @@ pub enum ParsingError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     InvalidUnicodeEscape(#[from] UnicodeEscapeError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    InvalidInterpolatedExpr(#[from] InterpolatedExprError),
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(pkl_fast::unexpected))]
+#[diagnostic(code(pkl_fast::error::unexpected))]
 #[error("Unexpected token")]
 pub struct UnexpectedError {
     #[label("here")]
@@ -95,7 +99,7 @@ pub struct UnexpectedError {
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
-    code(pkl_fast::expected_string),
+    code(pkl_fast::error::expected_string),
     help("try putting a string or removing a character")
 )]
 #[error("Invalid value (expected a string)")]
@@ -109,7 +113,7 @@ pub struct InvalidStringError {
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
-    code(pkl_fast::expected_identifier),
+    code(pkl_fast::error::expected_identifier),
     help("valid identifier = alphanumeric word (except first letter not numeric)")
 )]
 #[error("Expected a valid identifier")]
@@ -123,7 +127,7 @@ pub struct InvalidIdentifierError {
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
-    code(pkl_fast::expected_identifier),
+    code(pkl_fast::error::expected_identifier),
     help("write a valid integer (ex: 123, -123_000, 0x012AFF, 0b00010111, 0o755)")
 )]
 #[error("Expected a valid integer")]
@@ -137,7 +141,7 @@ pub struct InvalidIntError {
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
-    code(pkl_fast::expected_identifier),
+    code(pkl_fast::error::expected_identifier),
     help("write a valid float (ex: .23, -1.23, 1.23e2, 1.23e-2)")
 )]
 #[error("Expected a valid float")]
@@ -151,7 +155,7 @@ pub struct InvalidFloatError {
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
-    code(pkl_fast::invalid_as),
+    code(pkl_fast::error::invalid_as),
     help("The 'as' keyword is only supported in 'import' or 'import*' statements")
 )]
 #[error("Invalid 'as' statement")]
@@ -166,7 +170,7 @@ pub struct InvalidAsStatement {
 #[derive(Error, Diagnostic, Debug)]
 #[error("Unexpected end of input")]
 #[diagnostic(
-    code(pkl_fast::unexpected_end_of_input),
+    code(pkl_fast::error::unexpected_end_of_input),
     help("Try putting a string or removing a character")
 )]
 pub struct UnexpectedEndOfInputError {
@@ -179,7 +183,7 @@ pub struct UnexpectedEndOfInputError {
 
 #[derive(Error, Diagnostic, Debug)]
 #[error("No default value for given type")]
-#[diagnostic(code(pkl_fast::unexpected_end_of_input))]
+#[diagnostic(code(pkl_fast::error::no_default_value))]
 pub struct NoDefaultValueError {
     #[label("here")]
     pub at: SourceSpan,
@@ -194,7 +198,7 @@ pub struct NoDefaultValueError {
 #[derive(Error, Diagnostic, Debug)]
 #[error("String unexpected never ends")]
 #[diagnostic(
-    code(pkl_fast::unexpected_end_of_input),
+    code(pkl_fast::error::unterminated_string),
     help("Add a `\"` at the end of the input")
 )]
 pub struct UnterminatedStringError {
@@ -208,7 +212,7 @@ pub struct UnterminatedStringError {
 #[derive(Error, Diagnostic, Debug)]
 #[error("Invalid Character Escape")]
 #[diagnostic(
-    code(pkl_fast::unexpected_end_of_input),
+    code(pkl_fast::error::char_escape),
     help("Valid character escape: \\n, \\t, \\r, \\\", \\\\")
 )]
 pub struct EscapedCharError {
@@ -222,10 +226,24 @@ pub struct EscapedCharError {
 #[derive(Error, Diagnostic, Debug)]
 #[error("Invalid Unicode Escape")]
 #[diagnostic(
-    code(pkl_fast::unexpected_end_of_input),
+    code(pkl_fast::error::unicode_escape),
     help("A unicode escape should have '\\u{{HEX}}' format")
 )]
 pub struct UnicodeEscapeError {
+    #[label("here")]
+    pub at: SourceSpan,
+
+    #[source_code]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[error("Invalid Interpolated Expression")]
+#[diagnostic(
+    code(pkl_fast::error::interpolation),
+    help("An interpolated string should have '\\(<expr>)' format. Write a valid expression!")
+)]
+pub struct InterpolatedExprError {
     #[label("here")]
     pub at: SourceSpan,
 
@@ -276,16 +294,24 @@ impl ParsingError {
         })
     }
     pub fn invalid_char_escape(lexer: &mut PklLexer<'_>, index: usize) -> Self {
-        let offset: SourceOffset = lexer.span().start.into();
-
         ParsingError::InvalidEscapedChar(EscapedCharError {
             src: generate_source("main.pkl", lexer.source()),
-            at: SourceSpan::new((offset.offset() + index).into(), 2),
+            at: set_error_location(lexer, index, 2),
         })
     }
     pub fn invalid_unicode(lexer: &mut PklLexer<'_>, index: usize, length: usize) -> Self {
-        let offset: SourceOffset = lexer.span().start.into();
         ParsingError::InvalidUnicodeEscape(UnicodeEscapeError {
+            src: generate_source("main.pkl", lexer.source()),
+            at: set_error_location(lexer, index, length),
+        })
+    }
+    pub fn invalid_interpolated_expr(
+        lexer: &mut PklLexer<'_>,
+        index: usize,
+        length: usize,
+    ) -> Self {
+        let offset: SourceOffset = lexer.span().start.into();
+        ParsingError::InvalidInterpolatedExpr(InterpolatedExprError {
             src: generate_source("main.pkl", lexer.source()),
             at: SourceSpan::new((offset.offset() + index).into(), length),
         })
@@ -316,5 +342,85 @@ impl ParsingError {
     }
     pub fn expected_expression(lexer: &mut PklLexer<'_>) -> Self {
         Self::unexpected_token(lexer, "Expression")
+    }
+
+    pub fn get_at(&self) -> SourceSpan {
+        match self {
+            ParsingError::ParseIntError(_) => {
+                unreachable!("No source span available for ParseIntError")
+            }
+            ParsingError::IoError(_) => unreachable!("No source span available for IoError"),
+            ParsingError::ParseFloatError(_) => {
+                unreachable!("No source span available for ParseFloatError")
+            }
+            ParsingError::LexingError(_) => {
+                unreachable!("No source span available for LexingError")
+            }
+            ParsingError::TypeError(_) => unreachable!("No source span available for TypeError"),
+            ParsingError::UnexpectedToken(e) => e.at,
+            ParsingError::InvalidString(e) => e.at,
+            ParsingError::InvalidInt(e) => e.at,
+            ParsingError::InvalidFloat(e) => e.at,
+            ParsingError::InvalidIdentifier(e) => e.at,
+            ParsingError::AsStatementUnsupported(e) => e.at,
+            ParsingError::UnexpectedEndOfInput(e) => e.at,
+            ParsingError::UnterminatedString(e) => e.at,
+            ParsingError::NoDefaultValue(e) => e.at,
+            ParsingError::InvalidEscapedChar(e) => e.at,
+            ParsingError::InvalidUnicodeEscape(e) => e.at,
+            ParsingError::InvalidInterpolatedExpr(e) => e.at,
+        }
+    }
+
+    pub fn with_attributes(self, src: NamedSource<String>, at: SourceSpan) -> Self {
+        match self {
+            ParsingError::ParseIntError(_)
+            | ParsingError::IoError(_)
+            | ParsingError::ParseFloatError(_) => {
+                unreachable!("No need to implement it for std errors")
+            }
+            ParsingError::LexingError(_) => {
+                unreachable!("No need to implement it for lexing errors")
+            }
+            ParsingError::TypeError(_) => unreachable!("No need to implement it for type errors"),
+            ParsingError::UnexpectedToken(e) => ParsingError::UnexpectedToken(UnexpectedError {
+                src,
+                at,
+                advice: e.advice,
+            }),
+            ParsingError::InvalidString(_) => {
+                ParsingError::InvalidString(InvalidStringError { src, at })
+            }
+            ParsingError::InvalidInt(_) => ParsingError::InvalidInt(InvalidIntError { src, at }),
+            ParsingError::InvalidFloat(_) => {
+                ParsingError::InvalidFloat(InvalidFloatError { src, at })
+            }
+            ParsingError::InvalidIdentifier(_) => {
+                ParsingError::InvalidIdentifier(InvalidIdentifierError { src, at })
+            }
+            ParsingError::AsStatementUnsupported(_) => {
+                ParsingError::AsStatementUnsupported(InvalidAsStatement { src, at })
+            }
+            ParsingError::UnexpectedEndOfInput(_) => {
+                ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError { src, at })
+            }
+            ParsingError::UnterminatedString(_) => {
+                ParsingError::UnterminatedString(UnterminatedStringError { src, at })
+            }
+            ParsingError::NoDefaultValue(e) => ParsingError::NoDefaultValue(NoDefaultValueError {
+                src,
+                at,
+                advice: e.advice,
+            }),
+            ParsingError::InvalidEscapedChar(_) => {
+                ParsingError::InvalidEscapedChar(EscapedCharError { src, at })
+            }
+            ParsingError::InvalidUnicodeEscape(_) => {
+                ParsingError::InvalidUnicodeEscape(UnicodeEscapeError { src, at })
+            }
+            ParsingError::InvalidInterpolatedExpr(_) => {
+                ParsingError::InvalidInterpolatedExpr(InterpolatedExprError { src, at })
+            }
+        }
     }
 }
