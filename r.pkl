@@ -1,5 +1,5 @@
 ENV_VALUE="TEST_VALUE"
 s="str"
-greeting = "Hi,\u{1F60A} \t efefef \refefef! \u{1E0A} \n How are you? \n \(ENV_VALUE + s + 2)"
+greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n \(ENV_VALUE + s)"
 
 
