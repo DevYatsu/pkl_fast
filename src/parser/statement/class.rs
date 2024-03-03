@@ -13,6 +13,7 @@ use crate::{
 use super::Statement;
 
 #[derive(Debug, PartialEq, Clone)]
+/// A struct representing the type of a `ClassDeclaration`.
 pub enum ClassType {
     Abstract,
     Open,
@@ -20,6 +21,7 @@ pub enum ClassType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+/// A struct representing the type of a `ClassField`.
 pub enum FieldType {
     Fixed,
     Hidden,
@@ -28,7 +30,7 @@ pub enum FieldType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-/// A struct representing an field of a @ModuleInfo annotation
+/// A struct representing an argument, that is a field or a method, of a `ClassDeclaration`.
 pub enum ClassArgument<'a> {
     Field {
         value: PklType<'a>,

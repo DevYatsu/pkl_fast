@@ -44,7 +44,7 @@ pub fn parse<'source>(
 #[derive(Debug, Clone)]
 /// PklParser is the main parser struct, possessing the `parse` method to parse the tokens in the lexer.
 ///
-/// **IMPORTANT NOTE**: All parsing functions (in the entire library) are designed to operate on the next token from the lexer, except for the function that requires a specific token as a second argument.
+/// **IMPORTANT NOTE**: All parsing functions (in the entire library) are designed to operate on the next token from the lexer, except for the function that requires a token as a second argument.
 pub struct PklParser<'source> {
     pub statements: Vec<Statement<'source>>,
     lexer: PklLexer<'source>,
