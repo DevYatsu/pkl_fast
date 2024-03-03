@@ -18,9 +18,15 @@ pub enum Operator {
     Comparison(ComparisonOperator),
 }
 
-/// This function checks if there is an operator, if there is,
-/// then it modifies the mutable expression given as an argument
-/// otherwise returns the `PklToken` following or `None` if the input ends.
+/// Parses the next token to determine if it's an operator. If an operator is found,
+/// it constructs a `Expression::BinaryOperation` with the given expression as the left-hand side,
+/// and the expression obtained from parsing the next token as the right-hand side.
+/// If no operator is found, it returns the given expression and the next token.
+/// If there are other operators following with higher precedence, it recursively generates
+/// `Expression::BinaryOperation` nodes to ensure correct precedence order.
+/// Returns a tuple containing the resulting expression and the next token encountered (or None if there's none).
+///
+/// **Simply put, this fn parses a mathematical expression and returns the next token.**
 pub fn parse_opt_operation<'source>(
     lexer: &mut PklLexer<'source>,
     expr: Expression<'source>,
