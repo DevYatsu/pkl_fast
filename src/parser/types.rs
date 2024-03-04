@@ -1,13 +1,7 @@
-use self::{
-    errors::{Expected1GenericError, Expected2GenericError, TypeError},
-    generics::extract_generics,
-};
+use self::{errors::TypeError, generics::extract_generics};
 
 use super::{
-    errors::{
-        locating::{generate_source, get_error_location},
-        ParsingError,
-    },
+    errors::ParsingError,
     expression::Expression,
     utils::retrieve_next_token,
     value::{string::StringFragment, PklValue},
@@ -16,7 +10,7 @@ use super::{
 use crate::{parser::expression::parse_expr, prelude::PklToken};
 
 pub mod errors;
-mod generics;
+pub mod generics;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum PklType<'a> {
@@ -93,7 +87,10 @@ pub enum PklType<'a> {
         restriction: Option<Expression<'a>>,
     },
 
-    Class(&'a str),
+    Class {
+        name: &'a str,
+        generics_params: Option<Vec<PklType<'a>>>,
+    },
 
     Union(Vec<PklType<'a>>),
     UnionDefault(Box<PklType<'a>>),
@@ -108,23 +105,14 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
         PklToken::GenericTypeAnnotationFunctionCall => {
             let raw_value: &str = lexer.slice();
             let type_annotation_value = &raw_value[..raw_value.len() - 1];
-            let (base_type, mut generics) = extract_generics(type_annotation_value);
 
-            // there is necessarily one generic otherwise the lexer would have produced an Error
-            // we do not need to call trim method on our strings as it's done in the impl From<&str>
-            let first_generic: PklType<'_> = generics.next().unwrap().into();
-            let second_generic = generics.next().map(|s| s.into());
+            let (base_type, generics) = extract_generics(type_annotation_value);
+            let generics_vec = generics
+                .into_iter()
+                .map(|t| t.trim().into())
+                .collect::<Vec<PklType>>();
 
-            let mut base_type = if second_generic.is_some() {
-                PklType::generate_from_2_generic(
-                    lexer,
-                    base_type,
-                    first_generic,
-                    second_generic.unwrap(),
-                )?
-            } else {
-                PklType::generate_from_1_generic(lexer, base_type, first_generic)?
-            };
+            let mut base_type = PklType::generate_from_generics(lexer, base_type, generics_vec)?;
 
             let (expr, next_token) = parse_expr(lexer)?;
 
@@ -167,34 +155,30 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
                     *restriction = Some(expr);
                     Ok(base_type)
                 }
-
-                _ => unreachable!(/* allowed type are already checked */),
+                _ => Err(TypeError::no_restrictions_type(
+                    lexer,
+                    format!(
+                        "Remove the constraints annotation, try writing `{}`",
+                        base_type
+                    ),
+                )
+                .into()),
             }
         }
         PklToken::GenericTypeAnnotation => {
             let raw_value: &str = lexer.slice();
 
-            let (base_type, mut generics) = extract_generics(raw_value);
+            let (base_type, generics) = extract_generics(raw_value);
+            let generics_vec = generics
+                .into_iter()
+                .map(|t| t.trim().into())
+                .collect::<Vec<PklType>>();
 
-            // there is necessarily one generic otherwise the lexer would have produced an Error
-            // we do not need to call trim method on our strings as it's done in the impl From<&str>
-            let first_generic: PklType<'_> = generics.next().unwrap().into();
-            let second_generic = generics.next().map(|s| s.into());
-
-            if second_generic.is_some() {
-                Ok(PklType::generate_from_2_generic(
-                    lexer,
-                    base_type,
-                    first_generic,
-                    second_generic.unwrap(),
-                )?)
-            } else {
-                Ok(PklType::generate_from_1_generic(
-                    lexer,
-                    base_type,
-                    first_generic,
-                )?)
-            }
+            Ok(PklType::generate_from_generics(
+                lexer,
+                base_type,
+                generics_vec,
+            )?)
         }
         PklToken::FunctionCall(name) => {
             let mut base_type: PklType = name.into();
@@ -258,7 +242,7 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
                 PklType::Duration
                 | PklType::DataSize
                 | PklType::Null
-                | PklType::Class(_)
+                | PklType::Class { .. }
                 | PklType::Union(_)
                 | PklType::Regex
                 | _ => Err((TypeError::no_restrictions_type(
@@ -340,7 +324,10 @@ impl<'a> From<&'a str> for PklType<'a> {
                 _type: Box::new(PklType::Unknown),
                 restriction: None,
             },
-            _ => PklType::Class(value),
+            _ => PklType::Class {
+                name: value,
+                generics_params: None,
+            },
         }
     }
 }
@@ -364,7 +351,7 @@ impl<'a> PklType<'a> {
             PklType::Map { .. } => Ok(PklValue::Map(vec![])),
             PklType::Mapping { .. } => todo!(),
             PklType::Set { .. } => Ok(PklValue::Set(vec![])),
-            PklType::Class(name) => Ok(PklValue::ClassInstance {
+            PklType::Class { name, .. } => Ok(PklValue::ClassInstance {
                 name: Some(*name),
                 arguments: HashMap::new(),
             }),
@@ -390,60 +377,101 @@ impl<'a> PklType<'a> {
         }
     }
 
-    pub fn generate_from_1_generic(
+    pub fn generate_from_generics(
         lexer: &mut PklLexer<'a>,
         base_type: &'a str,
-        first_type: PklType<'a>,
+        generics: Vec<PklType<'a>>,
     ) -> Result<PklType<'a>, TypeError> {
         match base_type {
-            "Collection" => Ok(PklType::Collection {
-                _type: Box::new(first_type),
-                restriction: None,
-            }),
-            "Listing" => Ok(PklType::Listing {
-                _type: Box::new(first_type),
-                restriction: None,
-            }),
-            "List" => Ok(PklType::List {
-                _type: Box::new(first_type),
-                restriction: None,
-            }),
-            "Set" => Ok(PklType::Set {
-                _type: Box::new(first_type),
-                restriction: None,
-            }),
-            _ => Err(TypeError::Expected1Generic(Expected1GenericError {
-                src: generate_source("main.pkl", lexer.source()),
-                at: get_error_location(lexer).into(),
-            })),
-        }
-    }
-    pub fn generate_from_2_generic(
-        lexer: &mut PklLexer<'a>,
-        base_type: &'a str,
-        first_type: PklType<'a>,
-        second_type: PklType<'a>,
-    ) -> Result<PklType<'a>, TypeError> {
-        match base_type {
-            "Pair" => Ok(PklType::Pair {
-                key_type: Box::new(first_type),
-                value_type: Box::new(second_type),
-                restriction: None,
-            }),
-            "Map" => Ok(PklType::Map {
-                key_type: Box::new(first_type),
-                value_type: Box::new(second_type),
-                restriction: None,
-            }),
-            "Mapping" => Ok(PklType::Mapping {
-                key_type: Box::new(first_type),
-                value_type: Box::new(second_type),
-                restriction: None,
-            }),
-            _ => Err(TypeError::Expected2Generic(Expected2GenericError {
-                src: generate_source("main.pkl", lexer.source()),
-                at: get_error_location(lexer).into(),
-            })),
+            "Collection" => {
+                if generics.len() != 1 {
+                    return Err(TypeError::expect_generics(lexer, 1, base_type));
+                }
+
+                Ok(PklType::Collection {
+                    _type: Box::new(generics[0].to_owned()),
+                    restriction: None,
+                })
+            }
+            "Listing" => {
+                if generics.len() != 1 {
+                    return Err(TypeError::expect_generics(lexer, 1, base_type));
+                }
+
+                Ok(PklType::Listing {
+                    _type: Box::new(generics[0].to_owned()),
+                    restriction: None,
+                })
+            }
+            "List" => {
+                if generics.len() != 1 {
+                    return Err(TypeError::expect_generics(lexer, 1, base_type));
+                }
+
+                Ok(PklType::List {
+                    _type: Box::new(generics[0].to_owned()),
+                    restriction: None,
+                })
+            }
+            "Set" => {
+                if generics.len() != 1 {
+                    return Err(TypeError::expect_generics(lexer, 1, base_type));
+                }
+
+                Ok(PklType::Set {
+                    _type: Box::new(generics[0].to_owned()),
+                    restriction: None,
+                })
+            }
+            "Pair" => {
+                if generics.len() != 2 {
+                    return Err(TypeError::expect_generics(lexer, 2, base_type));
+                }
+
+                Ok(PklType::Pair {
+                    key_type: Box::new(generics[0].to_owned()),
+                    value_type: Box::new(generics[1].to_owned()),
+                    restriction: None,
+                })
+            }
+            "Map" => {
+                if generics.len() != 2 {
+                    return Err(TypeError::expect_generics(lexer, 2, base_type));
+                }
+
+                Ok(PklType::Map {
+                    key_type: Box::new(generics[0].to_owned()),
+                    value_type: Box::new(generics[1].to_owned()),
+                    restriction: None,
+                })
+            }
+            "Mapping" => {
+                if generics.len() != 2 {
+                    return Err(TypeError::expect_generics(lexer, 2, base_type));
+                }
+
+                Ok(PklType::Mapping {
+                    key_type: Box::new(generics[0].to_owned()),
+                    value_type: Box::new(generics[1].to_owned()),
+                    restriction: None,
+                })
+            }
+
+            name => {
+                let mut t: PklType = name.into();
+
+                match t {
+                    PklType::Class {
+                        ref mut generics_params,
+                        ..
+                    } => {
+                        *generics_params = Some(generics);
+                        Ok(t)
+                    }
+
+                    _ => Err(TypeError::expect_generics(lexer, 0, name)),
+                }
+            }
         }
     }
 }
@@ -565,7 +593,20 @@ impl<'a> fmt::Display for PklType<'a> {
                     write!(f, "Set<{}>", _type)
                 }
             }
-            PklType::Class(name) => write!(f, "{name}"),
+            PklType::Class {
+                name,
+                generics_params,
+            } => {
+                if generics_params.is_some() {
+                    write!(f, "{}<", name)?;
+                    for generic in generics_params.clone().unwrap() {
+                        write!(f, "{},", generic)?;
+                    }
+                    write!(f, ">")
+                } else {
+                    write!(f, "{}", name)
+                }
+            }
             PklType::Union(values) => {
                 write!(f, "{}", values[0])?;
                 for value in &values[1..] {

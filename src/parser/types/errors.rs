@@ -10,10 +10,7 @@ use crate::{
 pub enum TypeError {
     #[error(transparent)]
     #[diagnostic(transparent)]
-    Expected1Generic(#[from] Expected1GenericError),
-    #[error(transparent)]
-    #[diagnostic(transparent)]
-    Expected2Generic(#[from] Expected2GenericError),
+    ExpectedGenerics(#[from] ExpectedGenericsError),
 
     #[error(transparent)]
     #[diagnostic(transparent)]
@@ -28,20 +25,32 @@ impl TypeError {
             advice,
         })
     }
+
+    pub fn expect_generics<'source>(
+        lexer: &mut PklLexer<'source>,
+        number: u8,
+        type_name: &'source str,
+    ) -> Self {
+        TypeError::ExpectedGenerics(ExpectedGenericsError {
+            at: get_error_location(lexer),
+            src: generate_source("main.pkl", lexer.source()),
+            advice: format!("Expected `{}` generics for type `{}`!", number, type_name),
+        })
+    }
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[error("Expected an Enum that takes 1 generic argument")]
-#[diagnostic(
-    code(pkl_fast::types::generic::expected_1),
-    help("Check the number of generic types")
-)]
-pub struct Expected1GenericError {
+#[error("Invalid generics provided.")]
+#[diagnostic(code(pkl_fast::types::generic::expected_1))]
+pub struct ExpectedGenericsError {
     #[label("here")]
     pub at: SourceSpan,
 
     #[source_code]
     pub src: NamedSource<String>,
+
+    #[help]
+    pub advice: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]

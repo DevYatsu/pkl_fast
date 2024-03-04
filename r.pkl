@@ -11,3 +11,18 @@ class Bird {
 }
 
 emailRegex: Regex = Regex("test")
+
+
+email: EmailAddress = "pigeon@example.com"
+
+emailList: List<EmailAddress> = List("pigeon@example.com", "parrot@example.com")
+typealias EmailList = List<EmailAddress>
+
+emailList: EmailList = List("pigeon@example.com", "parrot@example.com")
+
+
+
+typealias StringMap<Value> = Map<String, Value>
+
+map: StringMap<Int> = Map("Pigeon", 42, "Falcon", 21)
+

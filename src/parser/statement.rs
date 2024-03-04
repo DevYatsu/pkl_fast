@@ -36,6 +36,7 @@ pub enum Statement<'a> {
 
     TypeAlias {
         alias: &'a str,
+        generics_params: Option<Vec<PklType<'a>>>,
         equivalent_type: PklType<'a>,
     },
     /// ModuleInfo variant represents the annotation @ModuleInfo { package: "version" }
