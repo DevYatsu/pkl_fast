@@ -18,25 +18,40 @@ use crate::{parser::expression::parse_expr, prelude::PklToken};
 pub mod errors;
 mod generics;
 
-#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum PklType<'a> {
     Any,
     NotNull,
     Unknown,
     Nothing,
 
+    // For types that can be restrained (i.e String, Int, Float, collection-kind types),
+    // I initially intended to manually add all the possible annotations,
+    // but it turned out to be too troublesome.
+    // It's better to parse the expression first
+    // and then take care of it in the evaluation step.
     String {
+        // example: s: "str" = "str", matches: Some("str")
         matches: Option<&'a str>,
-        contains: Option<&'a str>,
-        allowed_empty: bool,
+        restriction: Option<Expression<'a>>,
     },
     Boolean,
 
+    // SuperType: Number
     Int {
-        between: Option<(i64, i64)>,
+        restriction: Option<Expression<'a>>,
     },
-    Float,
-    Number,
+    Float {
+        restriction: Option<Expression<'a>>,
+    },
+
+    UInt,
+    UInt8,
+    UInt16,
+    UInt32,
+    Int8,
+    Int16,
+    Int32,
 
     Duration,
     DataSize,
@@ -44,15 +59,39 @@ pub enum PklType<'a> {
 
     Regex,
 
-    Collection(Box<PklType<'a>>),
-    Listing(Box<PklType<'a>>),
-    List(Box<PklType<'a>>),
+    Collection {
+        _type: Box<PklType<'a>>,
+        restriction: Option<Expression<'a>>,
+    },
+    Listing {
+        _type: Box<PklType<'a>>,
+        restriction: Option<Expression<'a>>,
+    },
+    List {
+        _type: Box<PklType<'a>>,
+        restriction: Option<Expression<'a>>,
+    },
 
-    Pair(Box<PklType<'a>>, Box<PklType<'a>>),
-    Map(Box<PklType<'a>>, Box<PklType<'a>>),
-    Mapping(Box<PklType<'a>>, Box<PklType<'a>>),
+    Pair {
+        key_type: Box<PklType<'a>>,
+        value_type: Box<PklType<'a>>,
+        restriction: Option<Expression<'a>>,
+    },
+    Map {
+        key_type: Box<PklType<'a>>,
+        value_type: Box<PklType<'a>>,
+        restriction: Option<Expression<'a>>,
+    },
+    Mapping {
+        key_type: Box<PklType<'a>>,
+        value_type: Box<PklType<'a>>,
+        restriction: Option<Expression<'a>>,
+    },
 
-    Set(Box<PklType<'a>>),
+    Set {
+        _type: Box<PklType<'a>>,
+        restriction: Option<Expression<'a>>,
+    },
 
     Class(&'a str),
 
@@ -66,6 +105,72 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
 
     match token {
         PklToken::Identifier(value) => Ok(value.into()),
+        PklToken::GenericTypeAnnotationFunctionCall => {
+            let raw_value: &str = lexer.slice();
+            let type_annotation_value = &raw_value[..raw_value.len() - 1];
+            let (base_type, mut generics) = extract_generics(type_annotation_value);
+
+            // there is necessarily one generic otherwise the lexer would have produced an Error
+            // we do not need to call trim method on our strings as it's done in the impl From<&str>
+            let first_generic: PklType<'_> = generics.next().unwrap().into();
+            let second_generic = generics.next().map(|s| s.into());
+
+            let mut base_type = if second_generic.is_some() {
+                PklType::generate_from_2_generic(
+                    lexer,
+                    base_type,
+                    first_generic,
+                    second_generic.unwrap(),
+                )?
+            } else {
+                PklType::generate_from_1_generic(lexer, base_type, first_generic)?
+            };
+
+            let (expr, next_token) = parse_expr(lexer)?;
+
+            match next_token {
+                Some(PklToken::CloseParenthesis) => (),
+                None => return Err(ParsingError::eof(lexer)),
+                _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
+            }
+
+            // allowed types should be checked in generate_from_2_generic and generate_from_1_generic
+            match base_type {
+                PklType::Collection {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Listing {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::List {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Pair {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Map {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Mapping {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Set {
+                    ref mut restriction,
+                    ..
+                } => {
+                    *restriction = Some(expr);
+                    Ok(base_type)
+                }
+
+                _ => unreachable!(/* allowed type are already checked */),
+            }
+        }
         PklToken::GenericTypeAnnotation => {
             let raw_value: &str = lexer.slice();
 
@@ -91,18 +196,84 @@ pub fn parse_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklTy
                 )?)
             }
         }
-
         PklToken::FunctionCall(name) => {
-            let base_type: PklType = name.into();
+            let mut base_type: PklType = name.into();
 
-            let value = parse_expr(lexer)?;
+            let (expr, next_token) = parse_expr(lexer)?;
 
-            todo!()
+            match next_token {
+                Some(PklToken::CloseParenthesis) => (),
+                None => return Err(ParsingError::eof(lexer)),
+                _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
+            }
+
+            // check which types can receive restriction
+            match base_type {
+                PklType::String {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Int {
+                    ref mut restriction,
+                }
+                | PklType::Float {
+                    ref mut restriction,
+                }
+                | PklType::Collection {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Listing {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::List {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Pair {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Map {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Mapping {
+                    ref mut restriction,
+                    ..
+                }
+                | PklType::Set {
+                    ref mut restriction,
+                    ..
+                } => {
+                    *restriction = Some(expr);
+                    Ok(base_type)
+                }
+
+                PklType::PotentiallyNull(_) | PklType::UnionDefault(_) => unreachable!(),
+
+                // I intentionnally separated types and did not considere them all as _
+                // It will be clearer in case we need to change sth
+                PklType::Duration
+                | PklType::DataSize
+                | PklType::Null
+                | PklType::Class(_)
+                | PklType::Union(_)
+                | PklType::Regex
+                | _ => Err((TypeError::no_restrictions_type(
+                    lexer,
+                    format!(
+                        "Remove the constraints annotation, try writing `{}`",
+                        base_type
+                    ),
+                ))
+                .into()),
+            }
         }
         PklToken::StringLiteral(value) => Ok(PklType::String {
             matches: Some(value),
-            contains: None,
-            allowed_empty: true,
+            restriction: None,
         }),
         PklToken::PotentiallyNullType(value) => {
             Ok(PklType::PotentiallyNull(Box::new(value.into())))
@@ -122,44 +293,52 @@ impl<'a> From<&'a str> for PklType<'a> {
             "nothing" => PklType::Nothing,
             "String" => PklType::String {
                 matches: None,
-                contains: None,
-                allowed_empty: true,
+                restriction: None,
             },
             "Boolean" => PklType::Boolean,
-            "Int" => PklType::Int { between: None },
-            "UInt" => PklType::Int {
-                between: Some((0, i64::MAX)),
-            },
-            "UInt8" => PklType::Int {
-                between: Some((0, 255)),
-            },
-            "UInt16" => PklType::Int {
-                between: Some((0, 65_535)),
-            },
-            "UInt32" => PklType::Int {
-                between: Some((0, 4_294_967_295)),
-            },
-            "Int8" => PklType::Int {
-                between: Some((-128, 127)),
-            },
-            "Int16" => PklType::Int {
-                between: Some((-32_768, 32_767)),
-            },
-            "Int32" => PklType::Int {
-                between: Some((-2_147_483_648, 2_147_483_647)),
-            },
-            "Float" => PklType::Float,
-            "Number" => PklType::Number,
+            "Int" => PklType::Int { restriction: None },
+            "UInt" => PklType::UInt,
+            "UInt8" => PklType::UInt8,
+            "UInt16" => PklType::UInt16,
+            "UInt32" => PklType::UInt32,
+            "Int8" => PklType::Int8,
+            "Int16" => PklType::Int16,
+            "Int32" => PklType::Int32,
+            "Float" => PklType::Float { restriction: None },
             "Duration" => PklType::Duration,
             "DataSize" => PklType::DataSize,
             "Null" => PklType::Null,
-            "Collection" => PklType::Collection(Box::new(PklType::Unknown)),
-            "Listing" => PklType::Listing(Box::new(PklType::Unknown)),
-            "List" => PklType::List(Box::new(PklType::Unknown)),
-            "Pair" => PklType::Pair(Box::new(PklType::Unknown), Box::new(PklType::Unknown)),
-            "Map" => PklType::Map(Box::new(PklType::Unknown), Box::new(PklType::Unknown)),
-            "Mapping" => PklType::Mapping(Box::new(PklType::Unknown), Box::new(PklType::Unknown)),
-            "Set" => PklType::Set(Box::new(PklType::Unknown)),
+            "Collection" => PklType::Collection {
+                _type: Box::new(PklType::Unknown),
+                restriction: None,
+            },
+            "Listing" => PklType::Listing {
+                _type: Box::new(PklType::Unknown),
+                restriction: None,
+            },
+            "List" => PklType::List {
+                _type: Box::new(PklType::Unknown),
+                restriction: None,
+            },
+            "Pair" => PklType::Pair {
+                key_type: Box::new(PklType::Unknown),
+                value_type: Box::new(PklType::Unknown),
+                restriction: None,
+            },
+            "Map" => PklType::Map {
+                key_type: Box::new(PklType::Unknown),
+                value_type: Box::new(PklType::Unknown),
+                restriction: None,
+            },
+            "Mapping" => PklType::Mapping {
+                key_type: Box::new(PklType::Unknown),
+                value_type: Box::new(PklType::Unknown),
+                restriction: None,
+            },
+            "Set" => PklType::Set {
+                _type: Box::new(PklType::Unknown),
+                restriction: None,
+            },
             _ => PklType::Class(value),
         }
     }
@@ -178,12 +357,12 @@ impl<'a> PklType<'a> {
                 Err(ParsingError::no_default_value(lexer, &self.to_string()))
             }
             PklType::Null => Ok(PklValue::Null),
-            PklType::Collection(_) => Ok(PklValue::List(vec![])),
-            PklType::Listing(_) => Ok(PklValue::List(vec![])),
-            PklType::List(_) => Ok(PklValue::List(vec![])),
-            PklType::Map(_, _) => Ok(PklValue::Map(vec![])),
-            PklType::Mapping(_, _) => todo!(),
-            PklType::Set(_) => Ok(PklValue::Set(vec![])),
+            PklType::Collection { .. } => Ok(PklValue::List(vec![])),
+            PklType::Listing { .. } => Ok(PklValue::List(vec![])),
+            PklType::List { .. } => Ok(PklValue::List(vec![])),
+            PklType::Map { .. } => Ok(PklValue::Map(vec![])),
+            PklType::Mapping { .. } => todo!(),
+            PklType::Set { .. } => Ok(PklValue::Set(vec![])),
             PklType::Class(name) => Ok(PklValue::ClassInstance {
                 name: Some(*name),
                 arguments: HashMap::new(),
@@ -216,16 +395,26 @@ impl<'a> PklType<'a> {
         first_type: PklType<'a>,
     ) -> Result<PklType<'a>, TypeError> {
         match base_type {
-            "Collection" => Ok(PklType::Collection(Box::new(first_type))),
-            "Listing" => Ok(PklType::Listing(Box::new(first_type))),
-            "List" => Ok(PklType::List(Box::new(first_type))),
-            "Set" => Ok(PklType::Set(Box::new(first_type))),
-            _ => {
-                return Err(TypeError::Expected1Generic(Expected1GenericError {
-                    src: generate_source("main.pkl", lexer.source()),
-                    at: get_error_location(lexer).into(),
-                }))
-            }
+            "Collection" => Ok(PklType::Collection {
+                _type: Box::new(first_type),
+                restriction: None,
+            }),
+            "Listing" => Ok(PklType::Listing {
+                _type: Box::new(first_type),
+                restriction: None,
+            }),
+            "List" => Ok(PklType::List {
+                _type: Box::new(first_type),
+                restriction: None,
+            }),
+            "Set" => Ok(PklType::Set {
+                _type: Box::new(first_type),
+                restriction: None,
+            }),
+            _ => Err(TypeError::Expected1Generic(Expected1GenericError {
+                src: generate_source("main.pkl", lexer.source()),
+                at: get_error_location(lexer).into(),
+            })),
         }
     }
     pub fn generate_from_2_generic(
@@ -235,18 +424,25 @@ impl<'a> PklType<'a> {
         second_type: PklType<'a>,
     ) -> Result<PklType<'a>, TypeError> {
         match base_type {
-            "Pair" => Ok(PklType::Pair(Box::new(first_type), Box::new(second_type))),
-            "Map" => Ok(PklType::Map(Box::new(first_type), Box::new(second_type))),
-            "Mapping" => Ok(PklType::Mapping(
-                Box::new(first_type),
-                Box::new(second_type),
-            )),
-            _ => {
-                return Err(TypeError::Expected2Generic(Expected2GenericError {
-                    src: generate_source("main.pkl", lexer.source()),
-                    at: get_error_location(lexer).into(),
-                }))
-            }
+            "Pair" => Ok(PklType::Pair {
+                key_type: Box::new(first_type),
+                value_type: Box::new(second_type),
+                restriction: None,
+            }),
+            "Map" => Ok(PklType::Map {
+                key_type: Box::new(first_type),
+                value_type: Box::new(second_type),
+                restriction: None,
+            }),
+            "Mapping" => Ok(PklType::Mapping {
+                key_type: Box::new(first_type),
+                value_type: Box::new(second_type),
+                restriction: None,
+            }),
+            _ => Err(TypeError::Expected2Generic(Expected2GenericError {
+                src: generate_source("main.pkl", lexer.source()),
+                at: get_error_location(lexer).into(),
+            })),
         }
     }
 }
@@ -259,23 +455,115 @@ impl<'a> fmt::Display for PklType<'a> {
             PklType::Any => write!(f, "Any"),
             PklType::Unknown => write!(f, "unknown"),
             PklType::Nothing => write!(f, "nothing"),
-            PklType::String { .. } => {
-                write!(f, "String")
+            PklType::String {
+                matches,
+                restriction,
+            } => {
+                if matches.is_some() {
+                    write!(f, "{}", matches.unwrap(/* safe */))
+                } else if restriction.is_some() {
+                    write!(f, "String({})", restriction.clone().unwrap(/* safe */))
+                } else {
+                    write!(f, "String")
+                }
             }
             PklType::Boolean => write!(f, "Boolean"),
-            PklType::Int { .. } => write!(f, "Int"),
-            PklType::Float => write!(f, "Float"),
-            PklType::Number => write!(f, "Number"),
+            PklType::Int { restriction } => {
+                if restriction.is_some() {
+                    write!(f, "Int({})", restriction.clone().unwrap())
+                } else {
+                    write!(f, "Int")
+                }
+            }
+            PklType::Float { restriction } => {
+                if restriction.is_some() {
+                    write!(f, "Float({})", restriction.clone().unwrap())
+                } else {
+                    write!(f, "Float")
+                }
+            }
             PklType::Duration => write!(f, "Duration"),
             PklType::DataSize => write!(f, "DataSize"),
             PklType::Null => write!(f, "Null"),
-            PklType::Collection(x) => write!(f, "Collection<{}>", x),
-            PklType::Listing(x) => write!(f, "Listing<{}>", x),
-            PklType::List(x) => write!(f, "List<{}>", x),
-            PklType::Pair(x, y) => write!(f, "Pair<{}, {}>", x, y),
-            PklType::Map(x, y) => write!(f, "Map<{}, {}>", x, y),
-            PklType::Mapping(x, y) => write!(f, "Mapping<{}, {}>", x, y),
-            PklType::Set(x) => write!(f, "Set<{}>", x),
+            PklType::Collection { _type, restriction } => {
+                if restriction.is_some() {
+                    write!(f, "Collection<{}>({})", _type, restriction.clone().unwrap())
+                } else {
+                    write!(f, "Collection<{}>", _type)
+                }
+            }
+            PklType::Listing { _type, restriction } => {
+                if restriction.is_some() {
+                    write!(f, "Listing<{}>({})", _type, restriction.clone().unwrap())
+                } else {
+                    write!(f, "Listing<{}>", _type)
+                }
+            }
+            PklType::List { _type, restriction } => {
+                if restriction.is_some() {
+                    write!(f, "List<{}>({})", _type, restriction.clone().unwrap())
+                } else {
+                    write!(f, "List<{}>", _type)
+                }
+            }
+            PklType::Pair {
+                key_type,
+                value_type,
+                restriction,
+            } => {
+                if restriction.is_some() {
+                    write!(
+                        f,
+                        "Pair<{}, {}>({})",
+                        key_type,
+                        value_type,
+                        restriction.clone().unwrap()
+                    )
+                } else {
+                    write!(f, "Pair<{}, {}>", key_type, value_type)
+                }
+            }
+            PklType::Map {
+                key_type,
+                value_type,
+                restriction,
+            } => {
+                if restriction.is_some() {
+                    write!(
+                        f,
+                        "Map<{}, {}>({})",
+                        key_type,
+                        value_type,
+                        restriction.clone().unwrap()
+                    )
+                } else {
+                    write!(f, "Map<{}, {}>", key_type, value_type)
+                }
+            }
+            PklType::Mapping {
+                key_type,
+                value_type,
+                restriction,
+            } => {
+                if restriction.is_some() {
+                    write!(
+                        f,
+                        "Mapping<{}, {}>({})",
+                        key_type,
+                        value_type,
+                        restriction.clone().unwrap()
+                    )
+                } else {
+                    write!(f, "Mapping<{}, {}>", key_type, value_type)
+                }
+            }
+            PklType::Set { _type, restriction } => {
+                if restriction.is_some() {
+                    write!(f, "Set<{}>({})", _type, restriction.clone().unwrap())
+                } else {
+                    write!(f, "Set<{}>", _type)
+                }
+            }
             PklType::Class(name) => write!(f, "{name}"),
             PklType::Union(values) => {
                 write!(f, "{}", values[0])?;
@@ -288,6 +576,13 @@ impl<'a> fmt::Display for PklType<'a> {
             PklType::NotNull => write!(f, "NotNull"),
             PklType::Regex => write!(f, "Regex"),
             PklType::UnionDefault(t) => write!(f, "*{t}"),
+            PklType::UInt => write!(f, "Uint"),
+            PklType::UInt8 => write!(f, "Uint8"),
+            PklType::UInt16 => write!(f, "Uint16"),
+            PklType::UInt32 => write!(f, "Uint32"),
+            PklType::Int8 => write!(f, "Int8"),
+            PklType::Int16 => write!(f, "Int16"),
+            PklType::Int32 => write!(f, "Int32"),
         }
     }
 }

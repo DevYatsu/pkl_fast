@@ -122,6 +122,13 @@ pub enum PklToken<'source> {
     )]
     GenericTypeAnnotation,
 
+    /// It's simply `GenericTypeAnnotation` variant followed by `(`.
+    /// It's supposed to represent a generic type with restrictions.
+    #[regex(
+        r"[A-Z][A-Za-z0-9]*<\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:,\s*([A-Za-z_][A-Za-z0-9_]*))?\s*>\("
+    )]
+    GenericTypeAnnotationFunctionCall,
+
     // We assume a type starts with an UpperCase
     #[regex(r"[A-Z][a-zA-Z0-9_]*\?", |lex| {let val=lex.slice(); &val[..val.len()-1]})]
     PotentiallyNullType(&'source str),
@@ -210,7 +217,7 @@ pub enum PklToken<'source> {
     /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
     Identifier(&'source str),
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let val = lex.slice(); &val[1..val.len()-1]})]
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let val = lex.slice(); &val[..val.len()-1]})]
     FunctionCall(&'source str),
 
     #[regex("//.*")]
@@ -297,7 +304,7 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::SemiColon => write!(f, "';'"),
             PklToken::AmendedObjectBracket(s) => write!(f, "({{}} {} {{)", s),
             PklToken::TypeAlias => write!(f, "typealias"),
-            PklToken::GenericTypeAnnotation => {
+            PklToken::GenericTypeAnnotation | PklToken::GenericTypeAnnotationFunctionCall => {
                 write!(f, "'GenericType Annotation: Type<Annotation>'")
             }
             PklToken::PotentiallyNullType(s) => write!(f, "{}?", s),

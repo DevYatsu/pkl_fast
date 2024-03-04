@@ -18,7 +18,7 @@ pub mod string;
 pub use class::parse_class_instance;
 pub use object::parse_object;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// An enum representing any Pkl value
 pub enum PklValue<'a> {
     String(Vec<StringFragment<'a>>),
