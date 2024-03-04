@@ -52,8 +52,6 @@ pub enum PklToken<'source> {
     New,
     #[token("class")]
     Class,
-    #[token("this")]
-    This,
     #[token("default")]
     Default,
 
@@ -280,7 +278,6 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::Open => write!(f, "open"),
             PklToken::New => write!(f, "new"),
             PklToken::Class => write!(f, "class"),
-            PklToken::This => write!(f, "this"),
             PklToken::Default => write!(f, "default"),
             PklToken::Local => write!(f, "local"),
             PklToken::Hidden => write!(f, "hidden"),

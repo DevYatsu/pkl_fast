@@ -4,3 +4,10 @@ greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n \(ENV_VALUE +
 
 
 x: Map<Int, String>(length <= 5) = Map(0, "0")
+
+class Bird {
+  name: String(length >= 3)   
+  parent: String(this != name)  
+}
+
+emailRegex: Regex = Regex("test")

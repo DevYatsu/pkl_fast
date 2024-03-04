@@ -308,6 +308,7 @@ impl<'a> From<&'a str> for PklType<'a> {
             "Duration" => PklType::Duration,
             "DataSize" => PklType::DataSize,
             "Null" => PklType::Null,
+            "Regex" => PklType::Regex,
             "Collection" => PklType::Collection {
                 _type: Box::new(PklType::Unknown),
                 restriction: None,
