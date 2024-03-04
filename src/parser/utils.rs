@@ -48,6 +48,21 @@ pub fn expect_token<'source>(
     }
 }
 
+pub fn assert_token_eq<'source>(
+    lexer: &mut PklLexer<'source>,
+    token_option: Option<PklToken<'source>>,
+    expected_token: PklToken<'source>,
+) -> ParsingResult<()> {
+    if token_option.is_none() {
+        return Err(ParsingError::eof(lexer));
+    }
+
+    match token_option.unwrap() {
+        token if token == expected_token => Ok(()),
+        _ => Err(ParsingError::unexpected(lexer, expected_token.to_string()))?,
+    }
+}
+
 pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<()> {
     match lexer.next() {
         Some(Err(e)) => Err(ParsingError::lexing(lexer, e)),
@@ -138,7 +153,7 @@ where
 /// The `separator_token` will be skipped after each time the `predicate` is ran.
 ///
 /// *NOTE*: This function is the same as `list_while_not_token0` except for one thing:
-/// the `predicate` reads the next token and need to return it.
+/// the `predicate` reads the next token and needs to return it.
 pub fn list_while_not_token2<'source, R, F>(
     lexer: &mut PklLexer<'source>,
     separator_token: PklToken<'source>,
@@ -254,6 +269,60 @@ where
                 continue;
             }
 
+            return Err(ParsingError::unexpected(
+                lexer,
+                format!("{} or {}", end_token, separator_token),
+            ));
+        }
+    }
+
+    Ok(result_vec)
+}
+
+/// This function creates a HashMap out of a `predicate` that will be ran until the `end_token` is encountered.
+/// The `separator_token` will be skipped indefinitely, after each time the `predicate` is ran.
+///
+/// The predicate should return a tuple with the item to insert as a key and its value, as well as the next token.
+///
+/// *NOTE*: This function is the same as `hashmap_while_not_token0` except for one thing:
+/// the `predicate` reads the next token and needs to return it.
+pub fn hashmap_while_not_token2<'source, K, V, F>(
+    lexer: &mut PklLexer<'source>,
+    separator_token: PklToken<'source>,
+    end_token: PklToken<'source>,
+    predicate: &F,
+) -> ParsingResult<HashMap<K, V>>
+where
+    K: Eq + Hash,
+    F: Fn(
+            &mut PklLexer<'source>,
+            PklToken<'source>,
+        ) -> ParsingResult<((K, V), Option<PklToken<'source>>)>
+        + 'static,
+{
+    let mut result_vec = HashMap::new();
+
+    loop {
+        let token = retrieve_next_token(lexer)?;
+
+        if end_token == token {
+            break;
+        }
+        if separator_token == token {
+            continue;
+        }
+
+        let ((key, value), next_token) = predicate(lexer, token)?;
+        result_vec.insert(key, value);
+
+        // if None, does not necessarily mean that there is no token next in the lexer
+        if let Some(token) = next_token {
+            if end_token == token {
+                break;
+            }
+            if separator_token == token {
+                continue;
+            }
             return Err(ParsingError::unexpected(
                 lexer,
                 format!("{} or {}", end_token, separator_token),

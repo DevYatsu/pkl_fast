@@ -21,7 +21,7 @@ fn main() -> miette::Result<()> {
     let _statements = parse(lexer)?;
 
     for s in _statements {
-        println!("{:?}", s);
+        println!("{:?}", s)
     }
 
     let end = Instant::now();

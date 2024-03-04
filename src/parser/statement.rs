@@ -4,7 +4,6 @@ mod extends;
 pub mod import;
 mod info;
 mod module;
-mod typealias;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement<'a> {
@@ -59,7 +58,6 @@ pub use import::ImportClause;
 pub use info::parse_deprecated;
 pub use info::parse_module_info;
 pub use module::parse_module;
-pub use typealias::parse_typealias;
 
 pub use self::class::ClassType;
 use self::info::InfoField;

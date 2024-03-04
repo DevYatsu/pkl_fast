@@ -21,8 +21,13 @@ typealias EmailList = List<EmailAddress>
 emailList: EmailList = List("pigeon@example.com", "parrot@example.com")
 
 
-
 typealias StringMap<Value> = Map<String, Value>
 
 map: StringMap<Int> = Map("Pigeon", 42, "Falcon", 21)
 
+
+
+typealias Hey = "hey"
+hey_string: Hey = "hey"
+
+typealias Foo = "foo"|"bar"|"baz"

@@ -2,8 +2,8 @@ use crate::{
     parser::{
         types::{parse_type, PklType},
         utils::{
-            expect_token, hashmap_while_not_token0, list_while_not_token0, parse_identifier,
-            retrieve_next_token,
+            assert_token_eq, expect_token, hashmap_while_not_token2, list_while_not_token2,
+            parse_identifier, retrieve_next_token,
         },
         value::parse_value,
     },
@@ -63,7 +63,7 @@ pub fn parse_class_declaration<'source>(
         _ => return Err(ParsingError::unexpected(lexer, "'{'".to_owned())),
     };
 
-    let fields = hashmap_while_not_token0(
+    let fields = hashmap_while_not_token2(
         lexer,
         PklToken::NewLine,
         PklToken::CloseBracket,
@@ -81,57 +81,72 @@ pub fn parse_class_declaration<'source>(
 pub fn parse_class_field<'source>(
     lexer: &mut PklLexer<'source>,
     token: PklToken<'source>,
-) -> ParsingResult<(&'source str, ClassArgument<'source>)> {
+) -> ParsingResult<(
+    (&'source str, ClassArgument<'source>),
+    Option<PklToken<'source>>,
+)> {
     match token {
         PklToken::Hidden => {
             let name = parse_identifier(lexer)?;
             expect_token(lexer, PklToken::Colon)?;
-            let value = parse_type(lexer)?;
+            let (value, next_token) = parse_type(lexer)?;
 
             Ok((
-                name,
-                ClassArgument::Field {
-                    value,
-                    _type: FieldType::Hidden,
-                },
+                (
+                    name,
+                    ClassArgument::Field {
+                        value,
+                        _type: FieldType::Hidden,
+                    },
+                ),
+                next_token,
             ))
         }
         PklToken::Fixed => {
             let name = parse_identifier(lexer)?;
             expect_token(lexer, PklToken::Colon)?;
-            let value = parse_type(lexer)?;
+            let (value, next_token) = parse_type(lexer)?;
 
             Ok((
-                name,
-                ClassArgument::Field {
-                    value,
-                    _type: FieldType::Fixed,
-                },
+                (
+                    name,
+                    ClassArgument::Field {
+                        value,
+                        _type: FieldType::Hidden,
+                    },
+                ),
+                next_token,
             ))
         }
         PklToken::Local => {
             let name = parse_identifier(lexer)?;
             expect_token(lexer, PklToken::Colon)?;
-            let value = parse_type(lexer)?;
+            let (value, next_token) = parse_type(lexer)?;
 
             Ok((
-                name,
-                ClassArgument::Field {
-                    value,
-                    _type: FieldType::Local,
-                },
+                (
+                    name,
+                    ClassArgument::Field {
+                        value,
+                        _type: FieldType::Local,
+                    },
+                ),
+                next_token,
             ))
         }
         PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
             expect_token(lexer, PklToken::Colon)?;
-            let value = parse_type(lexer)?;
+            let (value, next_token) = parse_type(lexer)?;
 
             Ok((
-                name,
-                ClassArgument::Field {
-                    value,
-                    _type: FieldType::None,
-                },
+                (
+                    name,
+                    ClassArgument::Field {
+                        value,
+                        _type: FieldType::None,
+                    },
+                ),
+                next_token,
             ))
         }
         PklToken::Function => {
@@ -140,7 +155,7 @@ pub fn parse_class_field<'source>(
                 _ => return Err(ParsingError::unexpected(lexer, "function name".to_owned())),
             };
 
-            let args = list_while_not_token0(
+            let args = list_while_not_token2(
                 lexer,
                 PklToken::Comma,
                 PklToken::CloseParenthesis,
@@ -148,19 +163,23 @@ pub fn parse_class_field<'source>(
             )?;
             expect_token(lexer, PklToken::Colon)?;
 
-            let return_type = parse_type(lexer)?;
+            let (return_type, next_token) = parse_type(lexer)?;
 
-            expect_token(lexer, PklToken::EqualSign)?;
+            assert_token_eq(lexer, next_token, PklToken::EqualSign)?;
+
             let next_token = retrieve_next_token(lexer)?;
             let return_value = parse_value(lexer, next_token)?;
 
             Ok((
-                name,
-                ClassArgument::Method {
-                    args,
-                    return_type,
-                    return_value,
-                },
+                (
+                    name,
+                    ClassArgument::Method {
+                        args,
+                        return_type,
+                        return_value,
+                    },
+                ),
+                None,
             ))
         }
         _ => Err(ParsingError::unexpected(
@@ -170,10 +189,12 @@ pub fn parse_class_field<'source>(
     }
 }
 
-fn parse_fn_arg<'a>(lexer: &mut PklLexer<'a>) -> ParsingResult<(&'a str, PklType<'a>)> {
+fn parse_fn_arg<'a>(
+    lexer: &mut PklLexer<'a>,
+) -> ParsingResult<((&'a str, PklType<'a>), Option<PklToken<'a>>)> {
     let name = parse_identifier(lexer)?;
     expect_token(lexer, PklToken::Colon)?;
-    let value = parse_type(lexer)?;
+    let (value, next_token) = parse_type(lexer)?;
 
-    Ok((name, value))
+    Ok(((name, value), next_token))
 }

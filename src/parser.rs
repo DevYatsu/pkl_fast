@@ -13,7 +13,7 @@ use self::{
         import::{import_clause, parse_import_value},
         ClassType,
     },
-    types::parse_type,
+    types::{parse_type, PklType},
     utils::{expect_statement_end, expect_token, parse_identifier, retrieve_opt_next_token},
     value::parse_object,
 };
@@ -129,7 +129,12 @@ impl<'source> PklParser<'source> {
                 }
                 Ok(PklToken::TypeAlias) => {
                     let stmt = self.parse_typealias()?;
-                    expect_statement_end(&mut self.lexer)?;
+
+                    if self.new_line_parsed {
+                        self.new_line_parsed = !self.new_line_parsed;
+                    } else {
+                        expect_statement_end(&mut self.lexer)?;
+                    }
 
                     stmt
                 }
@@ -257,9 +262,7 @@ impl<'source> PklParser<'source> {
                 });
             }
             PklToken::Colon => {
-                let variable_type = parse_type(lexer)?;
-
-                let next_token = retrieve_opt_next_token(lexer)?;
+                let (variable_type, next_token) = parse_type(lexer)?;
 
                 match next_token {
                     Some(PklToken::EqualSign) => {}
@@ -314,7 +317,43 @@ impl<'source> PklParser<'source> {
         })
     }
     fn parse_typealias(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_typealias(&mut self.lexer)
+        let lexer = &mut self.lexer;
+
+        let token = retrieve_next_token(lexer)?;
+
+        let (alias, generics_params) = match token {
+            PklToken::Identifier(v) => (v, None),
+            PklToken::GenericTypeAnnotation => {
+                let (name, generics) = types::generics::extract_generics(lexer.slice());
+
+                let generics_vec = generics
+                    .into_iter()
+                    .map(|s| s.trim().into())
+                    .collect::<Vec<PklType<'source>>>();
+
+                (name, Some(generics_vec))
+            }
+            _ => return Err(ParsingError::expected_identifier(lexer)),
+        };
+
+        expect_token(lexer, PklToken::EqualSign)?;
+
+        let (equivalent_type, next_token) = parse_type(lexer)?;
+
+        match next_token {
+            Some(PklToken::NewLine)
+            | Some(PklToken::LineComment)
+            | Some(PklToken::BlockComment) => {
+                self.new_line_parsed = true;
+            }
+            _ => return Err(ParsingError::unexpected(lexer, "line ending".to_owned())),
+        };
+
+        Ok(Statement::TypeAlias {
+            alias,
+            equivalent_type,
+            generics_params,
+        })
     }
 
     fn parse_module_info(&mut self) -> ParsingResult<Statement<'source>> {

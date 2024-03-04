@@ -87,10 +87,10 @@ pub enum PklToken<'source> {
     /// support for:
     /// - ==, <=, >=, >
     /// - ??
-    /// - &&, ||, |
+    /// - &&, ||
     /// - +,-,*,/
     /// - **, %,|>, ~/
-    #[regex(r#"==|<=|<|>=|>|!=|\?\?|\&\&|\&|\|\||\||/|\+|-|\*|\*\*|\|>|%|~/"#, |lex| lex.slice())]
+    #[regex(r#"==|<=|<|>=|>|!=|\?\?|\&\&|\&|\|\||/|\+|-|\*|\*\*|\|>|%|~/"#, |lex| lex.slice())]
     Operator(&'source str),
     #[token("=")]
     EqualSign,
@@ -137,8 +137,12 @@ pub enum PklToken<'source> {
     NonNullIdentifier(&'source str),
 
     /// This variant represents '!', the logical NOT operator
-    #[regex(r"!")]
+    #[token("!")]
     LogicalNotOperator,
+
+    /// This variant represents '|', the OR operator for type unions
+    #[token("|")]
+    UnionSerarator,
 
     /// This variant represents a type preceded by '*', meaning that the type is the default one in an union.
     #[regex(r"\*[A-Z][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| {let val=lex.slice(); &val[1..]})]
@@ -322,6 +326,7 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::LineComment => write!(f, "//"),
             PklToken::DocComment => write!(f, "///"),
             PklToken::BlockComment => write!(f, "/* ... */"),
+            PklToken::UnionSerarator => write!(f, "|"),
         }
     }
 }
