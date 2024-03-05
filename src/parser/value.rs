@@ -181,7 +181,13 @@ impl<'a> fmt::Display for PklValue<'a> {
                 write!(f, "}}")?;
                 Ok(())
             }
-            PklValue::Set(_) => todo!(),
+            PklValue::Set(values) => {
+                write!(f, "Set(")?;
+                for val in values {
+                    write!(f, "{}, ", val)?;
+                }
+                write!(f, ")")
+            }
             PklValue::Nullable(value) => {
                 write!(f, "Null({})", *value)
             }
