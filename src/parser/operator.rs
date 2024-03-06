@@ -42,7 +42,7 @@ pub fn parse_opt_operation<'source>(
         match next_token {
             Some(PklToken::Operator(op)) | Some(PklToken::RightAngleBracket(op)) => {
                 let new_operator = Operator::from(op);
-                let new_expr = parse_basic_expr(lexer)?;
+                let new_expr = parse_basic_expr(lexer, None)?;
                 output_queue.push(new_expr);
                 // If the operator stack is not empty and the precedence of the new operator
                 // is less than or equal to the precedence of the operator on top of the stack,

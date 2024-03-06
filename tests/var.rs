@@ -64,3 +64,15 @@ datasize7 = 1.6666666666666667.mb
 
     assert_eq!(statements.is_ok(), true);
 }
+
+#[test]
+fn str_var() {
+    let code = r#"ENV_VALUE="TEST_VALUE"
+s="str"
+greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n \(ENV_VALUE + s)""#;
+
+    let tokens = lex(code);
+    let statements = parse(tokens);
+
+    assert_eq!(statements.is_ok(), true);
+}

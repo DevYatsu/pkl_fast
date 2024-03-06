@@ -48,6 +48,42 @@ pub fn expect_token<'source>(
     }
 }
 
+pub fn expect_token_with_opt_newlines<'source>(
+    lexer: &mut PklLexer<'source>,
+    target_token: PklToken<'source>,
+) -> ParsingResult<()> {
+    loop {
+        let token = lexer.next();
+
+    if token.is_none() {
+        return Err(ParsingError::eof(lexer));
+    }
+
+    match token.unwrap() {
+        Err(e) => Err(ParsingError::lexing(lexer, e))?,
+        Ok(token) if token == PklToken::NewLine => continue,
+        Ok(token) if token == target_token => return Ok(()),
+        _ => Err(ParsingError::unexpected(lexer, target_token.to_string()))?,
+    }
+    }
+}
+
+pub fn parse_opt_newlines<'source, F, R>(
+    lexer: &mut PklLexer<'source>,
+    predicate: &F,
+) -> ParsingResult<R>
+where
+    F: Fn(&mut PklLexer<'source>, Option<PklToken<'source>>) -> ParsingResult<R>,
+{
+    loop {
+        let token = retrieve_next_token(lexer)?;
+
+        if PklToken::NewLine != token {
+            return predicate(lexer, Some(token));
+        }
+    }
+}
+
 pub fn assert_token_eq<'source>(
     lexer: &mut PklLexer<'source>,
     token_option: Option<PklToken<'source>>,
