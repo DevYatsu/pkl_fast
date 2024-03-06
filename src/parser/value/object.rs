@@ -30,6 +30,9 @@ pub enum ObjectField<'a> {
         iterable: &'a str,
         members: Vec<ObjectField<'a>>,
     },
+
+    Spread(&'a str),
+    NullableSpread(&'a str),
 }
 
 /// Function called to parse an object, we assume that '{' was already found
@@ -74,6 +77,14 @@ pub fn parse_block<'source>(
             };
 
             Ok((ObjectField::Variable { name, value }, next_token))
+        }
+        PklToken::SpreadSyntax => {
+            let ident = parse_identifier(lexer)?;
+            Ok((ObjectField::Spread(ident), None))
+        }
+        PklToken::NullableSpreadSyntax => {
+            let ident = parse_identifier(lexer)?;
+            Ok((ObjectField::NullableSpread(ident), None))
         }
         PklToken::When => {
             expect_token(lexer, PklToken::OpenParenthesis)?;
@@ -171,7 +182,7 @@ pub fn parse_block<'source>(
                         None,
                     ))
                 }
-                _ => return Err(ParsingError::unexpected(lexer, "'in' or ','".to_owned())),
+                _ => Err(ParsingError::unexpected(lexer, "'in' or ','".to_owned())),
             }
         }
         _ => Err(ParsingError::expected_identifier(lexer)),
@@ -225,6 +236,8 @@ impl<'a> fmt::Display for ObjectField<'a> {
 
                 write!(f, "}}")
             }
+            ObjectField::Spread(value) => write!(f, "...{value}"),
+            ObjectField::NullableSpread(value) => write!(f, "...?{value}"),
         }
     }
 }

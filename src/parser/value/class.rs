@@ -1,12 +1,14 @@
 use crate::{
     parser::{
         expression::{parse_expr, Expression},
-        utils::{expect_token, hashmap_while_not_token1, retrieve_next_token},
+        utils::{
+            expect_token, hashmap_while_not_token1, list_while_not_token3, retrieve_next_token,
+        },
     },
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
 };
 
-use super::parse_object;
+use super::{listing::parse_listing_field, parse_object};
 
 /// Function called to parse a class instance, we assume that 'new' was already found
 pub fn parse_class_instance<'source>(
@@ -16,13 +18,22 @@ pub fn parse_class_instance<'source>(
 
     let name = match next_token {
         PklToken::Identifier(value) => {
+            expect_token(lexer, PklToken::OpenBracket)?;
             match value {
-                "Listing" => unimplemented!(),
+                "Listing" => {
+                    let values = list_while_not_token3(
+                        lexer,
+                        PklToken::NewLine,
+                        PklToken::CloseBracket,
+                        &parse_listing_field,
+                    )?;
+
+                    return Ok(PklValue::Listing(values));
+                }
                 "Mapping" => unimplemented!(),
                 _ => (),
             }
 
-            expect_token(lexer, PklToken::OpenBracket)?;
             Some(value)
         }
         PklToken::OpenBracket => None,

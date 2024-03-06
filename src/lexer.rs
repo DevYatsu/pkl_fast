@@ -104,6 +104,8 @@ pub enum PklToken<'source> {
     Comma,
     #[token("...", priority = 3)]
     SpreadSyntax,
+    #[token("...?", priority = 3)]
+    NullableSpreadSyntax,
     #[token(".")]
     Dot,
     #[token(";")]
@@ -336,6 +338,7 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::BlockComment => write!(f, "/* ... */"),
             PklToken::UnionSerarator => write!(f, "|"),
             PklToken::ListIndexing(name) => write!(f, "{name}["),
+            PklToken::NullableSpreadSyntax => write!(f, "...?"),
         }
     }
 }

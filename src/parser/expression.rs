@@ -5,7 +5,7 @@ use std::fmt;
 use super::{operator::Operator, types::PklType, value::PklValue, PklLexer};
 
 pub mod basic;
-mod complex;
+pub mod complex;
 
 mod fn_call;
 

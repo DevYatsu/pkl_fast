@@ -1,5 +1,6 @@
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
+use self::listing::ListingField;
 use self::object::ObjectField;
 use self::string::StringFragment;
 use super::expression::Expression;
@@ -13,6 +14,7 @@ use std::fmt;
 mod class;
 mod datasize;
 mod duration;
+mod listing;
 pub mod object;
 pub mod string;
 
@@ -32,7 +34,7 @@ pub enum PklValue<'a> {
     },
 
     List(Vec<Expression<'a>>),
-    Listing(Vec<Expression<'a>>),
+    Listing(Vec<ListingField<'a>>),
 
     Map(Vec<Expression<'a>>),
 
