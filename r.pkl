@@ -1,4 +1,11 @@
+list = List(1,2,3,4,5)
+
+
 hey = if ("hey" == "hey") 
-true 
+    list[ 
+        1    
+    ]
 else 
-false
+    list[ 
+        2 + 1
+    ] + 1

@@ -1,6 +1,5 @@
 use super::{
-    expression::{parse_basic_expr, Expression},
-    utils::retrieve_opt_next_token,
+    expression::{basic::parse_basic_expr, Expression},
     ParsingResult, PklLexer,
 };
 use crate::prelude::PklToken;
@@ -27,22 +26,31 @@ pub enum Operator {
 /// Returns a tuple containing the resulting expression and the next token encountered (or None if there's none).
 ///
 /// **Simply put, this fn parses a mathematical expression and returns the next token.**
-pub fn parse_opt_operation<'source>(
+pub fn parse_operation<'source>(
     lexer: &mut PklLexer<'source>,
     expr: Expression<'source>,
+    operator: &'source str,
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
     let mut output_queue = Vec::new();
     let mut operator_stack: Vec<Operator> = Vec::new();
     let mut return_token = None;
     output_queue.push(expr);
 
-    loop {
-        let next_token = retrieve_opt_next_token(lexer)?;
+    // we take care of the initial expr and operator given as parameter
+    let first_operator = Operator::from(operator);
+    let (first_expr, next) = parse_basic_expr(lexer, None)?;
+    output_queue.push(first_expr);
+    operator_stack.push(first_operator);
 
+    let mut next_token = next;
+
+    loop {
         match next_token {
             Some(PklToken::Operator(op)) | Some(PklToken::RightAngleBracket(op)) => {
                 let new_operator = Operator::from(op);
-                let new_expr = parse_basic_expr(lexer, None)?;
+                let (new_expr, next) = parse_basic_expr(lexer, None)?;
+                next_token = next;
+
                 output_queue.push(new_expr);
                 // If the operator stack is not empty and the precedence of the new operator
                 // is less than or equal to the precedence of the operator on top of the stack,
@@ -64,8 +72,8 @@ pub fn parse_opt_operation<'source>(
 
                 operator_stack.push(new_operator);
             }
-            Some(token) => {
-                return_token = Some(token);
+            Some(_) => {
+                return_token = next_token;
                 break;
             }
             None => break,

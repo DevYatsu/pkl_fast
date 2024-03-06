@@ -79,11 +79,6 @@ pub fn parse_value<'source>(
         PklToken::Integer(i) => Ok(PklValue::Int(i)),
         PklToken::Float(f) => Ok(PklValue::Float(f)),
         PklToken::Null => Ok(PklValue::Null),
-        PklToken::AmendedObjectBracket(amended_by) => {
-            let value = parse_object(lexer, Some(amended_by))?;
-
-            Ok(value)
-        }
         PklToken::DataSize => match lexer.slice().split('.').collect::<Vec<_>>().as_slice() {
             [value, unit] => {
                 let value: DataSizeValue = value.parse::<i64>()?.into();

@@ -109,9 +109,19 @@ pub enum PklToken<'source> {
     #[token(";")]
     SemiColon,
 
-    #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#, |lex| {let val = lex.slice(); &val[1..val.find(')').unwrap()]})]
-    /// Token representing an object definition with the object amending another object, that is for example: ```(object_name) {```
-    AmendedObjectBracket(&'source str),
+    // #[regex("[A-Z][a-zA-Z]*")]
+    // PascalCaseValue,
+    // #[regex("[a-z][a-zA-Z]*")]
+    // CamelCaseValue, // in pkl words written in camelCase are meant to be used as values
+    /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
+    Identifier(&'source str),
+
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\[", |lex| {let val = lex.slice(); &val[0..val.len()-1]})]
+    ListIndexing(&'source str),
+
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let val = lex.slice(); &val[..val.len()-1]})]
+    FunctionCall(&'source str),
 
     #[token("typealias")]
     TypeAlias,
@@ -218,16 +228,6 @@ pub enum PklToken<'source> {
     #[regex(r#""""[^"]*""""#, |lex| {let val = lex.slice(); &val[3..val.len()-3]})]
     MultipleLinesString(&'source str),
 
-    // #[regex("[A-Z][a-zA-Z]*")]
-    // PascalCaseValue,
-    // #[regex("[a-z][a-zA-Z]*")]
-    // CamelCaseValue, // in pkl words written in camelCase are meant to be used as values
-    /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
-    Identifier(&'source str),
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let val = lex.slice(); &val[..val.len()-1]})]
-    FunctionCall(&'source str),
-
     #[regex("//.*")]
     LineComment,
     #[regex("///.*")]
@@ -310,7 +310,6 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::SpreadSyntax => write!(f, "'...'"),
             PklToken::Dot => write!(f, "'.'"),
             PklToken::SemiColon => write!(f, "';'"),
-            PklToken::AmendedObjectBracket(s) => write!(f, "({{}} {} {{)", s),
             PklToken::TypeAlias => write!(f, "typealias"),
             PklToken::GenericTypeAnnotationStart(name) => {
                 write!(f, "{name}<")
@@ -335,6 +334,7 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::DocComment => write!(f, "///"),
             PklToken::BlockComment => write!(f, "/* ... */"),
             PklToken::UnionSerarator => write!(f, "|"),
+            PklToken::ListIndexing(name) => write!(f, "{name}["),
         }
     }
 }

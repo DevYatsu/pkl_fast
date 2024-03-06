@@ -1,17 +1,11 @@
-use self::fn_call::parse_fn_call_arguments;
-use crate::{
-    parser::utils::{assert_token_eq, retrieve_next_token},
-    prelude::PklToken,
-};
+use self::{basic::parse_basic_expr, complex::parse_complex_expr};
+use crate::prelude::{ParsingResult, PklToken};
 use std::fmt;
 
-use super::{
-    errors::ParsingError,
-    operator::{parse_opt_operation, Operator},
-    utils::{expect_token, expect_token_with_opt_newlines, parse_opt_newlines},
-    value::{parse_value, PklValue},
-    ParsingResult, PklLexer,
-};
+use super::{operator::Operator, value::PklValue, PklLexer};
+
+pub mod basic;
+mod complex;
 
 mod fn_call;
 
@@ -22,6 +16,11 @@ pub enum Expression<'a> {
     FunctionCall {
         func_name: &'a str,
         args: Vec<Expression<'a>>,
+    },
+
+    ListIndexing {
+        indexed: &'a str,
+        indexer: Box<Expression<'a>>,
     },
 
     Operation {
@@ -45,71 +44,9 @@ pub fn parse_expr<'source>(
     lexer: &mut PklLexer<'source>,
     opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
-    let expr = parse_basic_expr(lexer, opt_token)?;
+    let (expr, opt_token) = parse_basic_expr(lexer, opt_token)?;
 
-    parse_opt_operation(lexer, expr)
-}
-
-pub fn parse_basic_expr<'source>(
-    lexer: &mut PklLexer<'source>,
-    opt_token: Option<PklToken<'source>>,
-) -> ParsingResult<Expression<'source>> {
-    let token = if opt_token.is_some() {
-        opt_token.unwrap()
-    } else {
-        retrieve_next_token(lexer)?
-    };
-
-    let expr = match token {
-        PklToken::LogicalNotOperator => {
-            Expression::LogicalNot(parse_basic_expr(lexer, None)?.into())
-        }
-        PklToken::OpenParenthesis => {
-            let (expr, next_token) = parse_expr(lexer, None)?;
-
-            match next_token {
-                Some(PklToken::CloseParenthesis) => (),
-                _ => return Err(ParsingError::unexpected(lexer, "'('".to_owned())),
-            };
-
-            Expression::Parenthesised(expr.into())
-        }
-        PklToken::Identifier(ident) => Expression::Identifier(ident),
-        PklToken::NonNullIdentifier(name) => {
-            Expression::NonNull(Expression::Identifier(name).into())
-        }
-        PklToken::If => {
-            expect_token(lexer, PklToken::OpenParenthesis)?;
-
-            let (condition, next) = parse_expr(lexer, None)?;
-            assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
-
-            let (condition_true, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
-
-            expect_token_with_opt_newlines(lexer, next_token, PklToken::Else)?;
-
-            let _else = parse_opt_newlines(lexer, &parse_basic_expr)?;
-
-            Expression::If {
-                condition: Box::new(condition),
-                condition_true: Box::new(condition_true),
-                _else: Box::new(_else),
-            }
-        }
-        PklToken::FunctionCall(func_name) => {
-            let args = parse_fn_call_arguments(lexer)?;
-
-            match func_name {
-                "List" => Expression::Value(PklValue::List(args)),
-                "Map" => Expression::Value(PklValue::Map(args)),
-                "Set" => Expression::Value(PklValue::Set(args)),
-                _ => Expression::FunctionCall { func_name, args },
-            }
-        }
-        current_token => Expression::Value(parse_value(lexer, current_token)?),
-    };
-
-    Ok(expr)
+    parse_complex_expr(lexer, expr, opt_token)
 }
 
 impl<'a> fmt::Display for Expression<'a> {
@@ -138,6 +75,7 @@ impl<'a> fmt::Display for Expression<'a> {
                 condition_true,
                 _else,
             } => write!(f, "if ({}) {} else {}", condition, condition_true, _else),
+            Expression::ListIndexing { indexed, indexer } => write!(f, "{}[{}]", indexed, indexer),
         }
     }
 }
