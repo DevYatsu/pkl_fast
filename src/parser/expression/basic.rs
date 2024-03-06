@@ -83,7 +83,7 @@ pub fn parse_basic_expr<'source>(
             ));
         }
         PklToken::Let => {
-            expect_token(lexer, PklToken::OpenParenthesis)?;
+            expect_token_with_opt_newlines(lexer, None, PklToken::OpenParenthesis)?;
             let name = parse_identifier(lexer)?;
 
             let opt_type = match retrieve_next_token(lexer)? {
