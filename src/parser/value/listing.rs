@@ -71,38 +71,53 @@ pub fn parse_listing_field<'source>(
         }
         PklToken::OpenParenthesis => {
             let (expr, opt_token) = parse_basic_expr(lexer, None)?;
-            assert_token_eq(lexer, opt_token, PklToken::CloseParenthesis)?;
 
-            match expr {
-                Expression::ListIndexing { indexed, indexer } => {
-                    if indexed == "this" {
-                        expect_token(lexer, PklToken::OpenBracket)?;
-                        let value = parse_object(lexer, None)?;
+            match opt_token {
+                Some(PklToken::CloseParenthesis) => match expr {
+                    Expression::ListIndexing { indexed, indexer } => {
+                        if indexed == "this" {
+                            expect_token(lexer, PklToken::OpenBracket)?;
+                            let value = parse_object(lexer, None)?;
 
-                        Ok((
-                            ListingField::AmendingElement {
-                                index: *indexer,
-                                value,
-                            },
-                            None,
-                        ))
-                    } else {
+                            Ok((
+                                ListingField::AmendingElement {
+                                    index: *indexer,
+                                    value,
+                                },
+                                None,
+                            ))
+                        } else {
+                            let (expr, next) = parse_complex_expr(
+                                lexer,
+                                Expression::Parenthesised(Box::new(Expression::ListIndexing {
+                                    indexed,
+                                    indexer,
+                                })),
+                                None,
+                            )?;
+                            Ok((ListingField::Expression(expr), next))
+                        }
+                    }
+                    _ => {
                         let (expr, next) = parse_complex_expr(
                             lexer,
-                            Expression::Parenthesised(Box::new(Expression::ListIndexing {
-                                indexed,
-                                indexer,
-                            })),
+                            Expression::Parenthesised(Box::new(expr)),
                             None,
                         )?;
                         Ok((ListingField::Expression(expr), next))
                     }
-                }
-                _ => {
-                    let (expr, next) =
-                        parse_complex_expr(lexer, Expression::Parenthesised(Box::new(expr)), None)?;
+                },
+
+                Some(_) => {
+                    // first call to parse expr inside parenthesis
+                    let (expr, next) = parse_complex_expr(lexer, expr, opt_token)?;
+                    assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
+                    // second call to parse following expr if there is one
+                    let (expr, next) = parse_complex_expr(lexer, expr, None)?;
+
                     Ok((ListingField::Expression(expr), next))
                 }
+                _ => Err(ParsingError::eof(lexer)),
             }
         }
         _ => {

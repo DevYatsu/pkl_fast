@@ -92,7 +92,7 @@ pub fn parse_block<'source>(
 
             Ok((ObjectField::AmendedValue { index: expr, value }, None))
         }
-                PklToken::Default => {
+        PklToken::Default => {
             expect_token(lexer, PklToken::OpenBracket)?;
             let value = parse_object(lexer, None)?;
 

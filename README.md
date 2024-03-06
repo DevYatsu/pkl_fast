@@ -28,13 +28,13 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 - [x] Parsing `extends` statement
 - [x] Parsing `module` statement
 
-- [ ] Parsing variable declaration statement (partially done)
+- [x] Parsing variable declaration statement
 - [x] Parsing `class` statement
 - [ ] Parsing `function` statement
 
 - [x] Parsing `@ModuleInfo`/`@Deprecated` annotation
 - [x] Parsing `typealias` annotation (partially done, need to support unions)
-- [ ] Parsing If/Else/Let/For/When statement
+- [x] Parsing If/Else/Let/For/When statement
 
 - [x] Parsing Arithmetic expressions
 - [x] Parsing Function call expressions
