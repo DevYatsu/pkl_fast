@@ -235,6 +235,57 @@ where
     Ok(result_vec)
 }
 
+/// This function creates a list out of a `predicate` that will be ran until the `end_token` is encountered.
+/// The `separator_token` will be skipped after each time the `predicate` is ran.
+///
+/// *NOTE*: This function is the same as `list_while_not_token2` except for one thing:
+/// the separator tokens are jumped at the start and the predicate is sure to receive a valid token as parameter.
+pub fn list_while_not_token3<'source, R, F>(
+    lexer: &mut PklLexer<'source>,
+    separator_token: PklToken<'source>,
+    end_token: PklToken<'source>,
+    predicate: &F,
+) -> ParsingResult<Vec<R>>
+where
+    F: Fn(
+            &mut PklLexer<'source>,
+            PklToken<'source>,
+        ) -> ParsingResult<(R, Option<PklToken<'source>>)>
+        + 'static,
+{
+    let mut result_vec = Vec::new();
+
+    loop {
+        let token = retrieve_next_token(lexer)?;
+
+        if token == separator_token {
+            continue;
+        }
+        if end_token == token {
+            break;
+        }
+
+        let (result, next_token) = predicate(lexer, token)?;
+        result_vec.push(result);
+
+        // if None, does not necessarily mean that there is no token next in the lexer
+        if let Some(token) = next_token {
+            if end_token == token {
+                break;
+            }
+            if separator_token == token {
+                continue;
+            }
+            return Err(ParsingError::unexpected(
+                lexer,
+                format!("{} or {}", end_token, separator_token),
+            ));
+        }
+    }
+
+    Ok(result_vec)
+}
+
 /// This function creates a list out of a `predicate` that will be ran until one of the `end_tokens` is encountered.
 /// The `separator_token` will be skipped after each time the `predicate` is ran.
 ///
@@ -342,11 +393,11 @@ where
     loop {
         let token = retrieve_next_token(lexer)?;
 
-        if end_token == token {
-            break;
-        }
         if separator_token == token {
             continue;
+        }
+        if end_token == token {
+            break;
         }
 
         let (key, value, next_token) = predicate(lexer, token)?;

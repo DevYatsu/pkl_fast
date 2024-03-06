@@ -1,5 +1,6 @@
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
+use self::object::ObjectField;
 use self::string::StringFragment;
 use super::expression::Expression;
 use super::PklLexer;
@@ -26,7 +27,7 @@ pub enum PklValue<'a> {
     Int(i64),
     Float(f64),
     Object {
-        value: HashMap<&'a str, Expression<'a>>,
+        values: Vec<ObjectField<'a>>,
         amended_by: Option<&'a str>,
     },
 
@@ -123,13 +124,13 @@ impl<'a> fmt::Display for PklValue<'a> {
             PklValue::Boolean(b) => write!(f, "{}", b),
             PklValue::Int(i) => write!(f, "{}", i),
             PklValue::Float(fl) => write!(f, "{}", fl),
-            PklValue::Object { value, amended_by } => {
+            PklValue::Object { values, amended_by } => {
                 if let Some(amended_by) = amended_by {
                     write!(f, "({}) ", amended_by)?;
                 }
                 write!(f, "{{")?;
-                for (key, val) in value {
-                    write!(f, "{}: {}, ", key, val)?;
+                for value in values {
+                    write!(f, "{}", value)?;
                 }
 
                 write!(f, "}}")

@@ -18,10 +18,10 @@ test: NumbersDictionnary = 2.5 // no type checking for the moment
 
 x: Int? = null
 
-// str: String(!isEmpty) = "str"
+str: String(!isEmpty) = "str"
 
 dodo {
-  name = "Dodo"
+  name = "Dodo" 
   taxonomy { 
     `class` = "Aves" 
   }
