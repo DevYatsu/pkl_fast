@@ -1,0 +1,54 @@
+birds = new Mapping {
+  ["Pigeon"] {
+    lifespan = 8
+    diet = "Seeds"
+  }
+  ["Parrot"] {
+    lifespan = 20
+    diet = "Berries"
+  }
+}
+
+pigeon = birds["Pigeon"]
+parrot = birds["Parrot"]
+
+mapping1 = new Mapping {
+  ["number"] = 42
+  ["list"] = List("Pigeon", "Parrot")
+  ["nested mapping"] {
+    ["Pigeon"] {
+      lifespan = 20
+      diet = "Seeds"
+    }
+  }
+}
+
+mapping2 = new Mapping {
+  [3.min] = 42
+  [new Dynamic { name = "Pigeon" }] = "abc"
+}
+
+// mapping3 = new Mapping {
+//   ["Pigeon".reverse()] = 42
+// }
+
+mapping4 = new Mapping {
+  local parrot = "Parrot"
+  ["Pigeon"] {
+    friend = parrot
+  }
+}
+
+birds2 = (birds) {
+  ["Barn owl"] {
+    lifespan = 15
+    diet = "Mice"
+  }
+  ["Pigeon"] {
+    diet = "Seeds"
+  }
+  ["Parrot"] = new {
+    lifespan = 20
+    diet = "Berries"
+  }
+}
