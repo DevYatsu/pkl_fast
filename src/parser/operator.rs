@@ -1,6 +1,7 @@
 use super::{
     expression::{basic::parse_basic_expr, Expression},
     types::parse_type,
+    utils::parse_opt_newlines,
     ParsingResult, PklLexer,
 };
 use crate::prelude::PklToken;
@@ -107,10 +108,10 @@ fn parse_expr_following_op<'source>(
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
     match op {
         Operator::TypeCast | Operator::TypeTest => {
-            let (t, next) = parse_type(lexer, None)?;
+            let (t, next) = parse_opt_newlines(lexer, &parse_type)?;
             Ok((Expression::ExpressionType(Box::new(t)), next))
         }
-        _ => parse_basic_expr(lexer, None),
+        _ => parse_opt_newlines(lexer, &parse_basic_expr),
     }
 }
 
