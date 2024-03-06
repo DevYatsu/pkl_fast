@@ -9,3 +9,14 @@ else
     list[ 
         2 + 1
     ] + 1
+
+
+birdDiets = let (diets = List("Seeds", "Berries", "Mice"))
+List(diets[2], diets[0]) 
+
+birdDiets = let (diets: List<String> = List("Seeds", "Berries", "Mice"))
+diets[2] + diets[0]
+
+birdDiets = let (birds = List("Pigeon", "Barn owl", "Parrot"))
+let (diet = List("Seeds", "Mice", "Berries"))
+birds.zip(diet) 

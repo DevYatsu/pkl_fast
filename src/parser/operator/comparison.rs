@@ -35,16 +35,15 @@ impl ComparisonOperator {
     /// Returns the precedence of the comparison operator.
     pub fn get_precedence(&self) -> u8 {
         match self {
-            ComparisonOperator::Equal
-            | ComparisonOperator::LessThanOrEqual
+            ComparisonOperator::Equal | ComparisonOperator::NotEqual => 3,
+            ComparisonOperator::LessThanOrEqual
             | ComparisonOperator::LessThan
             | ComparisonOperator::GreaterThanOrEqual
-            | ComparisonOperator::GreaterThan
-            | ComparisonOperator::NotEqual => 1,
-            ComparisonOperator::NotNot | ComparisonOperator::Not => 2,
-            ComparisonOperator::DoubleQuestion | ComparisonOperator::Question => 3,
-            ComparisonOperator::LogicalAnd | ComparisonOperator::BitwiseAnd => 4,
-            ComparisonOperator::LogicalOr | ComparisonOperator::BitwiseOr => 5,
+            | ComparisonOperator::GreaterThan => 4,
+            ComparisonOperator::NotNot | ComparisonOperator::Not => 8,
+            ComparisonOperator::DoubleQuestion | ComparisonOperator::Question => 1,
+            ComparisonOperator::LogicalAnd | ComparisonOperator::BitwiseAnd => 2,
+            ComparisonOperator::LogicalOr | ComparisonOperator::BitwiseOr => 2,
         }
     }
 }
@@ -59,7 +58,10 @@ impl From<&str> for ComparisonOperator {
             ">" => ComparisonOperator::GreaterThan,
             "!=" => ComparisonOperator::NotEqual,
             "!!" => ComparisonOperator::NotNot,
+
+            // should never happen as we parse it another way in the expr parser
             "!" => ComparisonOperator::Not,
+
             "??" => ComparisonOperator::DoubleQuestion,
             "?" => ComparisonOperator::Question,
             "&&" => ComparisonOperator::LogicalAnd,

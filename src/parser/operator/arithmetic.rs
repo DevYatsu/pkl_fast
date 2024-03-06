@@ -13,23 +13,20 @@ pub enum ArithmeticOperator {
     Division,
     /// The modulo operator `%`.
     Modulo,
-    /// The bitwise OR operator `|`.
-    BitwiseOr,
-    /// The bitwise NOT operator `~|`.
-    BitwiseNot,
+    /// The integer division operator `~/`.
+    IntegerDivision,
 }
 
 impl ArithmeticOperator {
     /// Returns the precedence of the arithmetic operator.
     pub fn get_precedence(&self) -> u8 {
         match self {
-            ArithmeticOperator::Addition | ArithmeticOperator::Subtraction => 1,
+            ArithmeticOperator::Addition | ArithmeticOperator::Subtraction => 5,
             ArithmeticOperator::Multiplication
             | ArithmeticOperator::Division
-            | ArithmeticOperator::Modulo => 2,
-            ArithmeticOperator::Exponentiation => 3,
-            ArithmeticOperator::BitwiseOr => 4,
-            ArithmeticOperator::BitwiseNot => 5,
+            | ArithmeticOperator::Modulo
+            | ArithmeticOperator::IntegerDivision => 6,
+            ArithmeticOperator::Exponentiation => 7,
         }
     }
 }
@@ -43,8 +40,7 @@ impl From<&str> for ArithmeticOperator {
             "**" => ArithmeticOperator::Exponentiation,
             "/" => ArithmeticOperator::Division,
             "%" => ArithmeticOperator::Modulo,
-            "|" => ArithmeticOperator::BitwiseOr,
-            "~/" => ArithmeticOperator::BitwiseNot,
+            "~/" => ArithmeticOperator::IntegerDivision,
             _ => unreachable!("Should not be reached! (in ArithmeticOperator struct)"),
         }
     }
@@ -61,8 +57,7 @@ impl fmt::Display for ArithmeticOperator {
             ArithmeticOperator::Exponentiation => "**",
             ArithmeticOperator::Division => "/",
             ArithmeticOperator::Modulo => "%",
-            ArithmeticOperator::BitwiseOr => "|",
-            ArithmeticOperator::BitwiseNot => "~/",
+            ArithmeticOperator::IntegerDivision => "~/",
         };
         write!(f, "{}", symbol)
     }

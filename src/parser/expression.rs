@@ -2,7 +2,7 @@ use self::{basic::parse_basic_expr, complex::parse_complex_expr};
 use crate::prelude::{ParsingResult, PklToken};
 use std::fmt;
 
-use super::{operator::Operator, value::PklValue, PklLexer};
+use super::{operator::Operator, types::PklType, value::PklValue, PklLexer};
 
 pub mod basic;
 mod complex;
@@ -33,6 +33,13 @@ pub enum Expression<'a> {
         condition: Box<Expression<'a>>,
         condition_true: Box<Expression<'a>>,
         _else: Box<Expression<'a>>,
+    },
+
+    Let {
+        name: &'a str,
+        opt_type: Option<Box<PklType<'a>>>,
+        value: Box<Expression<'a>>,
+        expr: Box<Expression<'a>>,
     },
 
     LogicalNot(Box<Expression<'a>>),
@@ -76,6 +83,22 @@ impl<'a> fmt::Display for Expression<'a> {
                 _else,
             } => write!(f, "if ({}) {} else {}", condition, condition_true, _else),
             Expression::ListIndexing { indexed, indexer } => write!(f, "{}[{}]", indexed, indexer),
+            Expression::Let {
+                name,
+                opt_type,
+                value,
+                expr,
+            } => {
+                if opt_type.is_some() {
+                    write!(
+                        f,
+                        "let ({name}: {} = {value}) {expr}",
+                        opt_type.clone().unwrap()
+                    )
+                } else {
+                    write!(f, "let ({name} = {value}) {expr}")
+                }
+            }
         }
     }
 }

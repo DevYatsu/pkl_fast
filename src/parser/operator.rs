@@ -15,6 +15,8 @@ pub use comparison::ComparisonOperator;
 pub enum Operator {
     Arithmetic(ArithmeticOperator),
     Comparison(ComparisonOperator),
+    TypeTest,
+    TypeCast,
 }
 
 /// Parses the next token to determine if it's an operator. If an operator is found,
@@ -101,6 +103,8 @@ impl Operator {
         match self {
             Operator::Arithmetic(op) => op.get_precedence(),
             Operator::Comparison(op) => op.get_precedence(),
+            Operator::TypeCast => 0,
+            Operator::TypeTest => 0,
         }
     }
 }
@@ -110,6 +114,8 @@ impl fmt::Display for Operator {
         match self {
             Operator::Arithmetic(x) => write!(f, "{x}"),
             Operator::Comparison(x) => write!(f, "{x}"),
+            Operator::TypeCast => write!(f, "as"),
+            Operator::TypeTest => write!(f, "is"),
         }
     }
 }
@@ -134,8 +140,7 @@ impl From<&str> for Operator {
             "**" => ArithmeticOperator::Exponentiation.into(),
             "/" => ArithmeticOperator::Division.into(),
             "%" => ArithmeticOperator::Modulo.into(),
-            "|" => ArithmeticOperator::BitwiseOr.into(),
-            "~/" => ArithmeticOperator::BitwiseNot.into(),
+            "~/" => ArithmeticOperator::IntegerDivision.into(),
             "==" => ComparisonOperator::Equal.into(),
             "<=" => ComparisonOperator::LessThanOrEqual.into(),
             "<" => ComparisonOperator::LessThan.into(),
@@ -148,8 +153,10 @@ impl From<&str> for Operator {
             "??" => ComparisonOperator::DoubleQuestion.into(),
             "&&" => ComparisonOperator::LogicalAnd.into(),
             "&" => ComparisonOperator::BitwiseAnd.into(),
-            r"\|" => ComparisonOperator::BitwiseOr.into(),
+            "|" => ComparisonOperator::BitwiseOr.into(),
             "||" => ComparisonOperator::LogicalOr.into(),
+            "is" => Operator::TypeTest,
+            "as" => Operator::TypeTest,
             _ => unreachable!("Should not be reached! (in Operator)"),
         }
     }
