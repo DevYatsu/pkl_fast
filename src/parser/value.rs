@@ -1,6 +1,7 @@
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
 use self::listing::ListingField;
+use self::mapping::MappingField;
 use self::object::ObjectField;
 use self::string::StringFragment;
 use super::expression::Expression;
@@ -15,6 +16,7 @@ mod class;
 mod datasize;
 mod duration;
 mod listing;
+mod mapping;
 pub mod object;
 pub mod string;
 
@@ -42,7 +44,7 @@ pub enum PklValue<'a> {
 
     /// For now, only indexing with &str is supported.
     /// In the future we shall support other any data type as key!
-    Mapping(HashMap<&'a str, Expression<'a>>),
+    Mapping(Vec<MappingField<'a>>),
 
     Duration(Duration),
     DataSize(DataSize),
@@ -160,8 +162,8 @@ impl<'a> fmt::Display for PklValue<'a> {
             }
             PklValue::Mapping(map) => {
                 write!(f, "new Mappin {{\n")?;
-                for (key, val) in map {
-                    write!(f, "\t{}: {}\n", key, val)?;
+                for x in map {
+                    write!(f, "\t{x}\n",)?;
                 }
                 write!(f, "}}")
             }

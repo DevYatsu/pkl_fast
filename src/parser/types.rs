@@ -371,7 +371,7 @@ impl<'a> PklType<'a> {
             PklType::Listing { .. } => Ok(PklValue::Listing(vec![])),
             PklType::List { .. } => Ok(PklValue::List(vec![])),
             PklType::Map { .. } => Ok(PklValue::Map(vec![])),
-            PklType::Mapping { .. } => Ok(PklValue::Mapping(HashMap::new())),
+            PklType::Mapping { .. } => Ok(PklValue::Mapping(vec![])),
             PklType::Set { .. } => Ok(PklValue::Set(vec![])),
             PklType::Class { name, .. } => Ok(PklValue::ClassInstance {
                 name: Some(*name),

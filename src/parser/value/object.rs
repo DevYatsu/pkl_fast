@@ -34,9 +34,10 @@ pub enum ObjectField<'a> {
     Spread(&'a str),
     NullableSpread(&'a str),
 
+    // AmendedValue for either Mapping or Listing
     AmendedValue {
-        index: Expression<'a>,
-        value: PklValue<'a>,
+        key: Expression<'a>,
+        value: Expression<'a>,
     },
     DefaultObject(Expression<'a>),
 }
@@ -87,10 +88,23 @@ pub fn parse_block<'source>(
         PklToken::OpenBrace => {
             let (expr, next_token) = parse_expr(lexer, None)?;
             assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
-            expect_token(lexer, PklToken::OpenBracket)?;
-            let value = parse_object(lexer, None)?;
-
-            Ok((ObjectField::AmendedValue { index: expr, value }, None))
+            match retrieve_next_token(lexer)? {
+                PklToken::OpenBracket => {
+                    let value = parse_object(lexer, None)?;
+                    Ok((
+                        ObjectField::AmendedValue {
+                            value: Expression::Value(value),
+                            key: expr,
+                        },
+                        None,
+                    ))
+                }
+                PklToken::EqualSign => {
+                    let (value, next) = parse_expr(lexer, None)?;
+                    Ok((ObjectField::AmendedValue { value, key: expr }, next))
+                }
+                _ => Err(ParsingError::unexpected(lexer, "'=' or '{'".to_owned())),
+            }
         }
         PklToken::Default => {
             expect_token(lexer, PklToken::OpenBracket)?;
@@ -258,7 +272,7 @@ impl<'a> fmt::Display for ObjectField<'a> {
             }
             ObjectField::Spread(value) => write!(f, "...{value}"),
             ObjectField::NullableSpread(value) => write!(f, "...?{value}"),
-            ObjectField::AmendedValue { index, value } => write!(f, "[{index}] {value}"),
+            ObjectField::AmendedValue { value, key } => write!(f, "[{key}] {value}"),
             ObjectField::DefaultObject(x) => write!(f, "default {x}"),
         }
     }

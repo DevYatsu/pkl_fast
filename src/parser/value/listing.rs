@@ -37,7 +37,7 @@ pub fn parse_listing_field<'source>(
 
             match retrieve_next_token(lexer)? {
                 PklToken::EqualSign => {
-                    let (value, next) = parse_expr(lexer, Some(next_token))?;
+                    let (value, next) = parse_expr(lexer, None)?;
                     Ok((
                         ListingField::LocalVariable {
                             name,

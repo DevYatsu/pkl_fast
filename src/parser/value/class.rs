@@ -8,7 +8,7 @@ use crate::{
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
 };
 
-use super::{listing::parse_listing_field, parse_object};
+use super::{listing::parse_listing_field, mapping::parse_mapping_field, parse_object};
 
 /// Function called to parse a class instance, we assume that 'new' was already found
 pub fn parse_class_instance<'source>(
@@ -30,7 +30,14 @@ pub fn parse_class_instance<'source>(
 
                     return Ok(PklValue::Listing(values));
                 }
-                "Mapping" => unimplemented!(),
+                "Mapping" => {let values = list_while_not_token3(
+                        lexer,
+                        PklToken::NewLine,
+                        PklToken::CloseBracket,
+                        &parse_mapping_field,
+                    )?;
+
+                    return Ok(PklValue::Mapping(values));}
                 _ => (),
             }
 
