@@ -99,14 +99,22 @@ pub enum PklType<'a> {
 
 pub fn parse_type<'source>(
     lexer: &mut PklLexer<'source>,
+    opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(PklType<'source>, Option<PklToken<'source>>)> {
-    let base_type = parse_basic_type(lexer)?;
+    let base_type = parse_basic_type(lexer, opt_token)?;
 
     parse_opt_union(lexer, base_type)
 }
 
-fn parse_basic_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<PklType<'source>> {
-    let token = retrieve_next_token(lexer)?;
+fn parse_basic_type<'source>(
+    lexer: &mut PklLexer<'source>,
+    opt_token: Option<PklToken<'source>>,
+) -> ParsingResult<PklType<'source>> {
+    let token = if opt_token.is_some() {
+        opt_token.unwrap()
+    } else {
+        retrieve_next_token(lexer)?
+    };
 
     let result_type = match token {
         PklToken::Identifier(value) => {
@@ -130,7 +138,7 @@ fn parse_basic_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Pkl
                     PklType::generate_from_generics(lexer, str_type, types)?
                 }
                 PklToken::GenericTypeAnnotationFunctionCall => {
-                    let (expr, next_token) = parse_expr(lexer)?;
+                    let (expr, next_token) = parse_expr(lexer, None)?;
 
                     match next_token {
                         Some(PklToken::CloseParenthesis) => (),
@@ -192,7 +200,7 @@ fn parse_basic_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Pkl
         PklToken::FunctionCall(name) => {
             let mut base_type: PklType = name.into();
 
-            let (expr, next_token) = parse_expr(lexer)?;
+            let (expr, next_token) = parse_expr(lexer, None)?;
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),

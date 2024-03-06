@@ -89,7 +89,7 @@ pub fn parse_class_field<'source>(
         PklToken::Hidden => {
             let name = parse_identifier(lexer)?;
             expect_token(lexer, PklToken::Colon)?;
-            let (value, next_token) = parse_type(lexer)?;
+            let (value, next_token) = parse_type(lexer, None)?;
 
             Ok((
                 (
@@ -105,7 +105,7 @@ pub fn parse_class_field<'source>(
         PklToken::Fixed => {
             let name = parse_identifier(lexer)?;
             expect_token(lexer, PklToken::Colon)?;
-            let (value, next_token) = parse_type(lexer)?;
+            let (value, next_token) = parse_type(lexer, None)?;
 
             Ok((
                 (
@@ -121,7 +121,7 @@ pub fn parse_class_field<'source>(
         PklToken::Local => {
             let name = parse_identifier(lexer)?;
             expect_token(lexer, PklToken::Colon)?;
-            let (value, next_token) = parse_type(lexer)?;
+            let (value, next_token) = parse_type(lexer, None)?;
 
             Ok((
                 (
@@ -136,7 +136,7 @@ pub fn parse_class_field<'source>(
         }
         PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
             expect_token(lexer, PklToken::Colon)?;
-            let (value, next_token) = parse_type(lexer)?;
+            let (value, next_token) = parse_type(lexer, None)?;
 
             Ok((
                 (
@@ -163,7 +163,7 @@ pub fn parse_class_field<'source>(
             )?;
             expect_token(lexer, PklToken::Colon)?;
 
-            let (return_type, next_token) = parse_type(lexer)?;
+            let (return_type, next_token) = parse_type(lexer, None)?;
 
             assert_token_eq(lexer, next_token, PklToken::EqualSign)?;
 
@@ -191,10 +191,18 @@ pub fn parse_class_field<'source>(
 
 fn parse_fn_arg<'a>(
     lexer: &mut PklLexer<'a>,
+    opt_token: Option<PklToken<'a>>,
 ) -> ParsingResult<((&'a str, PklType<'a>), Option<PklToken<'a>>)> {
-    let name = parse_identifier(lexer)?;
+    let name = if opt_token.is_some() {
+        match opt_token.unwrap() {
+            PklToken::Identifier(id) => id,
+            _ => return Err(ParsingError::expected_identifier(lexer)),
+        }
+    } else {
+        parse_identifier(lexer)?
+    };
     expect_token(lexer, PklToken::Colon)?;
-    let (value, next_token) = parse_type(lexer)?;
+    let (value, next_token) = parse_type(lexer, None)?;
 
     Ok(((name, value), next_token))
 }

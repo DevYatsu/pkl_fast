@@ -43,8 +43,9 @@ pub enum Expression<'a> {
 
 pub fn parse_expr<'source>(
     lexer: &mut PklLexer<'source>,
+    opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
-    let expr = parse_basic_expr(lexer, None)?;
+    let expr = parse_basic_expr(lexer, opt_token)?;
 
     parse_opt_operation(lexer, expr)
 }
@@ -64,7 +65,7 @@ pub fn parse_basic_expr<'source>(
             Expression::LogicalNot(parse_basic_expr(lexer, None)?.into())
         }
         PklToken::OpenParenthesis => {
-            let (expr, next_token) = parse_expr(lexer)?;
+            let (expr, next_token) = parse_expr(lexer, None)?;
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),
@@ -80,11 +81,12 @@ pub fn parse_basic_expr<'source>(
         PklToken::If => {
             expect_token(lexer, PklToken::OpenParenthesis)?;
 
-            let (condition, next) = parse_expr(lexer)?;
+            let (condition, next) = parse_expr(lexer, None)?;
             assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
 
-            let condition_true = parse_opt_newlines(lexer, &parse_basic_expr)?;
-            expect_token_with_opt_newlines(lexer, PklToken::Else)?;
+            let (condition_true, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
+
+            expect_token_with_opt_newlines(lexer, next_token, PklToken::Else)?;
 
             let _else = parse_opt_newlines(lexer, &parse_basic_expr)?;
 

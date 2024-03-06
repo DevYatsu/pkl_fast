@@ -34,7 +34,7 @@ pub fn parse_block<'source>(
 
             let (value, next_token) = match next_token {
                 PklToken::EqualSign => {
-                    let (value, next_token) = parse_expr(lexer)?;
+                    let (value, next_token) = parse_expr(lexer, None)?;
 
                     (value, next_token)
                 }

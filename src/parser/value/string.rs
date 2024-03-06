@@ -58,7 +58,7 @@ impl<'source> StringFragment<'source> {
                             open_paren_count -= 1;
                             if open_paren_count == 0 {
                                 let expr_str = &rest_of_string[..i];
-                                let result = parse_expr(&mut lex(expr_str));
+                                let result = parse_expr(&mut lex(expr_str), None);
 
                                 if result.is_err() {
                                     let string_in_main_str =

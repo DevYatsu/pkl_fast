@@ -50,21 +50,29 @@ pub fn expect_token<'source>(
 
 pub fn expect_token_with_opt_newlines<'source>(
     lexer: &mut PklLexer<'source>,
+    opt_current_token: Option<PklToken<'source>>,
     target_token: PklToken<'source>,
 ) -> ParsingResult<()> {
+    match opt_current_token {
+        Some(PklToken::NewLine) => (),
+        Some(token) if token == target_token => return Ok(()),
+        None => (),
+        _ => Err(ParsingError::unexpected(lexer, target_token.to_string()))?,
+    }
+
     loop {
         let token = lexer.next();
 
-    if token.is_none() {
-        return Err(ParsingError::eof(lexer));
-    }
+        if token.is_none() {
+            return Err(ParsingError::eof(lexer));
+        }
 
-    match token.unwrap() {
-        Err(e) => Err(ParsingError::lexing(lexer, e))?,
-        Ok(token) if token == PklToken::NewLine => continue,
-        Ok(token) if token == target_token => return Ok(()),
-        _ => Err(ParsingError::unexpected(lexer, target_token.to_string()))?,
-    }
+        match token.unwrap() {
+            Err(e) => Err(ParsingError::lexing(lexer, e))?,
+            Ok(token) if token == PklToken::NewLine => continue,
+            Ok(token) if token == target_token => return Ok(()),
+            _ => Err(ParsingError::unexpected(lexer, target_token.to_string()))?,
+        }
     }
 }
 
@@ -197,12 +205,16 @@ pub fn list_while_not_token2<'source, R, F>(
     predicate: &F,
 ) -> ParsingResult<Vec<R>>
 where
-    F: Fn(&mut PklLexer<'source>) -> ParsingResult<(R, Option<PklToken<'source>>)> + 'static,
+    F: Fn(
+            &mut PklLexer<'source>,
+            Option<PklToken<'source>>,
+        ) -> ParsingResult<(R, Option<PklToken<'source>>)>
+        + 'static,
 {
     let mut result_vec = Vec::new();
 
     loop {
-        let (result, next_token) = predicate(lexer)?;
+        let (result, next_token) = predicate(lexer, None)?;
         result_vec.push(result);
 
         // if None, does not necessarily mean that there is no token next in the lexer
@@ -235,13 +247,17 @@ pub fn list_while_not_tokens<'source, R, F>(
     predicate: &F,
 ) -> ParsingResult<(Vec<R>, PklToken<'source>)>
 where
-    F: Fn(&mut PklLexer<'source>) -> ParsingResult<(R, Option<PklToken<'source>>)> + 'static,
+    F: Fn(
+            &mut PklLexer<'source>,
+            Option<PklToken<'source>>,
+        ) -> ParsingResult<(R, Option<PklToken<'source>>)>
+        + 'static,
 {
     let mut result_vec = Vec::new();
     let mut _final_end_token = None;
 
     loop {
-        let (result, next_token) = predicate(lexer)?;
+        let (result, next_token) = predicate(lexer, None)?;
         result_vec.push(result);
 
         // if None, does not necessarily mean that there is no token next in the lexer

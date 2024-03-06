@@ -16,7 +16,7 @@ use self::{
     types::parse_type,
     utils::{
         expect_statement_end, expect_token, list_while_not_token2, parse_identifier,
-        retrieve_opt_next_token,
+        parse_opt_newlines, retrieve_opt_next_token,
     },
     value::parse_object,
 };
@@ -265,7 +265,7 @@ impl<'source> PklParser<'source> {
                 });
             }
             PklToken::Colon => {
-                let (variable_type, next_token) = parse_type(lexer)?;
+                let (variable_type, next_token) = parse_type(lexer, None)?;
 
                 match next_token {
                     Some(PklToken::EqualSign) => {}
@@ -301,7 +301,7 @@ impl<'source> PklParser<'source> {
             ))?,
         };
 
-        let (value, next_token) = parse_expr(lexer)?;
+        let (value, next_token) = parse_expr(lexer, None)?;
 
         match next_token {
             Some(PklToken::NewLine)
@@ -341,7 +341,7 @@ impl<'source> PklParser<'source> {
 
         expect_token(lexer, PklToken::EqualSign)?;
 
-        let (equivalent_type, next_token) = parse_type(lexer)?;
+        let (equivalent_type, next_token) = parse_opt_newlines(lexer, &parse_type)?;
 
         match next_token {
             Some(PklToken::NewLine)

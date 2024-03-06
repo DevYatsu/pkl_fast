@@ -13,7 +13,7 @@ pub fn parse_opt_union<'source>(
 
     let result = match token {
         Some(PklToken::UnionSerarator) => {
-            let (t, next_token) = parse_type(lexer)?;
+            let (t, next_token) = parse_type(lexer, None)?;
 
             if let PklType::Union(ref mut values) = base_type {
                 match t {
