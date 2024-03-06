@@ -40,7 +40,7 @@ pub fn parse_opt_operation<'source>(
         let next_token = retrieve_opt_next_token(lexer)?;
 
         match next_token {
-            Some(PklToken::Operator(op)) => {
+            Some(PklToken::Operator(op)) | Some(PklToken::RightAngleBracket(op)) => {
                 let new_operator = Operator::from(op);
                 let new_expr = parse_basic_expr(lexer)?;
                 output_queue.push(new_expr);

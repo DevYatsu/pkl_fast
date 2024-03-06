@@ -13,8 +13,11 @@ use self::{
         import::{import_clause, parse_import_value},
         ClassType,
     },
-    types::{parse_type, PklType},
-    utils::{expect_statement_end, expect_token, parse_identifier, retrieve_opt_next_token},
+    types::parse_type,
+    utils::{
+        expect_statement_end, expect_token, list_while_not_token2, parse_identifier,
+        retrieve_opt_next_token,
+    },
     value::parse_object,
 };
 
@@ -323,15 +326,15 @@ impl<'source> PklParser<'source> {
 
         let (alias, generics_params) = match token {
             PklToken::Identifier(v) => (v, None),
-            PklToken::GenericTypeAnnotation => {
-                let (name, generics) = types::generics::extract_generics(lexer.slice());
+            PklToken::GenericTypeAnnotationStart(name) => {
+                let types = list_while_not_token2(
+                    lexer,
+                    PklToken::Comma,
+                    PklToken::RightAngleBracket(">"),
+                    &parse_type,
+                )?;
 
-                let generics_vec = generics
-                    .into_iter()
-                    .map(|s| s.trim().into())
-                    .collect::<Vec<PklType<'source>>>();
-
-                (name, Some(generics_vec))
+                (name, Some(types))
             }
             _ => return Err(ParsingError::expected_identifier(lexer)),
         };

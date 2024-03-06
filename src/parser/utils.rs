@@ -149,7 +149,7 @@ where
     Ok(result_vec)
 }
 
-/// This function creates a list out of a `predicate` that will be ran until one of the `end_token` is encountered.
+/// This function creates a list out of a `predicate` that will be ran until the `end_token` is encountered.
 /// The `separator_token` will be skipped after each time the `predicate` is ran.
 ///
 /// *NOTE*: This function is the same as `list_while_not_token0` except for one thing:
@@ -185,6 +185,46 @@ where
     }
 
     Ok(result_vec)
+}
+
+/// This function creates a list out of a `predicate` that will be ran until one of the `end_tokens` is encountered.
+/// The `separator_token` will be skipped after each time the `predicate` is ran.
+///
+/// *NOTE*: This function is the same as `list_while_not_token2` except for one thing:
+/// it can take several end_tokens and returns the ending one.
+pub fn list_while_not_tokens<'source, R, F>(
+    lexer: &mut PklLexer<'source>,
+    separator_token: PklToken<'source>,
+    end_tokens: &[PklToken<'source>],
+    predicate: &F,
+) -> ParsingResult<(Vec<R>, PklToken<'source>)>
+where
+    F: Fn(&mut PklLexer<'source>) -> ParsingResult<(R, Option<PklToken<'source>>)> + 'static,
+{
+    let mut result_vec = Vec::new();
+    let mut final_end_token = None;
+
+    loop {
+        let (result, next_token) = predicate(lexer)?;
+        result_vec.push(result);
+
+        // if None, does not necessarily mean that there is no token next in the lexer
+        if let Some(token) = next_token {
+            if end_tokens.contains(&token) {
+                final_end_token = Some(token);
+                break;
+            }
+            if separator_token == token {
+                continue;
+            }
+            return Err(ParsingError::unexpected(
+                lexer,
+                format!("One of {:?} or {}", end_tokens, separator_token),
+            ));
+        }
+    }
+
+    Ok((result_vec, final_end_token.unwrap()))
 }
 
 /// This function creates a HashMap out of a `predicate` that will be ran until the `end_token` is encountered.

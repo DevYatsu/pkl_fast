@@ -85,13 +85,16 @@ pub enum PklToken<'source> {
     Is,
 
     /// support for:
-    /// - ==, <=, >=, >
+    /// - ==, <=, >=, <
     /// - ??
     /// - &&, ||
     /// - +,-,*,/
     /// - **, %,|>, ~/
-    #[regex(r#"==|<=|<|>=|>|!=|\?\?|\&\&|\&|\|\||/|\+|-|\*|\*\*|\|>|%|~/"#, |lex| lex.slice())]
+    ///
+    /// The '>' symbol is separated as it can also be used as a `GenericTypeAnnotation` closing tag.
+    #[regex(r#"==|<=|<|>=|!=|\?\?|\&\&|\&|\|\||/|\+|-|\*|\*\*|\|>|%|~/"#, |lex| lex.slice())]
     Operator(&'source str),
+
     #[token("=")]
     EqualSign,
 
@@ -113,18 +116,21 @@ pub enum PklToken<'source> {
     #[token("typealias")]
     TypeAlias,
 
-    /// This variant shall represent types with a given generic such as `Listing<Bird>` or `Map<Int, String>`  
-    // We assume a type starts with an UpperCase
+    /// This variant shall represent the start of a type with a given generic such as `Listing<` or `Map<`  
+    // **We assume a type starts with an UpperCase**
     #[regex(
-        r"[A-Z][A-Za-z0-9]*<\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:,\s*([A-Za-z_][A-Za-z0-9_]*))?\s*>"
-    )]
-    GenericTypeAnnotation,
+        r"[A-Z][A-Za-z0-9]*<",
+     |lex| {let val = lex.slice(); &val[0..val.len()-1]})]
+    GenericTypeAnnotationStart(&'source str),
 
-    /// It's simply `GenericTypeAnnotation` variant followed by `(`.
+    /// Closing tag for `GenericTypeAnnotation` or `GreaterThan` tag.
+    #[token(">", |lex| lex.slice())]
+    RightAngleBracket(&'source str),
+
+    /// It's a variant where followed by where a `GenericTypeAnnotation` is followed by a `(`.
     /// It's supposed to represent a generic type with restrictions.
-    #[regex(
-        r"[A-Z][A-Za-z0-9]*<\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:,\s*([A-Za-z_][A-Za-z0-9_]*))?\s*>\("
-    )]
+    // **We assume a type starts with an UpperCase**
+    #[token(">(")]
     GenericTypeAnnotationFunctionCall,
 
     // We assume a type starts with an UpperCase
@@ -297,6 +303,7 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::When => write!(f, "when"),
             PklToken::Is => write!(f, "is"),
             PklToken::Operator(op) => write!(f, "'{}'", op),
+            PklToken::RightAngleBracket(x) => write!(f, "{}", x),
             PklToken::EqualSign => write!(f, "'='"),
             PklToken::Colon => write!(f, "':'"),
             PklToken::Comma => write!(f, "','"),
@@ -305,9 +312,10 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::SemiColon => write!(f, "';'"),
             PklToken::AmendedObjectBracket(s) => write!(f, "({{}} {} {{)", s),
             PklToken::TypeAlias => write!(f, "typealias"),
-            PklToken::GenericTypeAnnotation | PklToken::GenericTypeAnnotationFunctionCall => {
-                write!(f, "'GenericType Annotation: Type<Annotation>'")
+            PklToken::GenericTypeAnnotationStart(name) => {
+                write!(f, "{name}<")
             }
+            PklToken::GenericTypeAnnotationFunctionCall => write!(f, ">("),
             PklToken::PotentiallyNullType(s) => write!(f, "{}?", s),
             PklToken::NonNullIdentifier(s) => write!(f, "{}!!", s),
             PklToken::LogicalNotOperator => write!(f, "'!'"),

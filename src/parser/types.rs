@@ -1,16 +1,15 @@
-use self::{errors::TypeError, generics::extract_generics, union::parse_opt_union};
+use self::{errors::TypeError, union::parse_opt_union};
 
 use super::{
     errors::ParsingError,
     expression::Expression,
-    utils::retrieve_next_token,
+    utils::{list_while_not_tokens, retrieve_next_token},
     value::{string::StringFragment, PklValue},
     ParsingResult, PklLexer,
 };
 use crate::{parser::expression::parse_expr, prelude::PklToken};
 
 pub mod errors;
-pub mod generics;
 mod union;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -115,81 +114,80 @@ fn parse_basic_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Pkl
 
             t
         }
-        PklToken::GenericTypeAnnotationFunctionCall => {
-            let raw_value: &str = lexer.slice();
-            let type_annotation_value = &raw_value[..raw_value.len() - 1];
+        PklToken::GenericTypeAnnotationStart(str_type) => {
+            let (types, end_token) = list_while_not_tokens(
+                lexer,
+                PklToken::Comma,
+                &[
+                    PklToken::RightAngleBracket(">"),
+                    PklToken::GenericTypeAnnotationFunctionCall,
+                ],
+                &parse_type,
+            )?;
 
-            let (base_type, generics) = extract_generics(type_annotation_value);
-            let generics_vec = generics
-                .into_iter()
-                .map(|t| t.trim().into())
-                .collect::<Vec<PklType>>();
+            match end_token {
+                PklToken::RightAngleBracket(_) => {
+                    PklType::generate_from_generics(lexer, str_type, types)?
+                }
+                PklToken::GenericTypeAnnotationFunctionCall => {
+                    let (expr, next_token) = parse_expr(lexer)?;
 
-            let mut base_type = PklType::generate_from_generics(lexer, base_type, generics_vec)?;
+                    match next_token {
+                        Some(PklToken::CloseParenthesis) => (),
+                        None => return Err(ParsingError::eof(lexer)),
+                        _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
+                    }
 
-            let (expr, next_token) = parse_expr(lexer)?;
+                    let mut base_type: PklType<'_> = str_type.into();
 
-            match next_token {
-                Some(PklToken::CloseParenthesis) => (),
-                None => return Err(ParsingError::eof(lexer)),
-                _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
-            }
-
-            // allowed types should be checked in generate_from_2_generic and generate_from_1_generic
-            match base_type {
-                PklType::Collection {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Listing {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::List {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Pair {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Map {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Mapping {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Set {
-                    ref mut restriction,
-                    ..
-                } => {
-                    *restriction = Some(expr);
-                    base_type
-                }
-                _ => {
-                    return Err(TypeError::no_restrictions_type(
-                        lexer,
-                        format!(
-                            "Remove the constraints annotation, try writing `{}`",
+                    // allowed types should be checked in generate_from_2_generic and generate_from_1_generic
+                    match base_type {
+                        PklType::Collection {
+                            ref mut restriction,
+                            ..
+                        }
+                        | PklType::Listing {
+                            ref mut restriction,
+                            ..
+                        }
+                        | PklType::List {
+                            ref mut restriction,
+                            ..
+                        }
+                        | PklType::Pair {
+                            ref mut restriction,
+                            ..
+                        }
+                        | PklType::Map {
+                            ref mut restriction,
+                            ..
+                        }
+                        | PklType::Mapping {
+                            ref mut restriction,
+                            ..
+                        }
+                        | PklType::Set {
+                            ref mut restriction,
+                            ..
+                        } => {
+                            *restriction = Some(expr);
                             base_type
-                        ),
-                    )
-                    .into())
+                        }
+                        _ => {
+                            return Err(TypeError::no_restrictions_type(
+                                lexer,
+                                format!(
+                                    "Remove the constraints annotation, try writing `{}`",
+                                    base_type
+                                ),
+                            )
+                            .into())
+                        }
+                    }
                 }
+
+                _ => unreachable!(),
             }
-        }
-        PklToken::GenericTypeAnnotation => {
-            let raw_value: &str = lexer.slice();
-
-            let (base_type, generics) = extract_generics(raw_value);
-            let generics_vec = generics
-                .into_iter()
-                .map(|t| t.trim().into())
-                .collect::<Vec<PklType>>();
-
-            PklType::generate_from_generics(lexer, base_type, generics_vec)?
         }
         PklToken::FunctionCall(name) => {
             let mut base_type: PklType = name.into();
