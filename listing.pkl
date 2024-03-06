@@ -1,0 +1,64 @@
+birds2 = new Listing {
+  new {
+    name = "Pigeon"
+    lifespan = 8
+    diet = "Seeds"
+  }
+  new {
+    name = "Parrot"
+    lifespan = 20
+    diet = "Berries"
+  }
+}
+
+// birds2 = (birds) {
+//   default {
+//     lifespan = 8
+//     diet = "Seeds"
+//   }
+// }
+
+birds = new Listing {
+  default {
+    lifespan = 8
+  }
+  new {
+    name = "Pigeon"
+  }
+  new {
+    name = "Parrot"
+    lifespan = 20
+  }
+}
+
+birds = new Listing {
+  new {
+    name = "Pigeon"
+    diet = "Seeds"
+  }
+  new {
+    name = "Parrot"
+    diet = "Berries"
+  }
+}
+
+// birds = new Listing {
+//   new { 
+//     name = "Pigeon"
+//     diet = "Seeds"
+//   }
+//   (this[0]) { 
+//     name = "Parrot"
+//   }
+// }
+
+birds = new Listing {
+  new {
+    name = "Pigeon"
+    diet = "Seeds"
+  }
+  new {
+    name = "Parrot"
+    diet = "Berries"
+  }
+}
