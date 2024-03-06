@@ -11,12 +11,12 @@ birds2 = new Listing {
   }
 }
 
-// birds2 = (birds) {
-//   default {
-//     lifespan = 8
-//     diet = "Seeds"
-//   }
-// }
+birds2 = (birds) {
+  default {
+    lifespan = 8
+    diet = "Seeds"
+  }
+}
 
 birds = new Listing {
   default {
@@ -42,15 +42,15 @@ birds = new Listing {
   }
 }
 
-// birds = new Listing {
-//   new { 
-//     name = "Pigeon"
-//     diet = "Seeds"
-//   }
-//   (this[0]) { 
-//     name = "Parrot"
-//   }
-// }
+birds = new Listing {
+  new { 
+    name = "Pigeon"
+    diet = "Seeds"
+  }
+  (this[0]) { 
+    name = "Parrot"
+  }
+}
 
 birds = new Listing {
   new {
