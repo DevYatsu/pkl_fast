@@ -202,7 +202,7 @@ where
     F: Fn(&mut PklLexer<'source>) -> ParsingResult<(R, Option<PklToken<'source>>)> + 'static,
 {
     let mut result_vec = Vec::new();
-    let mut final_end_token = None;
+    let mut _final_end_token = None;
 
     loop {
         let (result, next_token) = predicate(lexer)?;
@@ -211,7 +211,7 @@ where
         // if None, does not necessarily mean that there is no token next in the lexer
         if let Some(token) = next_token {
             if end_tokens.contains(&token) {
-                final_end_token = Some(token);
+                _final_end_token = Some(token);
                 break;
             }
             if separator_token == token {
@@ -224,7 +224,7 @@ where
         }
     }
 
-    Ok((result_vec, final_end_token.unwrap()))
+    Ok((result_vec, _final_end_token.unwrap()))
 }
 
 /// This function creates a HashMap out of a `predicate` that will be ran until the `end_token` is encountered.
