@@ -33,6 +33,11 @@ pub enum ObjectField<'a> {
 
     Spread(&'a str),
     NullableSpread(&'a str),
+
+    AmendedValue {
+        index: Expression<'a>,
+        value: PklValue<'a>,
+    },
 }
 
 /// Function called to parse an object, we assume that '{' was already found
@@ -77,6 +82,14 @@ pub fn parse_block<'source>(
             };
 
             Ok((ObjectField::Variable { name, value }, next_token))
+        }
+        PklToken::OpenBrace => {
+            let (expr, next_token) = parse_expr(lexer, None)?;
+            assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
+            expect_token(lexer, PklToken::OpenBracket)?;
+            let value = parse_object(lexer, None)?;
+
+            Ok((ObjectField::AmendedValue { index: expr, value }, None))
         }
         PklToken::SpreadSyntax => {
             let ident = parse_identifier(lexer)?;
@@ -238,6 +251,7 @@ impl<'a> fmt::Display for ObjectField<'a> {
             }
             ObjectField::Spread(value) => write!(f, "...{value}"),
             ObjectField::NullableSpread(value) => write!(f, "...?{value}"),
+            ObjectField::AmendedValue { index, value } => write!(f, "[{index}] {value}"),
         }
     }
 }
