@@ -21,6 +21,8 @@ pub fn parse_complex_expr<'source>(
         Some(PklToken::Operator(op)) | Some(PklToken::RightAngleBracket(op)) => {
             parse_operation(lexer, expr, op)
         }
+        Some(PklToken::Is) => parse_operation(lexer, expr, "is"),
+        Some(PklToken::As) => parse_operation(lexer, expr, "as"),
         Some(PklToken::OpenBracket) => {
             if let Expression::Parenthesised(inner_expr) = expr {
                 if let Expression::Identifier(name) = *inner_expr {

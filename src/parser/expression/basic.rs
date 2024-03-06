@@ -117,29 +117,5 @@ pub fn parse_basic_expr<'source>(
 
     let next_token = retrieve_opt_next_token(lexer)?;
 
-    match next_token {
-        Some(PklToken::As) => {
-            let (cast_type, next) = parse_opt_newlines(lexer, &parse_type)?;
-
-            Ok((
-                Expression::TypeCast {
-                    expr: expr.into(),
-                    _type: cast_type.into(),
-                },
-                next,
-            ))
-        }
-        Some(PklToken::Is) => {
-            let (test_type, next) = parse_opt_newlines(lexer, &parse_type)?;
-
-            Ok((
-                Expression::TypeTest {
-                    expr: expr.into(),
-                    _type: test_type.into(),
-                },
-                next,
-            ))
-        }
-        _ => Ok((expr, next_token)),
-    }
+    Ok((expr, next_token))
 }

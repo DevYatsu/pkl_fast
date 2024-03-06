@@ -1,5 +1,6 @@
 use super::{
     expression::{basic::parse_basic_expr, Expression},
+    types::parse_type,
     ParsingResult, PklLexer,
 };
 use crate::prelude::PklToken;
@@ -40,7 +41,7 @@ pub fn parse_operation<'source>(
 
     // we take care of the initial expr and operator given as parameter
     let first_operator = Operator::from(operator);
-    let (first_expr, next) = parse_basic_expr(lexer, None)?;
+    let (first_expr, next) = parse_expr_following_op(lexer, &first_operator)?;
     output_queue.push(first_expr);
     operator_stack.push(first_operator);
 
@@ -50,7 +51,9 @@ pub fn parse_operation<'source>(
         match next_token {
             Some(PklToken::Operator(op)) | Some(PklToken::RightAngleBracket(op)) => {
                 let new_operator = Operator::from(op);
-                let (new_expr, next) = parse_basic_expr(lexer, None)?;
+
+                let (new_expr, next) = parse_expr_following_op(lexer, &new_operator)?;
+
                 next_token = next;
 
                 output_queue.push(new_expr);
@@ -96,6 +99,19 @@ pub fn parse_operation<'source>(
     }
 
     Ok((output_queue.pop().unwrap(), return_token))
+}
+
+fn parse_expr_following_op<'source>(
+    lexer: &mut PklLexer<'source>,
+    op: &Operator,
+) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
+    match op {
+        Operator::TypeCast | Operator::TypeTest => {
+            let (t, next) = parse_type(lexer, None)?;
+            Ok((Expression::ExpressionType(Box::new(t)), next))
+        }
+        _ => parse_basic_expr(lexer, None),
+    }
 }
 
 impl Operator {

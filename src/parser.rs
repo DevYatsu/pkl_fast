@@ -327,7 +327,8 @@ impl<'source> PklParser<'source> {
             PklToken::NewLine,
             PklToken::CloseBracket,
             &parse_class_field,
-        )?.into();
+        )?
+        .into();
 
         Ok(Statement::ClassDeclaration {
             name,

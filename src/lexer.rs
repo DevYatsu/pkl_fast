@@ -130,7 +130,8 @@ pub enum PklToken<'source> {
     // **We assume a type starts with an UpperCase**
     #[regex(
         r"[A-Z][A-Za-z0-9]*<",
-     |lex| {let val = lex.slice(); &val[0..val.len()-1]})]
+        |lex| {let val = lex.slice(); &val[0..val.len()-1]})
+    ]
     GenericTypeAnnotationStart(&'source str),
 
     /// Closing tag for `GenericTypeAnnotation` or `GreaterThan` tag.

@@ -29,15 +29,7 @@ pub enum Expression<'a> {
         rhs: Box<Expression<'a>>,
     },
 
-    TypeCast {
-        expr: Box<Expression<'a>>,
-        _type: Box<PklType<'a>>,
-    },
-
-    TypeTest {
-        expr: Box<Expression<'a>>,
-        _type: Box<PklType<'a>>,
-    },
+    ExpressionType(Box<PklType<'a>>),
 
     If {
         condition: Box<Expression<'a>>,
@@ -109,8 +101,7 @@ impl<'a> fmt::Display for Expression<'a> {
                     write!(f, "let ({name} = {value}) {expr}")
                 }
             }
-            Expression::TypeCast { expr, _type } => write!(f, "{} as {}", expr, _type),
-            Expression::TypeTest { expr, _type } => write!(f, "{} is {}", expr, _type),
+            Expression::ExpressionType(s) => write!(f, "{s}",),
         }
     }
 }
