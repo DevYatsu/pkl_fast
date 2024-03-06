@@ -20,3 +20,27 @@ diets[2] + diets[0]
 birdDiets = let (birds = List("Pigeon", "Barn owl", "Parrot"))
 let (diet = List("Seeds", "Mice", "Berries"))
 birds.zip(diet) 
+
+test1 = email is String(contains("@")) 
+test2 = map is Map<Int, Base> 
+test3 = name is "Pigeon"|"Barn owl"|"Parrot" 
+
+test1 = 42 is Int
+test2 = 42 is Number
+test3 = 42 is Any
+test4 = !(42 is String)
+
+open class Base
+class Derived extends Base
+
+base = new Base {}
+
+test5 = base is Base
+test6 = base is Any
+test7 = !(base is Derived)
+
+derived = new Derived {}
+
+test8 = derived is Derived
+test9 = derived is Base
+test10 = derived is Any

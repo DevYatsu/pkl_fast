@@ -30,7 +30,7 @@ pub enum Statement<'a> {
         name: &'a str,
         extends: Option<&'a str>,
         _type: ClassType,
-        fields: HashMap<&'a str, ClassArgument<'a>>,
+        fields: Option<HashMap<&'a str, ClassArgument<'a>>>,
     },
 
     TypeAlias {
@@ -51,7 +51,7 @@ pub enum Statement<'a> {
 use std::collections::HashMap;
 
 pub use amends::parse_amends;
-pub use class::parse_class_declaration;
+pub use class::parse_class_field;
 pub use class::ClassArgument;
 pub use extends::parse_extends;
 pub use import::ImportClause;

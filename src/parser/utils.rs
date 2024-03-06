@@ -113,7 +113,7 @@ pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingRe
         Some(Ok(token))
             if token == PklToken::NewLine
                 || token == PklToken::LineComment
-                || token == PklToken::BlockComment =>
+                || token == PklToken::DocComment =>
         {
             Ok(())
         }

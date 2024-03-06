@@ -115,5 +115,31 @@ pub fn parse_basic_expr<'source>(
         current_token => Expression::Value(parse_value(lexer, current_token)?),
     };
 
-    Ok((expr, retrieve_opt_next_token(lexer)?))
+    let next_token = retrieve_opt_next_token(lexer)?;
+
+    match next_token {
+        Some(PklToken::As) => {
+            let (cast_type, next) = parse_opt_newlines(lexer, &parse_type)?;
+
+            Ok((
+                Expression::TypeCast {
+                    expr: expr.into(),
+                    _type: cast_type.into(),
+                },
+                next,
+            ))
+        }
+        Some(PklToken::Is) => {
+            let (test_type, next) = parse_opt_newlines(lexer, &parse_type)?;
+
+            Ok((
+                Expression::TypeTest {
+                    expr: expr.into(),
+                    _type: test_type.into(),
+                },
+                next,
+            ))
+        }
+        _ => Ok((expr, next_token)),
+    }
 }

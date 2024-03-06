@@ -2,15 +2,13 @@ use crate::{
     parser::{
         types::{parse_type, PklType},
         utils::{
-            assert_token_eq, expect_token, hashmap_while_not_token2, list_while_not_token2,
-            parse_identifier, retrieve_next_token,
+            assert_token_eq, expect_token, list_while_not_token2, parse_identifier,
+            retrieve_next_token,
         },
         value::parse_value,
     },
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
 };
-
-use super::Statement;
 
 #[derive(Debug, PartialEq, Clone)]
 /// A struct representing the type of a `ClassDeclaration`.
@@ -42,40 +40,6 @@ pub enum ClassArgument<'a> {
         return_type: PklType<'a>,
         return_value: PklValue<'a>,
     },
-}
-
-pub fn parse_class_declaration<'source>(
-    lexer: &mut PklLexer<'source>,
-    _type: ClassType,
-) -> ParsingResult<Statement<'source>> {
-    let name = parse_identifier(lexer)?;
-
-    let token = retrieve_next_token(lexer)?;
-
-    let extends = match token {
-        PklToken::Extends => {
-            let value = parse_identifier(lexer)?;
-            expect_token(lexer, PklToken::OpenBracket)?;
-
-            Some(value)
-        }
-        PklToken::OpenBracket => None,
-        _ => return Err(ParsingError::unexpected(lexer, "'{'".to_owned())),
-    };
-
-    let fields = hashmap_while_not_token2(
-        lexer,
-        PklToken::NewLine,
-        PklToken::CloseBracket,
-        &parse_class_field,
-    )?;
-
-    Ok(Statement::ClassDeclaration {
-        name,
-        extends,
-        _type,
-        fields,
-    })
 }
 
 pub fn parse_class_field<'source>(
