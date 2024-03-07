@@ -3,7 +3,6 @@ mod class;
 mod extends;
 pub mod import;
 mod info;
-mod module;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement<'a> {
@@ -17,7 +16,7 @@ pub enum Statement<'a> {
     },
     Amends(&'a str),
     Module {
-        value: &'a str,
+        value: Expression<'a>,
         open: bool,
     },
     Extends(&'a str),
@@ -57,7 +56,6 @@ pub use extends::parse_extends;
 pub use import::ImportClause;
 pub use info::parse_deprecated;
 pub use info::parse_module_info;
-pub use module::parse_module;
 
 pub use self::class::ClassType;
 use self::info::InfoField;

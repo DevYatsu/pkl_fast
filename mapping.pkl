@@ -39,7 +39,21 @@ mapping4 = new Mapping {
   }
 }
 
-birds2 = (birds) {
+birds2 = new Mapping {
+  ["Pigeon"] {
+    lifespan = 8
+    diet = "Seeds"
+  }
+  ["Parrot"] = (this["Pigeon"]) {
+    lifespan = 20
+  }
+}
+
+birds3 = (birds) {
+  default {
+    lifespan = 8
+    diet = "Seeds"
+  }
   ["Barn owl"] {
     lifespan = 15
     diet = "Mice"

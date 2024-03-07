@@ -30,14 +30,16 @@ pub fn parse_class_instance<'source>(
 
                     return Ok(PklValue::Listing(values));
                 }
-                "Mapping" => {let values = list_while_not_token3(
+                "Mapping" => {
+                    let values = list_while_not_token3(
                         lexer,
                         PklToken::NewLine,
                         PklToken::CloseBracket,
                         &parse_mapping_field,
                     )?;
 
-                    return Ok(PklValue::Mapping(values));}
+                    return Ok(PklValue::Mapping(values));
+                }
                 _ => (),
             }
 

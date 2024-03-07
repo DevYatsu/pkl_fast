@@ -101,7 +101,11 @@ impl<'source> PklParser<'source> {
                 }
                 Ok(PklToken::Module) => {
                     let stmt = self.parse_module()?;
-                    expect_statement_end(&mut self.lexer)?;
+                    if self.new_line_parsed {
+                        self.new_line_parsed = !self.new_line_parsed;
+                    } else {
+                        expect_statement_end(&mut self.lexer)?;
+                    }
                     stmt
                 }
                 Ok(PklToken::Extends) => {
@@ -169,24 +173,24 @@ impl<'source> PklParser<'source> {
                 Ok(PklToken::Open) => {
                     let token = retrieve_next_token(&mut self.lexer)?;
 
-                    match token {
+                    let stmt = match token {
                         PklToken::Module => self.parse_open_module()?,
-                        PklToken::Class => {
-                            let stmt = self.parse_open_class_declaration()?;
-                            if self.new_line_parsed {
-                                self.new_line_parsed = !self.new_line_parsed;
-                            } else {
-                                expect_statement_end(&mut self.lexer)?;
-                            }
-                            stmt
-                        }
+                        PklToken::Class => self.parse_open_class_declaration()?,
                         _ => {
                             return Err(ParsingError::unexpected(
                                 &mut self.lexer,
                                 "class declaration or module declaration".to_owned(),
                             ))
                         }
+                    };
+
+                    if self.new_line_parsed {
+                        self.new_line_parsed = !self.new_line_parsed;
+                    } else {
+                        expect_statement_end(&mut self.lexer)?;
                     }
+
+                    stmt
                 }
                 Err(e) => return Err(parse_lexing_error(&mut self.lexer, e)),
                 _ => continue,
@@ -207,7 +211,7 @@ impl<'source> PklParser<'source> {
             Some(PklToken::As) => Some(parse_identifier(&mut self.lexer)?),
             Some(PklToken::NewLine)
             | Some(PklToken::LineComment)
-            | Some(PklToken::BlockComment)
+            | Some(PklToken::DocComment)
             | None => {
                 self.new_line_parsed = true;
                 None
@@ -234,7 +238,7 @@ impl<'source> PklParser<'source> {
             Some(PklToken::As) => Some(parse_identifier(&mut self.lexer)?),
             Some(PklToken::NewLine)
             | Some(PklToken::LineComment)
-            | Some(PklToken::BlockComment)
+            | Some(PklToken::DocComment)
             | None => {
                 self.new_line_parsed = true;
                 None
@@ -260,10 +264,31 @@ impl<'source> PklParser<'source> {
     }
 
     fn parse_module(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_module(&mut self.lexer, false)
+        self.parse_mod(false)
     }
     fn parse_open_module(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_module(&mut self.lexer, true)
+        self.parse_mod(true)
+    }
+
+    fn parse_mod(&mut self, open: bool) -> ParsingResult<Statement<'source>> {
+        let (value, next_token) = parse_expr(&mut self.lexer, None)?;
+
+        match next_token {
+            Some(PklToken::NewLine)
+            | Some(PklToken::LineComment)
+            | Some(PklToken::DocComment)
+            | None => {
+                self.new_line_parsed = true;
+            }
+            _ => {
+                return Err(ParsingError::unexpected(
+                    &mut self.lexer,
+                    "'as <identifier>' or line end".to_owned(),
+                ))
+            }
+        };
+
+        Ok(Statement::Module { value, open })
     }
 
     fn parse_basic_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
@@ -393,9 +418,7 @@ impl<'source> PklParser<'source> {
         let (value, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
 
         match next_token {
-            Some(PklToken::NewLine)
-            | Some(PklToken::BlockComment)
-            | Some(PklToken::LineComment) => {
+            Some(PklToken::NewLine) | Some(PklToken::DocComment) | Some(PklToken::LineComment) => {
                 self.new_line_parsed = true;
             }
             None => (),
@@ -433,9 +456,7 @@ impl<'source> PklParser<'source> {
         let (equivalent_type, next_token) = parse_opt_newlines(lexer, &parse_type)?;
 
         match next_token {
-            Some(PklToken::NewLine)
-            | Some(PklToken::LineComment)
-            | Some(PklToken::BlockComment) => {
+            Some(PklToken::NewLine) | Some(PklToken::LineComment) | Some(PklToken::DocComment) => {
                 self.new_line_parsed = true;
             }
             _ => return Err(ParsingError::unexpected(lexer, "line ending".to_owned())),

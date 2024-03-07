@@ -6,7 +6,7 @@ import* "testt"
 import "test3.pkl"
 
 module x
-module com.animals.Birds
+module "str".length().test
 amends "wow.pkl" 
 extends "test.pkl"
 

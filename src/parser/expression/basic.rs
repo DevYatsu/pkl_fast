@@ -24,10 +24,10 @@ pub fn parse_basic_expr<'source>(
         retrieve_next_token(lexer)?
     };
 
-    let expr = match token {
+    match token {
         PklToken::LogicalNotOperator => {
             let (expr, next) = parse_basic_expr(lexer, None)?;
-            return Ok((Expression::LogicalNot(expr.into()), next));
+            Ok((Expression::LogicalNot(expr.into()), next))
         }
         PklToken::OpenParenthesis => {
             let (expr, next_token) = parse_expr(lexer, None)?;
@@ -37,29 +37,40 @@ pub fn parse_basic_expr<'source>(
                 _ => return Err(ParsingError::unexpected(lexer, "'('".to_owned())),
             };
 
-            Expression::Parenthesised(expr.into())
+            let expr = Expression::Parenthesised(expr.into());
+            Ok(parse_opt_member_expr(lexer, expr)?)
         }
-        PklToken::Identifier(ident) => Expression::Identifier(ident),
+        PklToken::Identifier(ident) => {
+            let expr = Expression::Identifier(ident);
+
+            Ok(parse_opt_member_expr(lexer, expr)?)
+        }
         PklToken::ListIndexing(indexed) => {
             let (expr, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
             expect_token_with_opt_newlines(lexer, next_token, PklToken::CloseBrace)?;
-            Expression::ListIndexing {
+            let expr = Expression::ListIndexing {
                 indexed,
                 indexer: expr.into(),
-            }
+            };
+
+            Ok(parse_opt_member_expr(lexer, expr)?)
         }
         PklToken::NonNullIdentifier(name) => {
-            Expression::NonNull(Expression::Identifier(name).into())
+            let expr = Expression::NonNull(Expression::Identifier(name).into());
+
+            Ok(parse_opt_member_expr(lexer, expr)?)
         }
         PklToken::FunctionCall(func_name) => {
             let args = parse_fn_call_arguments(lexer)?;
 
-            match func_name {
+            let expr = match func_name {
                 "List" => Expression::Value(PklValue::List(args)),
                 "Map" => Expression::Value(PklValue::Map(args)),
                 "Set" => Expression::Value(PklValue::Set(args)),
                 _ => Expression::FunctionCall { func_name, args },
-            }
+            };
+
+            Ok(parse_opt_member_expr(lexer, expr)?)
         }
         PklToken::If => {
             expect_token(lexer, PklToken::OpenParenthesis)?;
@@ -73,14 +84,14 @@ pub fn parse_basic_expr<'source>(
 
             let (_else, opt_token) = parse_opt_newlines(lexer, &parse_expr)?;
 
-            return Ok((
+            Ok((
                 Expression::If {
                     condition: Box::new(condition),
                     condition_true: Box::new(condition_true),
                     _else: Box::new(_else),
                 },
                 opt_token,
-            ));
+            ))
         }
         PklToken::Let => {
             expect_token_with_opt_newlines(lexer, None, PklToken::OpenParenthesis)?;
@@ -102,7 +113,7 @@ pub fn parse_basic_expr<'source>(
 
             let (expr, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
 
-            return Ok((
+            Ok((
                 Expression::Let {
                     name,
                     opt_type,
@@ -110,12 +121,35 @@ pub fn parse_basic_expr<'source>(
                     expr: expr.into(),
                 },
                 next_token,
-            ));
+            ))
         }
-        current_token => Expression::Value(parse_value(lexer, current_token)?),
-    };
+        current_token => {
+            let expr = Expression::Value(parse_value(lexer, current_token)?);
+            Ok(parse_opt_member_expr(lexer, expr)?)
+        }
+    }
+}
 
+fn parse_opt_member_expr<'source>(
+    lexer: &mut PklLexer<'source>,
+    expr: Expression<'source>,
+) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
     let next_token = retrieve_opt_next_token(lexer)?;
 
-    Ok((expr, next_token))
+    match next_token {
+        Some(PklToken::Dot) => {
+            let (second_expr, next) = parse_basic_expr(lexer, None)?;
+
+            return Ok((
+                Expression::MemberExpression {
+                    object: expr.into(),
+                    property: second_expr.into(),
+                },
+                next,
+            ));
+        }
+        _ => (),
+    };
+
+    return Ok((expr, next_token));
 }

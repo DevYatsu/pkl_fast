@@ -18,6 +18,12 @@ pub enum Expression<'a> {
         args: Vec<Expression<'a>>,
     },
 
+    // object indexing: `object.property` and recursively we can obtain several object indexing
+    MemberExpression {
+        object: Box<Expression<'a>>,
+        property: Box<Expression<'a>>,
+    },
+
     ListIndexing {
         indexed: &'a str,
         indexer: Box<Expression<'a>>,
@@ -102,6 +108,7 @@ impl<'a> fmt::Display for Expression<'a> {
                 }
             }
             Expression::ExpressionType(s) => write!(f, "{s}",),
+            Expression::MemberExpression { object, property } => write!(f, "{object}.{property}"),
         }
     }
 }

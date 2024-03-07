@@ -214,7 +214,15 @@ where
     let mut result_vec = Vec::new();
 
     loop {
-        let (result, next_token) = predicate(lexer, None)?;
+        let opt_token = retrieve_opt_next_token(lexer)?;
+
+        if let Some(t) = &opt_token {
+            if t == &end_token {
+                break;
+            }
+        }
+
+        let (result, next_token) = predicate(lexer, opt_token)?;
         result_vec.push(result);
 
         // if None, does not necessarily mean that there is no token next in the lexer

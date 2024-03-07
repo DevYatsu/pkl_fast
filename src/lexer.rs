@@ -115,14 +115,14 @@ pub enum PklToken<'source> {
     // PascalCaseValue,
     // #[regex("[a-z][a-zA-Z]*")]
     // CamelCaseValue, // in pkl words written in camelCase are meant to be used as values
-    /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
+    /// Matches a simple identifier (ex: `foo`)
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice())]
     Identifier(&'source str),
 
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\[", |lex| {let val = lex.slice(); &val[0..val.len()-1]})]
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*\[", |lex| {let val = lex.slice(); &val[0..val.len()-1]})]
     ListIndexing(&'source str),
 
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let val = lex.slice(); &val[..val.len()-1]})]
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*\(", |lex| {let val = lex.slice(); &val[..val.len()-1]})]
     FunctionCall(&'source str),
 
     #[token("typealias")]
@@ -152,7 +152,7 @@ pub enum PklToken<'source> {
 
     /// This variant represents a identifier followed by '!!', meaning that the variable cannot be null, otherwise throwing an error
     // We assume a type starts with an UpperCase
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*!!", |lex| {let val=lex.slice(); &val[0..val.len()-2]})]
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*!!", |lex| {let val=lex.slice(); &val[0..val.len()-2]})]
     NonNullIdentifier(&'source str),
 
     /// This variant represents '!', the logical NOT operator
@@ -164,7 +164,7 @@ pub enum PklToken<'source> {
     UnionSerarator,
 
     /// This variant represents a type preceded by '*', meaning that the type is the default one in an union.
-    #[regex(r"\*[A-Z][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| {let val=lex.slice(); &val[1..]})]
+    #[regex(r"\*[A-Z][a-zA-Z0-9_]*", |lex| {let val=lex.slice(); &val[1..]})]
     DefaultUnionType(&'source str),
 
     #[token("null")]
