@@ -6,7 +6,7 @@ import* "testt"
 import "test3.pkl"
 
 module x
-module "str".length().test
+module com.test.Apple
 amends "wow.pkl" 
 extends "test.pkl"
 
@@ -53,3 +53,5 @@ pigeon: Bird = new {
     species = "Columba palumbus"
   }
 }
+
+pigeon = birds["Pigeon"]

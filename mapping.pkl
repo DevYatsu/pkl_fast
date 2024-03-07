@@ -28,9 +28,9 @@ mapping2 = new Mapping {
   [new Dynamic { name = "Pigeon" }] = "abc"
 }
 
-// mapping3 = new Mapping {
-//   ["Pigeon".reverse()] = 42
-// }
+mapping3 = new Mapping {
+  ["Pigeon".reverse()] = 42
+}
 
 mapping4 = new Mapping {
   local parrot = "Parrot"
@@ -66,3 +66,30 @@ birds3 = (birds) {
     diet = "Berries"
   }
 }
+
+birds4 = (birds) { 
+  ["Pigeon"] {
+    diet = "Seeds"
+  }
+}
+
+parrotDiet = birds4["Parrot"].diet 
+
+
+class Bird {
+  name: String
+  hidden taxonomy: Taxonomy
+}
+
+class Taxonomy {
+  `species`: String
+}
+
+pigeon: Bird = new {
+  name = "Common wood pigeon"
+  taxonomy {
+    species = "Columba palumbus"
+  }
+}
+
+pigeonClass = pigeon.getClass()
