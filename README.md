@@ -40,6 +40,8 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 - [x] Parsing Function call expressions
 - [x] Parsing InterpolatedString expressions
 
+- [ ] Support expressions parsing on several lines
+
 - [ ] Generating a symbol table from the statements
 
 ## How to implement in Rust ?
