@@ -8,11 +8,11 @@ use super::{parse_type, PklType};
 pub fn parse_opt_union<'source>(
     lexer: &mut PklLexer<'source>,
     mut base_type: PklType<'source>,
-    opt_token: Option<PklToken<'source>>
+    opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(PklType<'source>, Option<PklToken<'source>>)> {
     let token = if opt_token.is_some() {
         opt_token
-    }else {
+    } else {
         retrieve_opt_next_token(lexer)?
     };
 

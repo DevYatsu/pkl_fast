@@ -116,16 +116,14 @@ pub fn parse_type<'source>(
     let base_type = match token {
         PklToken::Identifier(value) => {
             let next_token = retrieve_next_token(lexer)?;
-            
+
             match next_token {
                 PklToken::Dot => match retrieve_next_token(lexer)? {
-                    PklToken::Identifier(name) => {
-                        PklType::ImportedClass {
-                                name,
-                                module: value,
-                                generics_params: None,
-                            }
-                    }
+                    PklToken::Identifier(name) => PklType::ImportedClass {
+                        name,
+                        module: value,
+                        generics_params: None,
+                    },
                     PklToken::GenericTypeAnnotationStart(type_as_str) => {
                         let (types, end_token) = list_while_not_tokens(
                             lexer,
@@ -135,13 +133,11 @@ pub fn parse_type<'source>(
                         )?;
 
                         match end_token {
-                            PklToken::RightAngleBracket(_) => {
-                                PklType::ImportedClass {
-                                        name: type_as_str,
-                                        module: value,
-                                        generics_params: Some(types),
-                                    }
-                            }
+                            PklToken::RightAngleBracket(_) => PklType::ImportedClass {
+                                name: type_as_str,
+                                module: value,
+                                generics_params: Some(types),
+                            },
                             _ => unreachable!(),
                         }
                     }
@@ -149,8 +145,8 @@ pub fn parse_type<'source>(
                 },
                 _ => {
                     let t: PklType = value.into();
-                    return Ok(parse_opt_union(lexer, t, Some(next_token))?)
-                },
+                    return Ok(parse_opt_union(lexer, t, Some(next_token))?);
+                }
             }
         }
         PklToken::GenericTypeAnnotationStart(type_as_str) => {
