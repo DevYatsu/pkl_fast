@@ -1,8 +1,8 @@
-# Pkl_parser
+# Pkl_fast
 
 ## Overview
 
-_pkl_parser_ is a Rust library aiming to become an efficient tool for working with Apple's Pkl format. The library shall provide fast and reliable parsing and manipulation capabilities for Pkl files in Rust projects.
+_pkl_fast_ is a Rust library aiming to become an efficient tool for working with Apple's Pkl format. The library shall provide fast and reliable parsing and manipulation capabilities for Pkl files in Rust projects.
 
 **Note**: This library is still in development. The lexer part is completed, and work on the parser has begun.
 
