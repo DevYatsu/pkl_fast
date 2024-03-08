@@ -116,7 +116,7 @@ impl<'source> PklParser<'source> {
                 Ok(PklToken::Local) => {
                     // local variable declaration
                     let id = parse_identifier(&mut self.lexer)?;
-                    let stmt = self.parse_var_statement(id, false)?;
+                    let stmt = self.parse_var_statement(id, true)?;
 
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
