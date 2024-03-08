@@ -65,9 +65,9 @@ pub fn parse_listing_field<'source>(
         }
         PklToken::Default => {
             expect_token(lexer, PklToken::OpenBracket)?;
-            let value = parse_object(lexer, None)?;
+            let (value, token) = parse_object(lexer, None)?;
 
-            Ok((ListingField::DefaultObject(Expression::Value(value)), None))
+            Ok((ListingField::DefaultObject(Expression::Value(value)), token))
         }
         PklToken::OpenParenthesis => {
             let (expr, opt_token) = parse_basic_expr(lexer, None)?;
@@ -77,14 +77,14 @@ pub fn parse_listing_field<'source>(
                     Expression::ListIndexing { indexed, indexer } => {
                         if indexed == "this" {
                             expect_token(lexer, PklToken::OpenBracket)?;
-                            let value = parse_object(lexer, None)?;
+                            let (value, token) = parse_object(lexer, None)?;
 
                             Ok((
                                 ListingField::AmendingElement {
                                     index: *indexer,
                                     value,
                                 },
-                                None,
+                                token,
                             ))
                         } else {
                             let (expr, next) = parse_complex_expr(

@@ -5,7 +5,7 @@ use crate::{
         expression::{parse_expr, Expression},
         utils::{
             assert_token_eq, expect_token, list_while_not_token3, parse_identifier,
-            parse_opt_newlines, retrieve_next_token,
+            parse_opt_newlines, retrieve_next_token, retrieve_opt_next_token,
         },
     },
     prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
@@ -53,17 +53,41 @@ pub enum ObjectField<'a> {
 /// Function called to parse an object, we assume that '{' was already found
 pub fn parse_object<'source>(
     lexer: &mut PklLexer<'source>,
-    opt_amended_object: Option<&'source str>,
-) -> ParsingResult<PklValue<'source>> {
+    amended_by: Option<&'source str>,
+) -> ParsingResult<(PklValue<'source>, Option<PklToken<'source>>)> {
     let values = parse_object_values(lexer)?;
 
-    Ok(PklValue::Object {
-        values,
-        amended_by: opt_amended_object,
-    })
+    match retrieve_opt_next_token(lexer)? {
+        Some(PklToken::OpenBracket) => {
+            let chained_body = list_while_not_token3(
+                lexer,
+                &[PklToken::NewLine, PklToken::SemiColon],
+                PklToken::CloseBracket,
+                &parse_block_field,
+            )?;
+
+            Ok((
+                PklValue::Object {
+                    values,
+                    amended_by,
+                    chained_body: Some(chained_body),
+                },
+                None,
+            ))
+        }
+
+        token => Ok((
+            PklValue::Object {
+                values,
+                amended_by,
+                chained_body: None,
+            },
+            token,
+        )),
+    }
 }
 
-fn parse_object_values<'source>(
+pub fn parse_object_values<'source>(
     lexer: &mut PklLexer<'source>,
 ) -> ParsingResult<Vec<ObjectField<'source>>> {
     list_while_not_token3(
@@ -85,14 +109,13 @@ pub fn parse_block_field<'source>(
             let (value, next_token) = match next_token {
                 PklToken::EqualSign => {
                     let (value, next_token) = parse_expr(lexer, None)?;
-
                     (value, next_token)
                 }
                 PklToken::OpenBracket => {
                     // we sould see whether or not we add to this object that its parent object is amended
-                    let value = parse_object(lexer, None)?;
+                    let (value, token) = parse_object(lexer, None)?;
 
-                    (Expression::Value(value), None)
+                    (Expression::Value(value), token)
                 }
                 _ => return Err(ParsingError::unexpected(lexer, "'='".to_owned())),
             };
@@ -119,13 +142,13 @@ pub fn parse_block_field<'source>(
             assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
             match retrieve_next_token(lexer)? {
                 PklToken::OpenBracket => {
-                    let value = parse_object(lexer, None)?;
+                    let (value, token) = parse_object(lexer, None)?;
                     Ok((
                         ObjectField::AmendedValue {
                             value: Expression::Value(value),
                             key: expr,
                         },
-                        None,
+                        token,
                     ))
                 }
                 PklToken::EqualSign => {

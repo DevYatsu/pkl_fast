@@ -87,14 +87,14 @@ fn parse_class_instance_field<'source>(
                     Ok((ClassField::VariableDeclaration { name, value }, next_token))
                 }
                 PklToken::OpenBracket => {
-                    let value = parse_object(lexer, None)?;
+                    let (value, token) = parse_object(lexer, None)?;
 
                     Ok((
                         ClassField::VariableDeclaration {
                             name,
                             value: Expression::Value(value),
                         },
-                        None,
+                        token,
                     ))
                 }
                 _ => Err(ParsingError::unexpected(lexer, "'=' or '{'".to_owned())),

@@ -34,7 +34,7 @@ pub fn parse_basic_expr<'source>(
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),
-                _ => return Err(ParsingError::unexpected(lexer, "'('".to_owned())),
+                _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
             };
 
             let expr = Expression::Parenthesised(expr.into());

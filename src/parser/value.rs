@@ -30,9 +30,14 @@ pub enum PklValue<'a> {
     Boolean(bool),
     Int(i64),
     Float(f64),
+
+    /// An object!
+    ///  
+    /// chained_body and amended_by properties: ([see note](https://pkl-lang.org/main/current/language-reference/index.html#amending-objects))
     Object {
         values: Vec<ObjectField<'a>>,
         amended_by: Option<&'a str>,
+        chained_body: Option<Vec<ObjectField<'a>>>,
     },
 
     List(Vec<Expression<'a>>),
@@ -95,7 +100,7 @@ pub fn parse_value<'source>(
                 let unit: DataSizeUnit = (*unit).into();
                 Ok(PklValue::DataSize(DataSize { value, unit }))
             }
-            _ => unreachable!("Cannot be reached!"),
+            _ => unreachable!(),
         },
         PklToken::Duration => match lexer.slice().split('.').collect::<Vec<_>>().as_slice() {
             [value, unit] => {
@@ -108,7 +113,7 @@ pub fn parse_value<'source>(
                 let unit: DurationUnit = (*unit).into();
                 Ok(PklValue::Duration(Duration { value, unit }))
             }
-            _ => unreachable!("Cannot be reached!"),
+            _ => unreachable!(),
         },
         PklToken::New => parse_class_instance(lexer),
         _ => Err(ParsingError::expected_expression(lexer)),
@@ -128,7 +133,11 @@ impl<'a> fmt::Display for PklValue<'a> {
             PklValue::Boolean(b) => write!(f, "{}", b),
             PklValue::Int(i) => write!(f, "{}", i),
             PklValue::Float(fl) => write!(f, "{}", fl),
-            PklValue::Object { values, amended_by } => {
+            PklValue::Object {
+                values,
+                amended_by,
+                chained_body,
+            } => {
                 if let Some(amended_by) = amended_by {
                     write!(f, "({}) ", amended_by)?;
                 }
@@ -137,7 +146,16 @@ impl<'a> fmt::Display for PklValue<'a> {
                     write!(f, "{}", value)?;
                 }
 
-                write!(f, "}}")
+                match chained_body {
+                    Some(amended_values) => {
+                        write!(f, "{{")?;
+                        for value in amended_values {
+                            write!(f, "{}", value)?;
+                        }
+                        write!(f, "}}")
+                    }
+                    None => write!(f, "}}"),
+                }
             }
             PklValue::List(list) => {
                 write!(f, "List(")?;

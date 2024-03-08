@@ -69,9 +69,9 @@ pub fn parse_mapping_field<'source>(
         }
         PklToken::Default => {
             expect_token(lexer, PklToken::OpenBracket)?;
-            let value = parse_object(lexer, None)?;
+            let (value, token) = parse_object(lexer, None)?;
 
-            Ok((MappingField::DefaultObject(Expression::Value(value)), None))
+            Ok((MappingField::DefaultObject(Expression::Value(value)), token))
         }
         PklToken::OpenBrace => parse_mapping_variable(lexer),
         _ => {
@@ -90,13 +90,13 @@ pub fn parse_mapping_variable<'source>(
 
     match retrieve_next_token(lexer)? {
         PklToken::OpenBracket => {
-            let value = parse_object(lexer, None)?;
+            let (value, token) = parse_object(lexer, None)?;
             Ok((
                 MappingField::Pair {
                     value: Expression::Value(value),
                     key,
                 },
-                None,
+                token,
             ))
         }
         PklToken::EqualSign => {
@@ -109,14 +109,14 @@ pub fn parse_mapping_variable<'source>(
                             Expression::ListIndexing { indexed, indexer } => {
                                 if indexed == "this" {
                                     expect_token(lexer, PklToken::OpenBracket)?;
-                                    let value = parse_object(lexer, None)?;
+                                    let (value, token) = parse_object(lexer, None)?;
 
                                     Ok((
                                         MappingField::AmendingElement {
                                             index: *indexer,
                                             value,
                                         },
-                                        None,
+                                        token,
                                     ))
                                 } else {
                                     let (expr, next) = parse_complex_expr(

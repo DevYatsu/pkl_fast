@@ -391,11 +391,21 @@ impl<'source> PklParser<'source> {
 
         let optional_type = match token {
             PklToken::OpenBracket => {
-                let value = Expression::Value(parse_object(lexer, None)?);
+                let (object, next_token) = parse_object(lexer, None)?;
+
+                match next_token {
+                    Some(PklToken::NewLine)
+                    | Some(PklToken::BlockComment)
+                    | Some(PklToken::DocComment) => {
+                        self.new_line_parsed = true;
+                    }
+                    None => (),
+                    _ => return Err(ParsingError::unexpected(lexer, "'='".to_owned())),
+                };
 
                 return Ok(Statement::VariableDeclaration {
                     name,
-                    value,
+                    value: Expression::Value(object),
                     optional_type: None,
                 });
             }
@@ -409,18 +419,14 @@ impl<'source> PklParser<'source> {
 
                         return Ok(Statement::VariableDeclaration {
                             name,
-                            value: expression::Expression::Value(
-                                variable_type.default_value(lexer)?,
-                            ),
+                            value: Expression::Value(variable_type.default_value(lexer)?),
                             optional_type: Some(variable_type),
                         });
                     }
                     None => {
                         return Ok(Statement::VariableDeclaration {
                             name,
-                            value: expression::Expression::Value(
-                                variable_type.default_value(lexer)?,
-                            ),
+                            value: Expression::Value(variable_type.default_value(lexer)?),
                             optional_type: Some(variable_type),
                         })
                     }

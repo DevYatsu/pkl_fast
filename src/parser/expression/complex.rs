@@ -26,7 +26,8 @@ pub fn parse_complex_expr<'source>(
         Some(PklToken::OpenBracket) => {
             if let Expression::Parenthesised(inner_expr) = expr {
                 if let Expression::Identifier(name) = *inner_expr {
-                    return Ok((Expression::Value(parse_object(lexer, Some(name))?), None));
+                    let (value, next) = parse_object(lexer, Some(name))?;
+                    return Ok((Expression::Value(value), next));
                 }
             }
 

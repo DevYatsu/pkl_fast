@@ -15,7 +15,7 @@ pub enum PklToken<'source> {
     // if necessary add Tab
     #[token("{")]
     OpenBracket,
-    #[token("}")]
+    #[token("}", priority = 20)]
     CloseBracket,
 
     #[token("[")]
