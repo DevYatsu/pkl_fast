@@ -250,7 +250,7 @@ where
 /// the separator tokens are jumped at the start and the predicate is sure to receive a valid token as parameter.
 pub fn list_while_not_token3<'source, R, F>(
     lexer: &mut PklLexer<'source>,
-    separator_token: PklToken<'source>,
+    separator_tokens: &[PklToken<'source>],
     end_token: PklToken<'source>,
     predicate: &F,
 ) -> ParsingResult<Vec<R>>
@@ -266,10 +266,10 @@ where
     loop {
         let token = retrieve_next_token(lexer)?;
 
-        if token == separator_token {
+        if separator_tokens.contains(&token) {
             continue;
         }
-        if end_token == token {
+        if token == end_token {
             break;
         }
 
@@ -278,15 +278,23 @@ where
 
         // if None, does not necessarily mean that there is no token next in the lexer
         if let Some(token) = next_token {
-            if end_token == token {
+            if token == end_token {
                 break;
             }
-            if separator_token == token {
+            if separator_tokens.contains(&token) {
                 continue;
             }
             return Err(ParsingError::unexpected(
                 lexer,
-                format!("{} or {}", end_token, separator_token),
+                format!(
+                    "one of {} or {}",
+                    separator_tokens
+                        .iter()
+                        .map(|x| x.to_string())
+                        .collect::<Vec<String>>()
+                        .join(","),
+                    end_token
+                ),
             ));
         }
     }

@@ -6,6 +6,8 @@ attendants = 100
 /* isInteractive = true */
 amountLearned = 13.37
 
+
+
 if (bar)
     bar
 else

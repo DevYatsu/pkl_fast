@@ -193,7 +193,28 @@ impl<'source> PklParser<'source> {
                     stmt
                 }
                 Err(e) => return Err(parse_lexing_error(&mut self.lexer, e)),
-                _ => continue,
+                Ok(PklToken::LineComment)
+                | Ok(PklToken::DocComment)
+                | Ok(PklToken::NewLine)
+                | Ok(PklToken::BlockComment) => continue,
+                Ok(token) => {
+                    let (expr, next) = parse_expr(&mut self.lexer, Some(token))?;
+
+                    match next {
+                        Some(PklToken::NewLine)
+                        | Some(PklToken::DocComment)
+                        | Some(PklToken::LineComment) => (),
+                        None => (),
+                        _ => {
+                            return Err(ParsingError::unexpected(
+                                &mut self.lexer,
+                                "line ending".to_owned(),
+                            ))
+                        }
+                    };
+
+                    Statement::Expression(expr)
+                }
             };
 
             self.statements.push(statement);

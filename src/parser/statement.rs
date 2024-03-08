@@ -45,6 +45,8 @@ pub enum Statement<'a> {
     DeprecatedInfo {
         infos: Vec<InfoField<'a>>,
     },
+
+    Expression(Expression<'a>),
 }
 
 use std::collections::HashMap;

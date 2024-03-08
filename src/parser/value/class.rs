@@ -37,7 +37,7 @@ pub fn parse_class_instance<'source>(
                 "Listing" => {
                     let values = list_while_not_token3(
                         lexer,
-                        PklToken::NewLine,
+                        &[PklToken::NewLine, PklToken::SemiColon],
                         PklToken::CloseBracket,
                         &parse_listing_field,
                     )?;
@@ -47,7 +47,7 @@ pub fn parse_class_instance<'source>(
                 "Mapping" => {
                     let values = list_while_not_token3(
                         lexer,
-                        PklToken::NewLine,
+                        &[PklToken::NewLine, PklToken::SemiColon],
                         PklToken::CloseBracket,
                         &parse_mapping_field,
                     )?;
@@ -65,7 +65,7 @@ pub fn parse_class_instance<'source>(
 
     let arguments = list_while_not_token3(
         lexer,
-        PklToken::NewLine,
+        &[PklToken::NewLine, PklToken::SemiColon],
         PklToken::CloseBracket,
         &parse_class_instance_field,
     )?;

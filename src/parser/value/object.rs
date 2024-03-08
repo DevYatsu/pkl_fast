@@ -49,9 +49,9 @@ pub fn parse_object<'source>(
 ) -> ParsingResult<PklValue<'source>> {
     let values = list_while_not_token3(
         lexer,
-        PklToken::NewLine,
+        &[PklToken::NewLine, PklToken::SemiColon],
         PklToken::CloseBracket,
-        &parse_block,
+        &parse_block_field,
     )?;
 
     Ok(PklValue::Object {
@@ -60,7 +60,7 @@ pub fn parse_object<'source>(
     })
 }
 
-pub fn parse_block<'source>(
+pub fn parse_block_field<'source>(
     lexer: &mut PklLexer<'source>,
     token: PklToken<'source>,
 ) -> ParsingResult<(ObjectField<'source>, Option<PklToken<'source>>)> {
@@ -128,9 +128,9 @@ pub fn parse_block<'source>(
 
             let members = list_while_not_token3(
                 lexer,
-                PklToken::NewLine,
+                &[PklToken::NewLine],
                 PklToken::CloseBracket,
-                &parse_block,
+                &parse_block_field,
             )?;
 
             let next_token = retrieve_next_token(lexer)?;
@@ -140,9 +140,9 @@ pub fn parse_block<'source>(
                     expect_token(lexer, PklToken::OpenBracket)?;
                     let _else = list_while_not_token3(
                         lexer,
-                        PklToken::NewLine,
+                        &[PklToken::NewLine],
                         PklToken::CloseBracket,
-                        &parse_block,
+                        &parse_block_field,
                     )?;
 
                     Ok((
@@ -179,9 +179,9 @@ pub fn parse_block<'source>(
 
                     let members = list_while_not_token3(
                         lexer,
-                        PklToken::NewLine,
+                        &[PklToken::NewLine],
                         PklToken::CloseBracket,
-                        &parse_block,
+                        &parse_block_field,
                     )?;
 
                     Ok((
@@ -201,9 +201,9 @@ pub fn parse_block<'source>(
 
                     let members = list_while_not_token3(
                         lexer,
-                        PklToken::NewLine,
+                        &[PklToken::NewLine],
                         PklToken::CloseBracket,
-                        &parse_block,
+                        &parse_block_field,
                     )?;
 
                     Ok((

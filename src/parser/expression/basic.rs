@@ -151,5 +151,5 @@ fn parse_opt_member_expr<'source>(
         _ => (),
     };
 
-    return Ok((expr, next_token));
+    Ok((expr, next_token))
 }
