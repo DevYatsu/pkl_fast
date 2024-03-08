@@ -8,9 +8,15 @@ use super::{parse_type, PklType};
 pub fn parse_opt_union<'source>(
     lexer: &mut PklLexer<'source>,
     mut base_type: PklType<'source>,
+    opt_token: Option<PklToken<'source>>
 ) -> ParsingResult<(PklType<'source>, Option<PklToken<'source>>)> {
-    let token = retrieve_opt_next_token(lexer)?;
+    let token = if opt_token.is_some() {
+        opt_token
+    }else {
+        retrieve_opt_next_token(lexer)?
+    };
 
+    println!("{:?}", token);
     let result = match token {
         Some(PklToken::UnionSerarator) => {
             let (t, next_token) = parse_type(lexer, None)?;

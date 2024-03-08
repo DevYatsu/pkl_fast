@@ -138,6 +138,7 @@ fn parse_opt_member_expr<'source>(
 
     match next_token {
         Some(PklToken::Dot) => {
+            // function call or identifier
             let (second_expr, next) = parse_basic_expr(lexer, None)?;
 
             return Ok((
