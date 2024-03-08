@@ -19,6 +19,9 @@ pub enum Operator {
     Comparison(ComparisonOperator),
     TypeTest,
     TypeCast,
+
+    /// The pipe operator `|>` used to pass the result of one function call to another
+    Pipe
 }
 
 /// Parses the next token to determine if it's an operator. If an operator is found,
@@ -122,6 +125,7 @@ impl Operator {
             Operator::Comparison(op) => op.get_precedence(),
             Operator::TypeCast => 0,
             Operator::TypeTest => 0,
+            Operator::Pipe => 0,
         }
     }
 }
@@ -133,6 +137,7 @@ impl fmt::Display for Operator {
             Operator::Comparison(x) => write!(f, "{x}"),
             Operator::TypeCast => write!(f, "as"),
             Operator::TypeTest => write!(f, "is"),
+            Operator::Pipe => write!(f, "|>"),
         }
     }
 }
@@ -172,6 +177,7 @@ impl From<&str> for Operator {
             "&" => ComparisonOperator::BitwiseAnd.into(),
             "|" => ComparisonOperator::BitwiseOr.into(),
             "||" => ComparisonOperator::LogicalOr.into(),
+            "|>" => Operator::Pipe,
             "is" => Operator::TypeTest,
             "as" => Operator::TypeTest,
             _ => unreachable!("Should not be reached! (in Operator)"),
