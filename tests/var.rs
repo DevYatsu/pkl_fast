@@ -69,7 +69,19 @@ datasize7 = 1.6666666666666667.mb
 fn str_var() {
     let code = r#"ENV_VALUE="TEST_VALUE"
 s="str"
-greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n \(ENV_VALUE + s)""#;
+greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n \(ENV_VALUE + s)"
+
+name = "Dodo"
+greeting = "Hi, \(name)!" 
+str = "\(x + 2) plus \(x * 2) is \(0x80) \t " 
+
+bird = "Dodo"
+local message = """
+Although the \(bird) is ex\ntinct, \u{a2e3e}
+the species will be remembered. \\
+"""
+
+"#;
 
     let tokens = lex(code);
     let statements = parse(tokens);
