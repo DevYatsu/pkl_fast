@@ -8,6 +8,7 @@ use super::{
     ParsingResult, PklLexer,
 };
 use crate::{parser::expression::parse_expr, prelude::PklToken};
+use std::fmt;
 
 pub mod errors;
 mod union;
@@ -375,7 +376,7 @@ impl<'a> PklType<'a> {
             PklType::Set { .. } => Ok(PklValue::Set(vec![])),
             PklType::Class { name, .. } => Ok(PklValue::ClassInstance {
                 name: Some(*name),
-                arguments: HashMap::new(),
+                arguments: Vec::new(),
             }),
             PklType::PotentiallyNull(t) => Ok(PklValue::Nullable(Box::new(Expression::Value(
                 t.default_value(lexer)?,
@@ -497,8 +498,6 @@ impl<'a> PklType<'a> {
         }
     }
 }
-
-use std::{collections::HashMap, fmt};
 
 impl<'a> fmt::Display for PklType<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

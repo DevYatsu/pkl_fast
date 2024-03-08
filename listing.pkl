@@ -71,3 +71,9 @@ birds = new Listing {
   (x[0] + 2)
   ((x[0]) + 3) + 5 * (02 + 3)  / 6 - 10 % 4
 }
+
+res1: Listing<String> = new { 
+  "foo"
+  "bar"
+  "hihi"
+} 

@@ -20,7 +20,6 @@ res2 = new { 1; 2; 3; 4; 5; 6 }
 
 amends "Foo.pkl" 
 
-res1 { "foo" } 
 res2 = 1 + 2 
 res3 = res2 as Number 
 res4 = List(1, 2, 3) 

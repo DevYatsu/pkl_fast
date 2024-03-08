@@ -1,3 +1,4 @@
+use self::class::ClassField;
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
 use self::listing::ListingField;
@@ -9,7 +10,6 @@ use super::PklLexer;
 use crate::parser::value::datasize::DataSizeUnit;
 use crate::parser::{errors::ParsingError, ParsingResult};
 use crate::prelude::PklToken;
-use std::collections::HashMap;
 use std::fmt;
 
 mod class;
@@ -65,7 +65,7 @@ pub enum PklValue<'a> {
     /// }
     ClassInstance {
         name: Option<&'a str>,
-        arguments: HashMap<&'a str, Expression<'a>>,
+        arguments: Vec<ClassField<'a>>,
     },
 }
 
@@ -174,8 +174,8 @@ impl<'a> fmt::Display for PklValue<'a> {
                 write!(f, "new {} {{", name.unwrap_or(""))?;
                 if !arguments.is_empty() {
                     write!(f, "\n")?;
-                    for (key, val) in arguments {
-                        write!(f, "\t{}: {}\n", key, val)?;
+                    for value in arguments {
+                        write!(f, "\t{}\n", value)?;
                     }
                 }
                 write!(f, "}}")?;

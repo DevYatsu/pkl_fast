@@ -93,3 +93,30 @@ pigeon: Bird = new {
 }
 
 pigeonClass = pigeon.getClass()
+
+
+class Bird {
+  lifespan: Int
+}
+
+birds: Mapping<String, Bird>
+
+birds {
+  ["Pigeon"] {
+    lifespan = 8
+  }
+  ["Parrot"] {
+    lifespan = 20
+  }
+}
+
+mapping: Mapping = new {
+  ["number"] = 42
+  ["list"] = List("Pigeon", "Parrot")
+  ["nested mapping"] {
+    ["Pigeon"] {
+      lifespan = 20
+      diet = "Seeds"
+    }
+  }
+}
