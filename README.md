@@ -14,7 +14,8 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 
 ## Todo List
 
-- [x] Parsing basic values (e.g., int, float, boolean, string, datasize, duration)
+- [x] Parsing basic values (e.g., int, float, boolean, datasize, duration)
+- [ ] Parsing all types of strings, e.g. multiline strings and custom string delimiters (#""# with a changeable number of #)
 - [x] Parsing objects declaration
 - [x] Parsing `Map`, `Set`, `List`
 - [x] Parsing `Mapping`, `Listing`
