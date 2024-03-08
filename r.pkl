@@ -44,3 +44,15 @@ derived = new Derived {}
 test8 = derived is Derived
 test9 = derived is Base
 test10 = derived is Any
+
+pigeon {
+  name = "Common wood pigeon"
+} {
+  extinct = false
+} 
+
+dodo = (pigeon) {
+  name = "Dodo"
+} {
+  extinct = true
+} 
