@@ -113,9 +113,22 @@ impl<'source> PklParser<'source> {
                     expect_statement_end(&mut self.lexer)?;
                     stmt
                 }
+                Ok(PklToken::Local) => {
+                    // local variable declaration
+                    let id = parse_identifier(&mut self.lexer)?;
+                    let stmt = self.parse_var_statement(id, false)?;
+
+                    if self.new_line_parsed {
+                        self.new_line_parsed = !self.new_line_parsed;
+                    } else {
+                        expect_statement_end(&mut self.lexer)?;
+                    }
+
+                    stmt
+                }
                 Ok(PklToken::Identifier(id)) => {
                     // match for variable declaration, object declaration and variable assignment
-                    let stmt = self.parse_var_statement(id)?;
+                    let stmt = self.parse_var_statement(id, false)?;
 
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
@@ -385,7 +398,11 @@ impl<'source> PklParser<'source> {
     }
 
     // this function is defined here as it uses self.new_line_parsed
-    fn parse_var_statement(&mut self, name: &'source str) -> ParsingResult<Statement<'source>> {
+    fn parse_var_statement(
+        &mut self,
+        name: &'source str,
+        is_local: bool,
+    ) -> ParsingResult<Statement<'source>> {
         let lexer = &mut self.lexer;
         let token = retrieve_next_token(lexer)?;
 
@@ -407,6 +424,7 @@ impl<'source> PklParser<'source> {
                     name,
                     value: Expression::Value(object),
                     optional_type: None,
+                    is_local,
                 });
             }
             PklToken::Colon => {
@@ -421,6 +439,7 @@ impl<'source> PklParser<'source> {
                             name,
                             value: Expression::Value(variable_type.default_value(lexer)?),
                             optional_type: Some(variable_type),
+                            is_local,
                         });
                     }
                     None => {
@@ -428,6 +447,7 @@ impl<'source> PklParser<'source> {
                             name,
                             value: Expression::Value(variable_type.default_value(lexer)?),
                             optional_type: Some(variable_type),
+                            is_local,
                         })
                     }
                     _ => return Err(ParsingError::unexpected(lexer, "'='".to_owned())),
@@ -456,6 +476,7 @@ impl<'source> PklParser<'source> {
             name,
             value,
             optional_type,
+            is_local,
         })
     }
     fn parse_typealias(&mut self) -> ParsingResult<Statement<'source>> {

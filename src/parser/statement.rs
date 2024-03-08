@@ -24,6 +24,7 @@ pub enum Statement<'a> {
         name: &'a str,
         optional_type: Option<PklType<'a>>,
         value: Expression<'a>,
+        is_local: bool,
     },
     ClassDeclaration {
         name: &'a str,

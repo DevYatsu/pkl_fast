@@ -21,7 +21,7 @@ pub enum Operator {
     TypeCast,
 
     /// The pipe operator `|>` used to pass the result of one function call to another
-    Pipe
+    Pipe,
 }
 
 /// Parses the next token to determine if it's an operator. If an operator is found,
