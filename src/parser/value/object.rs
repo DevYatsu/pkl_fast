@@ -39,7 +39,15 @@ pub enum ObjectField<'a> {
         key: Expression<'a>,
         value: Expression<'a>,
     },
-    DefaultObject(Expression<'a>),
+    DefaultObject(Vec<ObjectField<'a>>),
+
+    MemberPredicate {
+        match_expr: Expression<'a>,
+        values: Vec<ObjectField<'a>>,
+    },
+
+    // represents an expression when a Listing is amended
+    Expression(Expression<'a>),
 }
 
 /// Function called to parse an object, we assume that '{' was already found
@@ -47,17 +55,23 @@ pub fn parse_object<'source>(
     lexer: &mut PklLexer<'source>,
     opt_amended_object: Option<&'source str>,
 ) -> ParsingResult<PklValue<'source>> {
-    let values = list_while_not_token3(
-        lexer,
-        &[PklToken::NewLine, PklToken::SemiColon],
-        PklToken::CloseBracket,
-        &parse_block_field,
-    )?;
+    let values = parse_object_values(lexer)?;
 
     Ok(PklValue::Object {
         values,
         amended_by: opt_amended_object,
     })
+}
+
+fn parse_object_values<'source>(
+    lexer: &mut PklLexer<'source>,
+) -> ParsingResult<Vec<ObjectField<'source>>> {
+    list_while_not_token3(
+        lexer,
+        &[PklToken::NewLine, PklToken::SemiColon],
+        PklToken::CloseBracket,
+        &parse_block_field,
+    )
 }
 
 pub fn parse_block_field<'source>(
@@ -86,7 +100,22 @@ pub fn parse_block_field<'source>(
             Ok((ObjectField::Variable { name, value }, next_token))
         }
         PklToken::OpenBrace => {
-            let (expr, next_token) = parse_expr(lexer, None)?;
+            let token = retrieve_next_token(lexer)?;
+
+            match token {
+                PklToken::OpenBrace => {
+                    let (match_expr, next_token) = parse_expr(lexer, None)?;
+                    assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
+                    expect_token(lexer, PklToken::CloseBrace)?;
+                    expect_token(lexer, PklToken::OpenBracket)?;
+
+                    let values = parse_object_values(lexer)?;
+                    return Ok((ObjectField::MemberPredicate { match_expr, values }, None));
+                }
+                _ => (),
+            };
+
+            let (expr, next_token) = parse_expr(lexer, Some(token))?;
             assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
             match retrieve_next_token(lexer)? {
                 PklToken::OpenBracket => {
@@ -108,9 +137,9 @@ pub fn parse_block_field<'source>(
         }
         PklToken::Default => {
             expect_token(lexer, PklToken::OpenBracket)?;
-            let value = parse_object(lexer, None)?;
+            let values = parse_object_values(lexer)?;
 
-            Ok((ObjectField::DefaultObject(Expression::Value(value)), None))
+            Ok((ObjectField::DefaultObject(values), None))
         }
         PklToken::SpreadSyntax => {
             let ident = parse_identifier(lexer)?;
@@ -219,7 +248,11 @@ pub fn parse_block_field<'source>(
                 _ => Err(ParsingError::unexpected(lexer, "'in' or ','".to_owned())),
             }
         }
-        _ => Err(ParsingError::expected_identifier(lexer)),
+        token => {
+            let (expr, next) = parse_expr(lexer, Some(token))?;
+
+            Ok((ObjectField::Expression(expr), next))
+        }
     }
 }
 
@@ -273,7 +306,25 @@ impl<'a> fmt::Display for ObjectField<'a> {
             ObjectField::Spread(value) => write!(f, "...{value}"),
             ObjectField::NullableSpread(value) => write!(f, "...?{value}"),
             ObjectField::AmendedValue { value, key } => write!(f, "[{key}] {value}"),
-            ObjectField::DefaultObject(x) => write!(f, "default {x}"),
+            ObjectField::DefaultObject(x) => {
+                write!(f, "default {{\n")?;
+
+                for y in x {
+                    write!(f, "\t{y}\n")?;
+                }
+
+                write!(f, "}}")
+            }
+            ObjectField::MemberPredicate { match_expr, values } => {
+                write!(f, "[[{match_expr}]] {{\n")?;
+
+                for y in values {
+                    write!(f, "\t{y}\n")?;
+                }
+
+                write!(f, "}}")
+            }
+            ObjectField::Expression(x) => write!(f, "{x}"),
         }
     }
 }
