@@ -77,3 +77,27 @@ res1: Listing<String> = new {
   "bar"
   "hihi"
 } 
+
+
+birds = new Listing {
+  new { 
+    name = "Pigeon"
+    diet = "Seeds"
+  }
+  (this[0]) { 
+    name = "Parrot"
+  }
+}
+birds2 = (birds) { 
+  new { 
+    name = "Barn owl"
+    diet = "Mice"
+  }
+  [0] { 
+    diet = "Worms"
+  }
+  [1] = new { 
+    name = "Albatross"
+    diet = "Fish"
+  }
+}
