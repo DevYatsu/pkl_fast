@@ -117,7 +117,7 @@ pub fn parse_listing_field<'source>(
 
                     Ok((ListingField::Expression(expr), next))
                 }
-                _ => Err(ParsingError::eof(lexer)),
+                _ => Err(ParsingError::eof(lexer, "a closing parenthesis")),
             }
         }
         _ => {

@@ -9,7 +9,7 @@ pub fn parse_identifier<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult
         if token.is_some() {
             Err(ParsingError::invalid_id(lexer))
         } else {
-            Err(ParsingError::eof(lexer))
+            Err(ParsingError::eof(lexer, "an identifier"))
         }
     }
 }

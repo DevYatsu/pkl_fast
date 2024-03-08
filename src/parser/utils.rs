@@ -10,7 +10,7 @@ pub fn retrieve_next_token<'source>(
     let token = lexer.next();
 
     if token.is_none() {
-        return Err(ParsingError::eof(lexer));
+        return Err(ParsingError::eof(lexer, "something"));
     }
 
     match token.unwrap() {
@@ -38,7 +38,7 @@ pub fn expect_token<'source>(
     let token = lexer.next();
 
     if token.is_none() {
-        return Err(ParsingError::eof(lexer));
+        return Err(ParsingError::eof(lexer, &format!("a {target_token}")));
     }
 
     match token.unwrap() {
@@ -64,7 +64,7 @@ pub fn expect_token_with_opt_newlines<'source>(
         let token = lexer.next();
 
         if token.is_none() {
-            return Err(ParsingError::eof(lexer));
+            return Err(ParsingError::eof(lexer, &format!("{target_token}")));
         }
 
         match token.unwrap() {
@@ -98,7 +98,7 @@ pub fn assert_token_eq<'source>(
     expected_token: PklToken<'source>,
 ) -> ParsingResult<()> {
     if token_option.is_none() {
-        return Err(ParsingError::eof(lexer));
+        return Err(ParsingError::eof(lexer, &expected_token.to_string()));
     }
 
     match token_option.unwrap() {

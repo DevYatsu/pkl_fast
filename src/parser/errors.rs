@@ -171,7 +171,6 @@ pub struct InvalidAsStatement {
 #[error("Unexpected end of input")]
 #[diagnostic(
     code(pkl_fast::error::unexpected_end_of_input),
-    help("Try putting a string or removing a character")
 )]
 pub struct UnexpectedEndOfInputError {
     #[label("here")]
@@ -179,6 +178,9 @@ pub struct UnexpectedEndOfInputError {
 
     #[source_code]
     pub src: NamedSource<String>,
+
+    #[help]
+    advice: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -252,10 +254,11 @@ pub struct InterpolatedExprError {
 }
 
 impl ParsingError {
-    pub fn eof(lexer: &mut PklLexer<'_>) -> Self {
+    pub fn eof(lexer: &mut PklLexer<'_>, advice: &str) -> Self {
         ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError {
             src: generate_source("main.pkl", lexer.source()),
             at: get_error_location(lexer),
+            advice: format!("Add {advice}? Maybe you should...")
         })
     }
     pub fn unexpected(lexer: &mut PklLexer<'_>, advice: String) -> Self {
@@ -401,8 +404,8 @@ impl ParsingError {
             ParsingError::AsStatementUnsupported(_) => {
                 ParsingError::AsStatementUnsupported(InvalidAsStatement { src, at })
             }
-            ParsingError::UnexpectedEndOfInput(_) => {
-                ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError { src, at })
+            ParsingError::UnexpectedEndOfInput(e) => {
+                ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError { src, at, advice: e.advice })
             }
             ParsingError::UnterminatedString(_) => {
                 ParsingError::UnterminatedString(UnterminatedStringError { src, at })

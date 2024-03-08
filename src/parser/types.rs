@@ -159,7 +159,7 @@ pub fn parse_type<'source>(
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),
-                None => return Err(ParsingError::eof(lexer)),
+                None => return Err(ParsingError::eof(lexer, "a closing parenthesis")),
                 _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
             }
 
@@ -269,7 +269,7 @@ fn parse_generic_type_annotation<'source>(
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),
-                None => return Err(ParsingError::eof(lexer)),
+                None => return Err(ParsingError::eof(lexer, "a closing parenthesis")),
                 _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
             }
 

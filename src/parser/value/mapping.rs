@@ -148,7 +148,7 @@ pub fn parse_mapping_variable<'source>(
 
                             Ok((MappingField::Expression(expr), next))
                         }
-                        _ => Err(ParsingError::eof(lexer)),
+                        _ => Err(ParsingError::eof(lexer, "a closing parenthesis")),
                     }
                 }
                 token => {
