@@ -27,7 +27,7 @@ pub enum ObjectField<'a> {
     ForGenerator {
         key: Option<&'a str>,
         value: &'a str,
-        iterable: &'a str,
+        iterable: Expression<'a>,
         members: Vec<ObjectField<'a>>,
     },
 
@@ -225,8 +225,8 @@ pub fn parse_block_field<'source>(
                 PklToken::Comma => {
                     let value = parse_identifier(lexer)?;
                     expect_token(lexer, PklToken::In)?;
-                    let iterable = parse_identifier(lexer)?;
-                    expect_token(lexer, PklToken::CloseParenthesis)?;
+                    let (iterable, next) = parse_expr(lexer, None)?;
+                    assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
                     expect_token(lexer, PklToken::OpenBracket)?;
 
                     let members = list_while_not_token3(
@@ -247,8 +247,8 @@ pub fn parse_block_field<'source>(
                     ))
                 }
                 PklToken::In => {
-                    let iterable = parse_identifier(lexer)?;
-                    expect_token(lexer, PklToken::CloseParenthesis)?;
+                    let (iterable, next) = parse_expr(lexer, None)?;
+                    assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
                     expect_token(lexer, PklToken::OpenBracket)?;
 
                     let members = list_while_not_token3(
