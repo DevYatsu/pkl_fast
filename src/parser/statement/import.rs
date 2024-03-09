@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use crate::{
-    parser::utils::parse_string_literal,
-    prelude::{ParsingResult, PklLexer},
+    parser::{utils::parse_string_literal, PklParser},
+    prelude::ParsingResult,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -13,8 +13,8 @@ pub enum ImportClause<'a> {
     Https(&'a str),
 }
 
-pub fn parse_import_value<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<&'source str> {
-    let value = parse_string_literal(lexer)?;
+pub fn parse_import_value<'source>(parser: &mut PklParser<'source>) -> ParsingResult<&'source str> {
+    let value = parse_string_literal(parser)?;
 
     Ok(value)
 }

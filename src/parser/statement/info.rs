@@ -2,8 +2,9 @@ use crate::{
     parser::{
         utils::{expect_token, list_while_not_token0, parse_identifier, retrieve_next_token},
         value::parse_value,
+        PklParser,
     },
-    prelude::{ParsingResult, PklLexer, PklToken, PklValue},
+    prelude::{ParsingResult, PklToken, PklValue},
 };
 
 use super::Statement;
@@ -17,36 +18,36 @@ pub struct InfoField<'a> {
 
 /// Parsing @ModuleInfo annotation
 pub fn parse_module_info<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
 ) -> ParsingResult<Statement<'source>> {
-    let infos = parse_info(lexer)?;
+    let infos = parse_info(parser)?;
 
     Ok(Statement::ModuleInfo { infos })
 }
 
 /// Parsing @Deprecated annotation
 pub fn parse_deprecated<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
 ) -> ParsingResult<Statement<'source>> {
-    let infos = parse_info(lexer)?;
+    let infos = parse_info(parser)?;
 
     Ok(Statement::DeprecatedInfo { infos })
 }
 
-fn parse_info<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Vec<InfoField<'source>>> {
-    expect_token(lexer, PklToken::OpenBracket)?;
+fn parse_info<'source>(parser: &mut PklParser<'source>) -> ParsingResult<Vec<InfoField<'source>>> {
+    expect_token(parser, PklToken::OpenBracket)?;
 
-    let predicate = |lexer: &mut PklLexer<'source>| -> ParsingResult<InfoField<'source>> {
-        let name = parse_identifier(lexer)?;
-        expect_token(lexer, PklToken::EqualSign)?;
+    let predicate = |parser: &mut PklParser<'source>| -> ParsingResult<InfoField<'source>> {
+        let name = parse_identifier(parser)?;
+        expect_token(parser, PklToken::EqualSign)?;
 
-        let next_token = retrieve_next_token(lexer)?;
-        let value = parse_value(lexer, next_token)?;
+        let next_token = retrieve_next_token(parser)?;
+        let value = parse_value(parser, next_token)?;
 
         Ok(InfoField { name, value })
     };
 
-    let infos = list_while_not_token0(lexer, PklToken::Comma, PklToken::CloseBracket, &predicate)?;
+    let infos = list_while_not_token0(parser, PklToken::Comma, PklToken::CloseBracket, &predicate)?;
 
     Ok(infos)
 }

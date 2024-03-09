@@ -1,5 +1,3 @@
-use pkl_fast::prelude::{lex, parse};
-
 #[test]
 fn class() {
     const S: &str = "abstract class Bird {
@@ -26,9 +24,13 @@ class Bird3 {
   hidden nameAndLifespanInIndex: String 
 }
 ";
-
-    let tokens = lex(S);
-    let statements = parse(tokens);
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(S);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }

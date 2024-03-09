@@ -2,6 +2,7 @@ use logos::Logos;
 use miette::Diagnostic;
 use std::num::{ParseFloatError, ParseIntError};
 use thiserror::Error;
+pub mod string;
 
 /**
 PklToken enum possesses a `lexer` method that lexes an input into tokens constituting the Pkl syntax
@@ -226,11 +227,10 @@ pub enum PklToken<'source> {
     // we retrieve the string like this and we pass it through a lexing fn to obtain a Vec<StringFragment>
     #[regex(r#""[^"]*""#, |lex| {let val = lex.slice(); &val[1..val.len()-1]})]
     StringLiteral(&'source str),
-
-    /// This variant needs to be changed fast
     #[regex(r#""""[^"]*""""#, |lex| {let val = lex.slice(); &val[3..val.len()-3]})]
     MultipleLinesString(&'source str),
-
+    // #[regex(r##"#+"[^"#]"#+"##, |lex| lex.slice())]
+    // S,
     #[regex("//.*")]
     LineComment,
     #[regex("///.*")]
@@ -272,57 +272,59 @@ impl From<ParseFloatError> for LexingError {
 impl<'source> std::fmt::Display for PklToken<'source> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-        PklToken::NewLine => write!(f, "new line"),
-        PklToken::OpenBracket => write!(f, "opening curly brace {{"),
-        PklToken::CloseBracket => write!(f, "closing curly brace }}"),
-        PklToken::OpenBrace => write!(f, "opening square bracket ["),
-        PklToken::CloseBrace => write!(f, "closing square bracket ]"),
-        PklToken::OpenParenthesis => write!(f, "opening parenthesis ("),
-        PklToken::CloseParenthesis => write!(f, "closing parenthesis )"),
-        PklToken::Module => write!(f, "'module' keyword"),
-        PklToken::ModuleInfo => write!(f, "@ModuleInfo annotation"),
-        PklToken::DeprecatedInstruction => write!(f, "@Deprecated annotation"),
-        PklToken::GlobbedImport => write!(f, "import* keyword"),
-        PklToken::Import => write!(f, "import keyword"),
-        PklToken::Extends => write!(f, "extends keyword"),
-        PklToken::Amends => write!(f, "amends keyword"),
-        PklToken::Abstract => write!(f, "abstract keyword"),
-        PklToken::Open => write!(f, "open keyword"),
-        PklToken::New => write!(f, "new keyword"),
-        PklToken::Class => write!(f, "class keyword"),
-        PklToken::Default => write!(f, "default keyword"),
-        PklToken::Local => write!(f, "local keyword"),
-        PklToken::Hidden => write!(f, "hidden keyword"),
-        PklToken::Fixed => write!(f, "fixed keyword"),
-        PklToken::Function => write!(f, "function keyword"),
-        PklToken::ArrowOperator => write!(f, "arrow operator ->"),
-        PklToken::If => write!(f, "if keyword"),
-        PklToken::Else => write!(f, "else keyword"),
-        PklToken::Let => write!(f, "let keyword"),
-        PklToken::As => write!(f, "as keyword"),
-        PklToken::For => write!(f, "for keyword"),
-        PklToken::In => write!(f, "in keyword"),
-        PklToken::When => write!(f, "when keyword"),
-        PklToken::Is => write!(f, "is keyword"),
-        PklToken::Operator(op) => write!(f, "Operator '{}'", op),
-        PklToken::RightAngleBracket(x) => write!(f, "> (greater than operator, value: {})", x),  // Add value for context
-        PklToken::EqualSign => write!(f, "Equal sign '='"),
-        PklToken::Colon => write!(f, "Colon ':'"),
-        PklToken::Comma => write!(f, "Comma ','"),
-        PklToken::SpreadSyntax => write!(f, "Spread syntax '...'"),
-        PklToken::Dot => write!(f, "Dot '.'"),
-        PklToken::SemiColon => write!(f, "Semicolon ';'"),
-        PklToken::TypeAlias => write!(f, "typealias keyword"),
-        PklToken::GenericTypeAnnotationStart(name) => {
-            write!(f, "{} generic type annotation (start)", name)
-        }
-        PklToken::GenericTypeAnnotationFunctionCall => write!(f, "Generic type function call annotation: ('>(')"),
-        PklToken::PotentiallyNullType(s) => write!(f, "{}? (potentially null type)", s),
-        PklToken::NonNullIdentifier(s) => write!(f, "{}!! (non-null identifier)", s),
-        PklToken::LogicalNotOperator => write!(f, "Logical NOT operator '!'"),
-        PklToken::DefaultUnionType(s) => write!(f, "*{} (default union type)", s),
-        PklToken::Null => write!(f, "null literal"),
-        PklToken::Boolean(b) => write!(f, "{}", if *b { "true" } else { "false" }),
+            PklToken::NewLine => write!(f, "new line"),
+            PklToken::OpenBracket => write!(f, "opening curly brace {{"),
+            PklToken::CloseBracket => write!(f, "closing curly brace }}"),
+            PklToken::OpenBrace => write!(f, "opening square bracket ["),
+            PklToken::CloseBrace => write!(f, "closing square bracket ]"),
+            PklToken::OpenParenthesis => write!(f, "opening parenthesis ("),
+            PklToken::CloseParenthesis => write!(f, "closing parenthesis )"),
+            PklToken::Module => write!(f, "'module' keyword"),
+            PklToken::ModuleInfo => write!(f, "@ModuleInfo annotation"),
+            PklToken::DeprecatedInstruction => write!(f, "@Deprecated annotation"),
+            PklToken::GlobbedImport => write!(f, "import* keyword"),
+            PklToken::Import => write!(f, "import keyword"),
+            PklToken::Extends => write!(f, "extends keyword"),
+            PklToken::Amends => write!(f, "amends keyword"),
+            PklToken::Abstract => write!(f, "abstract keyword"),
+            PklToken::Open => write!(f, "open keyword"),
+            PklToken::New => write!(f, "new keyword"),
+            PklToken::Class => write!(f, "class keyword"),
+            PklToken::Default => write!(f, "default keyword"),
+            PklToken::Local => write!(f, "local keyword"),
+            PklToken::Hidden => write!(f, "hidden keyword"),
+            PklToken::Fixed => write!(f, "fixed keyword"),
+            PklToken::Function => write!(f, "function keyword"),
+            PklToken::ArrowOperator => write!(f, "arrow operator ->"),
+            PklToken::If => write!(f, "if keyword"),
+            PklToken::Else => write!(f, "else keyword"),
+            PklToken::Let => write!(f, "let keyword"),
+            PklToken::As => write!(f, "as keyword"),
+            PklToken::For => write!(f, "for keyword"),
+            PklToken::In => write!(f, "in keyword"),
+            PklToken::When => write!(f, "when keyword"),
+            PklToken::Is => write!(f, "is keyword"),
+            PklToken::Operator(op) => write!(f, "Operator '{}'", op),
+            PklToken::RightAngleBracket(x) => write!(f, "> (greater than operator, value: {})", x), // Add value for context
+            PklToken::EqualSign => write!(f, "Equal sign '='"),
+            PklToken::Colon => write!(f, "Colon ':'"),
+            PklToken::Comma => write!(f, "Comma ','"),
+            PklToken::SpreadSyntax => write!(f, "Spread syntax '...'"),
+            PklToken::Dot => write!(f, "Dot '.'"),
+            PklToken::SemiColon => write!(f, "Semicolon ';'"),
+            PklToken::TypeAlias => write!(f, "typealias keyword"),
+            PklToken::GenericTypeAnnotationStart(name) => {
+                write!(f, "{} generic type annotation (start)", name)
+            }
+            PklToken::GenericTypeAnnotationFunctionCall => {
+                write!(f, "Generic type function call annotation: ('>(')")
+            }
+            PklToken::PotentiallyNullType(s) => write!(f, "{}? (potentially null type)", s),
+            PklToken::NonNullIdentifier(s) => write!(f, "{}!! (non-null identifier)", s),
+            PklToken::LogicalNotOperator => write!(f, "Logical NOT operator '!'"),
+            PklToken::DefaultUnionType(s) => write!(f, "*{} (default union type)", s),
+            PklToken::Null => write!(f, "null literal"),
+            PklToken::Boolean(b) => write!(f, "{}", if *b { "true" } else { "false" }),
 
             PklToken::Duration => write!(f, "Duration"),
             PklToken::DataSize => write!(f, "DataSize"),
@@ -334,11 +336,11 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::Identifier(s) => write!(f, "{}", s),
             PklToken::FunctionCall(s) => write!(f, "{}(", s),
             PklToken::LineComment => write!(f, "//"),
-            PklToken::DocComment => write!(f, "///"),
+            PklToken::DocComment => write!(f, "'///'"),
             PklToken::BlockComment => write!(f, "/* ... */"),
-            PklToken::UnionSerarator => write!(f, "|"),
+            PklToken::UnionSerarator => write!(f, "'|'"),
             PklToken::ListIndexing(name) => write!(f, "{name}["),
-            PklToken::NullableSpreadSyntax => write!(f, "...?"),
+            PklToken::NullableSpreadSyntax => write!(f, "'...?'"),
         }
     }
 }

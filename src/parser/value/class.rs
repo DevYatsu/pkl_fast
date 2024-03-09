@@ -5,7 +5,7 @@ use crate::{
         expression::{parse_expr, Expression},
         utils::{expect_token, list_while_not_token3, retrieve_next_token},
     },
-    prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
+    prelude::{ParsingError, ParsingResult, PklParser, PklToken, PklValue},
 };
 
 use super::{
@@ -26,17 +26,17 @@ pub enum ClassField<'a> {
 
 /// Function called to parse a class instance, we assume that 'new' was already found
 pub fn parse_class_instance<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
 ) -> ParsingResult<PklValue<'source>> {
-    let next_token = retrieve_next_token(lexer)?;
+    let next_token = retrieve_next_token(parser)?;
 
     let name = match next_token {
         PklToken::Identifier(value) => {
-            expect_token(lexer, PklToken::OpenBracket)?;
+            expect_token(parser, PklToken::OpenBracket)?;
             match value {
                 "Listing" => {
                     let values = list_while_not_token3(
-                        lexer,
+                        parser,
                         &[PklToken::NewLine, PklToken::SemiColon],
                         PklToken::CloseBracket,
                         &parse_listing_field,
@@ -46,7 +46,7 @@ pub fn parse_class_instance<'source>(
                 }
                 "Mapping" => {
                     let values = list_while_not_token3(
-                        lexer,
+                        parser,
                         &[PklToken::NewLine, PklToken::SemiColon],
                         PklToken::CloseBracket,
                         &parse_mapping_field,
@@ -60,11 +60,16 @@ pub fn parse_class_instance<'source>(
             Some(value)
         }
         PklToken::OpenBracket => None,
-        _ => return Err(ParsingError::unexpected(lexer, "class instance".to_owned())),
+        _ => {
+            return Err(ParsingError::unexpected(
+                parser,
+                "class instance".to_owned(),
+            ))
+        }
     };
 
     let arguments = list_while_not_token3(
-        lexer,
+        parser,
         &[PklToken::NewLine, PklToken::SemiColon],
         PklToken::CloseBracket,
         &parse_class_instance_field,
@@ -74,20 +79,20 @@ pub fn parse_class_instance<'source>(
 }
 
 fn parse_class_instance_field<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     token: PklToken<'source>,
 ) -> ParsingResult<(ClassField<'source>, Option<PklToken<'source>>)> {
     match token {
         PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
-            let next_token = retrieve_next_token(lexer)?;
+            let next_token = retrieve_next_token(parser)?;
 
             match next_token {
                 PklToken::EqualSign => {
-                    let (value, next_token) = parse_expr(lexer, None)?;
+                    let (value, next_token) = parse_expr(parser, None)?;
                     Ok((ClassField::VariableDeclaration { name, value }, next_token))
                 }
                 PklToken::OpenBracket => {
-                    let (value, token) = parse_object(lexer, None)?;
+                    let (value, token) = parse_object(parser, None)?;
 
                     Ok((
                         ClassField::VariableDeclaration {
@@ -97,18 +102,18 @@ fn parse_class_instance_field<'source>(
                         token,
                     ))
                 }
-                _ => Err(ParsingError::unexpected(lexer, "'=' or '{'".to_owned())),
+                _ => Err(ParsingError::unexpected(parser, "'=' or '{'".to_owned())),
             }
         }
 
         PklToken::OpenBrace => {
-            let (field, next) = parse_mapping_variable(lexer)?;
+            let (field, next) = parse_mapping_variable(parser)?;
 
             Ok((ClassField::MappingField(field), next))
         }
         token => {
             // try parsing an expression, the instance might be a listing
-            let (expr, next) = parse_expr(lexer, Some(token))?;
+            let (expr, next) = parse_expr(parser, Some(token))?;
 
             Ok((ClassField::Expression(expr), next))
         }

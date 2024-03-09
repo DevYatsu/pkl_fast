@@ -3,7 +3,7 @@ use crate::{
         errors::locating::{generate_source, set_error_location},
         expression::{parse_expr, Expression},
     },
-    prelude::{lex, ParsingError, ParsingResult, PklLexer},
+    prelude::{lex, ParsingError, ParsingResult, PklParser},
 };
 use logos::Logos;
 use std::fmt;
@@ -30,9 +30,11 @@ pub enum StringLexer<'source> {
 
 impl<'source> StringFragment<'source> {
     pub fn from_raw_string(
-        lexer: &mut PklLexer<'source>,
+        parser: &mut PklParser<'source>,
         initial_string: &'source str,
     ) -> ParsingResult<Vec<Self>> {
+        let initial_string = parser.strings_vec[initial_string.parse::<usize>().unwrap()];
+
         // function used for parsing both classic strings and multiline ones
         let mut fragments = Vec::new();
 
@@ -67,7 +69,10 @@ impl<'source> StringFragment<'source> {
 
                                         if open_paren_count == 0 {
                                             let expr_str = &rest_of_string[..i];
-                                            let result = parse_expr(&mut lex(expr_str), None);
+                                            let result = parse_expr(
+                                                &mut PklParser::new(lex(expr_str), vec![]),
+                                                None,
+                                            );
 
                                             if result.is_err() {
                                                 let string_in_main_str =
@@ -88,10 +93,10 @@ impl<'source> StringFragment<'source> {
                                                         return Err(e.with_attributes(
                                                             generate_source(
                                                                 "main.pkl",
-                                                                lexer.source(),
+                                                                parser.lexer.source(),
                                                             ),
                                                             set_error_location(
-                                                                lexer,
+                                                                &mut parser.lexer,
                                                                 expr_start_index + offset_in_expr,
                                                                 at.len(),
                                                             ),
@@ -111,7 +116,7 @@ impl<'source> StringFragment<'source> {
                                                     + 1;
                                                 return Err(
                                                     ParsingError::invalid_interpolated_expr(
-                                                        lexer,
+                                                        parser,
                                                         index_in_main_str + 2,
                                                         i,
                                                     ),
@@ -134,7 +139,7 @@ impl<'source> StringFragment<'source> {
                                     // we can unwrap safely as we are sure the sequence exists in the string
                                     if next_char != '{' {
                                         return Err(ParsingError::invalid_unicode(
-                                            lexer,
+                                            parser,
                                             char_index + 3,
                                             2,
                                         ));
@@ -150,7 +155,7 @@ impl<'source> StringFragment<'source> {
                                     if hex_value.len() > 6 || hex_value.is_empty() {
                                         // hex_value.len() for highlighting the entire hex_value and +1 to highlight the } following
                                         return Err(ParsingError::invalid_unicode(
-                                            lexer,
+                                            parser,
                                             char_index + 6,
                                             hex_value.len(),
                                         ));
@@ -161,7 +166,7 @@ impl<'source> StringFragment<'source> {
                                 } else {
                                     // No closing brace found, raise an error
                                     return Err(ParsingError::invalid_unicode(
-                                        lexer,
+                                        parser,
                                         char_index + 3,
                                         3,
                                     ));
@@ -172,7 +177,7 @@ impl<'source> StringFragment<'source> {
 
                                 if !ALLOWED_ESCAPE.contains(&after_backslash) {
                                     return Err(ParsingError::invalid_char_escape(
-                                        lexer,
+                                        parser,
                                         char_index + 3,
                                     ));
                                 }
@@ -185,7 +190,7 @@ impl<'source> StringFragment<'source> {
                     } else {
                         // Backslash is at the end of the string, raise an error
                         return Err(ParsingError::invalid_char_escape(
-                            lexer,
+                            parser,
                             initial_string.len(),
                         ));
                     };

@@ -37,8 +37,9 @@ pub type PklLexer<'source> = Lexer<'source, PklToken<'source>>;
 
 pub fn parse<'source>(
     lexer: PklLexer<'source>,
+    strings_vec: Vec<&'source str>,
 ) -> ParsingResult<Vec<statement::Statement<'source>>> {
-    let mut parser = PklParser::new(lexer);
+    let mut parser = PklParser::new(lexer, strings_vec);
 
     parser.parse()?;
     Ok(parser.statements)
@@ -54,15 +55,17 @@ pub struct PklParser<'source> {
     pub statements: Vec<Statement<'source>>,
     lexer: PklLexer<'source>,
     new_line_parsed: bool,
+    strings_vec: Vec<&'source str>,
 }
 
 impl<'source> PklParser<'source> {
     /// The function to initialize an instance of PklParser.
-    pub fn new(lexer: PklLexer<'source>) -> Self {
+    pub fn new(lexer: PklLexer<'source>, strings_vec: Vec<&'source str>) -> Self {
         Self {
             statements: vec![],
             new_line_parsed: false,
             lexer,
+            strings_vec,
         }
     }
 
@@ -78,7 +81,7 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
 
                     stmt
@@ -89,14 +92,14 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
 
                     stmt
                 }
                 Ok(PklToken::Amends) => {
                     let stmt = self.parse_amends()?;
-                    expect_statement_end(&mut self.lexer)?;
+                    expect_statement_end(self)?;
                     stmt
                 }
                 Ok(PklToken::Module) => {
@@ -104,24 +107,24 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
                     stmt
                 }
                 Ok(PklToken::Extends) => {
                     let stmt = self.parse_extends()?;
-                    expect_statement_end(&mut self.lexer)?;
+                    expect_statement_end(self)?;
                     stmt
                 }
                 Ok(PklToken::Local) => {
                     // local variable declaration
-                    let id = parse_identifier(&mut self.lexer)?;
+                    let id = parse_identifier(self)?;
                     let stmt = self.parse_var_statement(id, true)?;
 
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
 
                     stmt
@@ -133,20 +136,20 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
 
                     stmt
                 }
                 Ok(PklToken::ModuleInfo) => {
                     let stmt = self.parse_module_info()?;
-                    expect_statement_end(&mut self.lexer)?;
+                    expect_statement_end(self)?;
 
                     stmt
                 }
                 Ok(PklToken::DeprecatedInstruction) => {
                     let stmt = self.parse_deprecated()?;
-                    expect_statement_end(&mut self.lexer)?;
+                    expect_statement_end(self)?;
 
                     stmt
                 }
@@ -156,7 +159,7 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
 
                     stmt
@@ -166,32 +169,32 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
                     stmt
                 }
                 Ok(PklToken::Abstract) => {
-                    expect_token(&mut self.lexer, PklToken::Class)?;
+                    expect_token(self, PklToken::Class)?;
 
                     let stmt = self.parse_abstract_class_declaration()?;
 
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
 
                     stmt
                 }
                 Ok(PklToken::Open) => {
-                    let token = retrieve_next_token(&mut self.lexer)?;
+                    let token = retrieve_next_token(self)?;
 
                     let stmt = match token {
                         PklToken::Module => self.parse_open_module()?,
                         PklToken::Class => self.parse_open_class_declaration()?,
                         _ => {
                             return Err(ParsingError::unexpected(
-                                &mut self.lexer,
+                                self,
                                 "class declaration or module declaration".to_owned(),
                             ))
                         }
@@ -200,30 +203,25 @@ impl<'source> PklParser<'source> {
                     if self.new_line_parsed {
                         self.new_line_parsed = !self.new_line_parsed;
                     } else {
-                        expect_statement_end(&mut self.lexer)?;
+                        expect_statement_end(self)?;
                     }
 
                     stmt
                 }
-                Err(e) => return Err(parse_lexing_error(&mut self.lexer, e)),
+                Err(e) => return Err(parse_lexing_error(self, e)),
                 Ok(PklToken::LineComment)
                 | Ok(PklToken::DocComment)
                 | Ok(PklToken::NewLine)
                 | Ok(PklToken::BlockComment) => continue,
                 Ok(token) => {
-                    let (expr, next) = parse_expr(&mut self.lexer, Some(token))?;
+                    let (expr, next) = parse_expr(self, Some(token))?;
 
                     match next {
                         Some(PklToken::NewLine)
                         | Some(PklToken::DocComment)
                         | Some(PklToken::LineComment) => (),
                         None => (),
-                        _ => {
-                            return Err(ParsingError::unexpected(
-                                &mut self.lexer,
-                                "line ending".to_owned(),
-                            ))
-                        }
+                        _ => return Err(ParsingError::unexpected(self, "line ending".to_owned())),
                     };
 
                     Statement::Expression(expr)
@@ -237,12 +235,12 @@ impl<'source> PklParser<'source> {
     }
 
     fn parse_import(&mut self) -> ParsingResult<Statement<'source>> {
-        let value = parse_import_value(&mut self.lexer)?;
+        let value = parse_import_value(self)?;
 
-        let next_token = retrieve_opt_next_token(&mut self.lexer)?;
+        let next_token = retrieve_opt_next_token(self)?;
 
         let imported_as = match next_token {
-            Some(PklToken::As) => Some(parse_identifier(&mut self.lexer)?),
+            Some(PklToken::As) => Some(parse_identifier(self)?),
             Some(PklToken::NewLine)
             | Some(PklToken::LineComment)
             | Some(PklToken::DocComment)
@@ -252,7 +250,7 @@ impl<'source> PklParser<'source> {
             }
             _ => {
                 return Err(ParsingError::unexpected(
-                    &mut self.lexer,
+                    self,
                     "'as <identifier>' or line end".to_owned(),
                 ))
             }
@@ -264,12 +262,12 @@ impl<'source> PklParser<'source> {
         })
     }
     fn parse_globbed_import(&mut self) -> ParsingResult<Statement<'source>> {
-        let value = parse_import_value(&mut self.lexer)?;
+        let value = parse_import_value(self)?;
 
-        let next_token = retrieve_opt_next_token(&mut self.lexer)?;
+        let next_token = retrieve_opt_next_token(self)?;
 
         let imported_as = match next_token {
-            Some(PklToken::As) => Some(parse_identifier(&mut self.lexer)?),
+            Some(PklToken::As) => Some(parse_identifier(self)?),
             Some(PklToken::NewLine)
             | Some(PklToken::LineComment)
             | Some(PklToken::DocComment)
@@ -279,8 +277,8 @@ impl<'source> PklParser<'source> {
             }
             _ => {
                 return Err(ParsingError::unexpected(
-                    &mut self.lexer,
-                    "'as <identifier>' or line end".to_owned(),
+                    self,
+                    "'as' identifier or line end".to_owned(),
                 ))
             }
         };
@@ -291,10 +289,10 @@ impl<'source> PklParser<'source> {
         })
     }
     fn parse_amends(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_amends(&mut self.lexer)
+        statement::parse_amends(self)
     }
     fn parse_extends(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_extends(&mut self.lexer)
+        statement::parse_extends(self)
     }
 
     fn parse_module(&mut self) -> ParsingResult<Statement<'source>> {
@@ -305,7 +303,7 @@ impl<'source> PklParser<'source> {
     }
 
     fn parse_mod(&mut self, open: bool) -> ParsingResult<Statement<'source>> {
-        let (value, next_token) = parse_expr(&mut self.lexer, None)?;
+        let (value, next_token) = parse_expr(self, None)?;
 
         match next_token {
             Some(PklToken::NewLine)
@@ -316,7 +314,7 @@ impl<'source> PklParser<'source> {
             }
             _ => {
                 return Err(ParsingError::unexpected(
-                    &mut self.lexer,
+                    self,
                     "'as <identifier>' or line end".to_owned(),
                 ))
             }
@@ -336,16 +334,14 @@ impl<'source> PklParser<'source> {
     }
 
     fn parse_class_declaration(&mut self, _type: ClassType) -> ParsingResult<Statement<'source>> {
-        let lexer = &mut self.lexer;
-
-        let name = parse_identifier(lexer)?;
-        let token = retrieve_next_token(lexer)?;
+        let name = parse_identifier(self)?;
+        let token = retrieve_next_token(self)?;
 
         let extends = match token {
             PklToken::Extends => {
-                let value = parse_identifier(lexer)?;
+                let value = parse_identifier(self)?;
 
-                match retrieve_opt_next_token(lexer)? {
+                match retrieve_opt_next_token(self)? {
                     Some(PklToken::OpenBracket) => (),
                     Some(PklToken::NewLine)
                     | Some(PklToken::LineComment)
@@ -360,7 +356,7 @@ impl<'source> PklParser<'source> {
                     }
                     _ => {
                         return Err(ParsingError::unexpected(
-                            lexer,
+                            self,
                             "'{' or line ending".to_owned(),
                         ))
                     }
@@ -378,11 +374,11 @@ impl<'source> PklParser<'source> {
                     fields: None,
                 });
             }
-            _ => return Err(ParsingError::unexpected(lexer, "'{'".to_owned())),
+            _ => return Err(ParsingError::unexpected(self, "'{'".to_owned())),
         };
 
         let fields = hashmap_while_not_token2(
-            lexer,
+            self,
             PklToken::NewLine,
             PklToken::CloseBracket,
             &parse_class_field,
@@ -403,12 +399,11 @@ impl<'source> PklParser<'source> {
         name: &'source str,
         is_local: bool,
     ) -> ParsingResult<Statement<'source>> {
-        let lexer = &mut self.lexer;
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(self)?;
 
         let optional_type = match token {
             PklToken::OpenBracket => {
-                let (object, next_token) = parse_object(lexer, None)?;
+                let (object, next_token) = parse_object(self, None)?;
 
                 match next_token {
                     Some(PklToken::NewLine)
@@ -417,7 +412,7 @@ impl<'source> PklParser<'source> {
                         self.new_line_parsed = true;
                     }
                     None => (),
-                    _ => return Err(ParsingError::unexpected(lexer, "'='".to_owned())),
+                    _ => return Err(ParsingError::unexpected(self, "'='".to_owned())),
                 };
 
                 return Ok(Statement::VariableDeclaration {
@@ -428,7 +423,7 @@ impl<'source> PklParser<'source> {
                 });
             }
             PklToken::Colon => {
-                let (variable_type, next_token) = parse_opt_newlines(lexer, &parse_type)?;
+                let (variable_type, next_token) = parse_opt_newlines(self, &parse_type)?;
 
                 match next_token {
                     Some(PklToken::EqualSign) => {}
@@ -437,7 +432,7 @@ impl<'source> PklParser<'source> {
 
                         return Ok(Statement::VariableDeclaration {
                             name,
-                            value: Expression::Value(variable_type.default_value(lexer)?),
+                            value: Expression::Value(variable_type.default_value(self)?),
                             optional_type: Some(variable_type),
                             is_local,
                         });
@@ -445,31 +440,28 @@ impl<'source> PklParser<'source> {
                     None => {
                         return Ok(Statement::VariableDeclaration {
                             name,
-                            value: Expression::Value(variable_type.default_value(lexer)?),
+                            value: Expression::Value(variable_type.default_value(self)?),
                             optional_type: Some(variable_type),
                             is_local,
                         })
                     }
-                    _ => return Err(ParsingError::unexpected(lexer, "'='".to_owned())),
+                    _ => return Err(ParsingError::unexpected(self, "'='".to_owned())),
                 };
 
                 Some(variable_type)
             }
             PklToken::EqualSign => None,
-            _ => Err(ParsingError::unexpected(
-                lexer,
-                "'=', ':' or '{'".to_owned(),
-            ))?,
+            _ => Err(ParsingError::unexpected(self, "'=', ':' or '{'".to_owned()))?,
         };
 
-        let (value, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
+        let (value, next_token) = parse_opt_newlines(self, &parse_expr)?;
 
         match next_token {
             Some(PklToken::NewLine) | Some(PklToken::DocComment) | Some(PklToken::LineComment) => {
                 self.new_line_parsed = true;
             }
             None => (),
-            _ => return Err(ParsingError::unexpected(lexer, "line end".to_owned())),
+            _ => return Err(ParsingError::unexpected(self, "line end".to_owned())),
         }
 
         Ok(Statement::VariableDeclaration {
@@ -480,15 +472,13 @@ impl<'source> PklParser<'source> {
         })
     }
     fn parse_typealias(&mut self) -> ParsingResult<Statement<'source>> {
-        let lexer = &mut self.lexer;
-
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(self)?;
 
         let (alias, generics_params) = match token {
             PklToken::Identifier(v) => (v, None),
             PklToken::GenericTypeAnnotationStart(name) => {
                 let types = list_while_not_token2(
-                    lexer,
+                    self,
                     PklToken::Comma,
                     PklToken::RightAngleBracket(">"),
                     &parse_type,
@@ -496,18 +486,18 @@ impl<'source> PklParser<'source> {
 
                 (name, Some(types))
             }
-            _ => return Err(ParsingError::expected_identifier(lexer)),
+            _ => return Err(ParsingError::expected_identifier(self)),
         };
 
-        expect_token(lexer, PklToken::EqualSign)?;
+        expect_token(self, PklToken::EqualSign)?;
 
-        let (equivalent_type, next_token) = parse_opt_newlines(lexer, &parse_type)?;
+        let (equivalent_type, next_token) = parse_opt_newlines(self, &parse_type)?;
 
         match next_token {
             Some(PklToken::NewLine) | Some(PklToken::LineComment) | Some(PklToken::DocComment) => {
                 self.new_line_parsed = true;
             }
-            _ => return Err(ParsingError::unexpected(lexer, "line ending".to_owned())),
+            _ => return Err(ParsingError::unexpected(self, "line ending".to_owned())),
         };
 
         Ok(Statement::TypeAlias {
@@ -518,10 +508,10 @@ impl<'source> PklParser<'source> {
     }
 
     fn parse_module_info(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_module_info(&mut self.lexer)
+        statement::parse_module_info(self)
     }
 
     fn parse_deprecated(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_deprecated(&mut self.lexer)
+        statement::parse_deprecated(self)
     }
 }

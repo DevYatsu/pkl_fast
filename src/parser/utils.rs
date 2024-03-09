@@ -5,51 +5,51 @@ mod identifier;
 mod string;
 
 pub fn retrieve_next_token<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
 ) -> ParsingResult<PklToken<'source>> {
-    let token = lexer.next();
+    let token = parser.lexer.next();
 
     if token.is_none() {
-        return Err(ParsingError::eof(lexer, "something"));
+        return Err(ParsingError::eof(parser, "something"));
     }
 
     match token.unwrap() {
-        Err(e) => Err(ParsingError::lexing(lexer, e)),
+        Err(e) => Err(ParsingError::lexing(parser, e)),
         token => Ok(token?),
     }
 }
 
 pub fn retrieve_opt_next_token<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
 ) -> ParsingResult<Option<PklToken<'source>>> {
-    let token = lexer.next();
+    let token = parser.lexer.next();
 
     match token {
-        Some(Err(e)) => Err(ParsingError::lexing(lexer, e)),
+        Some(Err(e)) => Err(ParsingError::lexing(parser, e)),
         Some(token) => Ok(Some(token?)),
         None => Ok(None),
     }
 }
 
 pub fn expect_token<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     target_token: PklToken<'source>,
 ) -> ParsingResult<()> {
-    let token = lexer.next();
+    let token = parser.lexer.next();
 
     if token.is_none() {
-        return Err(ParsingError::eof(lexer, &format!("a {target_token}")));
+        return Err(ParsingError::eof(parser, &format!("a {target_token}")));
     }
 
     match token.unwrap() {
-        Err(e) => Err(ParsingError::lexing(lexer, e))?,
+        Err(e) => Err(ParsingError::lexing(parser, e))?,
         Ok(token) if token == target_token => Ok(()),
-        _ => Err(ParsingError::unexpected(lexer, target_token.to_string()))?,
+        _ => Err(ParsingError::unexpected(parser, target_token.to_string()))?,
     }
 }
 
 pub fn expect_token_with_opt_newlines<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     opt_current_token: Option<PklToken<'source>>,
     target_token: PklToken<'source>,
 ) -> ParsingResult<()> {
@@ -57,59 +57,59 @@ pub fn expect_token_with_opt_newlines<'source>(
         Some(PklToken::NewLine) => (),
         Some(token) if token == target_token => return Ok(()),
         None => (),
-        _ => Err(ParsingError::unexpected(lexer, target_token.to_string()))?,
+        _ => Err(ParsingError::unexpected(parser, target_token.to_string()))?,
     }
 
     loop {
-        let token = lexer.next();
+        let token = parser.lexer.next();
 
         if token.is_none() {
-            return Err(ParsingError::eof(lexer, &format!("{target_token}")));
+            return Err(ParsingError::eof(parser, &format!("{target_token}")));
         }
 
         match token.unwrap() {
-            Err(e) => Err(ParsingError::lexing(lexer, e))?,
+            Err(e) => Err(ParsingError::lexing(parser, e))?,
             Ok(token) if token == PklToken::NewLine => continue,
             Ok(token) if token == target_token => return Ok(()),
-            _ => Err(ParsingError::unexpected(lexer, target_token.to_string()))?,
+            _ => Err(ParsingError::unexpected(parser, target_token.to_string()))?,
         }
     }
 }
 
 pub fn parse_opt_newlines<'source, F, R>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     predicate: &F,
 ) -> ParsingResult<R>
 where
-    F: Fn(&mut PklLexer<'source>, Option<PklToken<'source>>) -> ParsingResult<R>,
+    F: Fn(&mut PklParser<'source>, Option<PklToken<'source>>) -> ParsingResult<R>,
 {
     loop {
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(parser)?;
 
         if PklToken::NewLine != token {
-            return predicate(lexer, Some(token));
+            return predicate(parser, Some(token));
         }
     }
 }
 
 pub fn assert_token_eq<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     token_option: Option<PklToken<'source>>,
     expected_token: PklToken<'source>,
 ) -> ParsingResult<()> {
     if token_option.is_none() {
-        return Err(ParsingError::eof(lexer, &expected_token.to_string()));
+        return Err(ParsingError::eof(parser, &expected_token.to_string()));
     }
 
     match token_option.unwrap() {
         token if token == expected_token => Ok(()),
-        _ => Err(ParsingError::unexpected(lexer, expected_token.to_string()))?,
+        _ => Err(ParsingError::unexpected(parser, expected_token.to_string()))?,
     }
 }
 
-pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<()> {
-    match lexer.next() {
-        Some(Err(e)) => Err(ParsingError::lexing(lexer, e)),
+pub fn expect_statement_end<'source>(parser: &mut PklParser<'source>) -> ParsingResult<()> {
+    match parser.lexer.next() {
+        Some(Err(e)) => Err(ParsingError::lexing(parser, e)),
         Some(Ok(token))
             if token == PklToken::NewLine
                 || token == PklToken::LineComment
@@ -117,7 +117,7 @@ pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingRe
         {
             Ok(())
         }
-        Some(_) => Err(ParsingError::unexpected(lexer, "line ending".to_string())),
+        Some(_) => Err(ParsingError::unexpected(parser, "line ending".to_string())),
         None => Ok(()),
     }
 }
@@ -127,20 +127,20 @@ pub fn expect_statement_end<'source>(lexer: &mut PklLexer<'source>) -> ParsingRe
 ///
 /// *NOTE*: Contrary to `list_while_not_token1` function, this function does not skip the `separator_token` before running the predicate for the first time
 pub fn list_while_not_token0<'source, R, F>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     separator_token: PklToken<'source>,
     end_token: PklToken<'source>,
     predicate: &F,
 ) -> ParsingResult<Vec<R>>
 where
-    F: Fn(&mut PklLexer<'source>) -> ParsingResult<R> + 'static,
+    F: Fn(&mut PklParser<'source>) -> ParsingResult<R> + 'static,
 {
     let mut result_vec = Vec::new();
 
     loop {
-        result_vec.push(predicate(lexer)?);
+        result_vec.push(predicate(parser)?);
 
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(parser)?;
 
         if end_token == token {
             break;
@@ -149,7 +149,7 @@ where
             continue;
         }
         return Err(ParsingError::unexpected(
-            lexer,
+            parser,
             format!("{} or {}", end_token, separator_token),
         ));
     }
@@ -162,32 +162,32 @@ where
 ///
 /// *NOTE*: This function also skips the `separator_token` before running the predicate for the first time
 pub fn list_while_not_token1<'source, R, F>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     separator_token: PklToken<'source>,
     end_token: PklToken<'source>,
     predicate: &F,
 ) -> ParsingResult<Vec<R>>
 where
-    F: Fn(&mut PklLexer<'source>, PklToken<'source>) -> ParsingResult<R> + 'static,
+    F: Fn(&mut PklParser<'source>, PklToken<'source>) -> ParsingResult<R> + 'static,
 {
     let mut result_vec = Vec::new();
     let mut was_separator_token_encountered = false;
 
     loop {
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(parser)?;
 
         if end_token == token {
             break;
         }
         if separator_token == token {
             if was_separator_token_encountered {
-                return Err(ParsingError::unexpected(lexer, format!("{}", end_token)));
+                return Err(ParsingError::unexpected(parser, format!("{}", end_token)));
             }
             was_separator_token_encountered = true;
             continue;
         }
         was_separator_token_encountered = false;
-        result_vec.push(predicate(lexer, token)?);
+        result_vec.push(predicate(parser, token)?);
     }
 
     Ok(result_vec)
@@ -199,14 +199,14 @@ where
 /// *NOTE*: This function is the same as `list_while_not_token0` except for one thing:
 /// the `predicate` reads the next token and needs to return it.
 pub fn list_while_not_token2<'source, R, F>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     separator_token: PklToken<'source>,
     end_token: PklToken<'source>,
     predicate: &F,
 ) -> ParsingResult<Vec<R>>
 where
     F: Fn(
-            &mut PklLexer<'source>,
+            &mut PklParser<'source>,
             Option<PklToken<'source>>,
         ) -> ParsingResult<(R, Option<PklToken<'source>>)>
         + 'static,
@@ -214,7 +214,7 @@ where
     let mut result_vec = Vec::new();
 
     loop {
-        let opt_token = retrieve_opt_next_token(lexer)?;
+        let opt_token = retrieve_opt_next_token(parser)?;
 
         if let Some(t) = &opt_token {
             if t == &end_token {
@@ -222,10 +222,10 @@ where
             }
         }
 
-        let (result, next_token) = predicate(lexer, opt_token)?;
+        let (result, next_token) = predicate(parser, opt_token)?;
         result_vec.push(result);
 
-        // if None, does not necessarily mean that there is no token next in the lexer
+        // if None, does not necessarily mean that there is no token next in the parser
         if let Some(token) = next_token {
             if end_token == token {
                 break;
@@ -234,7 +234,7 @@ where
                 continue;
             }
             return Err(ParsingError::unexpected(
-                lexer,
+                parser,
                 format!("{} or {}", end_token, separator_token),
             ));
         }
@@ -249,14 +249,14 @@ where
 /// *NOTE*: This function is the same as `list_while_not_token2` except for one thing:
 /// the separator tokens are jumped at the start and the predicate is sure to receive a valid token as parameter.
 pub fn list_while_not_token3<'source, R, F>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     separator_tokens: &[PklToken<'source>],
     end_token: PklToken<'source>,
     predicate: &F,
 ) -> ParsingResult<Vec<R>>
 where
     F: Fn(
-            &mut PklLexer<'source>,
+            &mut PklParser<'source>,
             PklToken<'source>,
         ) -> ParsingResult<(R, Option<PklToken<'source>>)>
         + 'static,
@@ -264,7 +264,7 @@ where
     let mut result_vec = Vec::new();
 
     loop {
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(parser)?;
 
         if separator_tokens.contains(&token) {
             continue;
@@ -273,10 +273,10 @@ where
             break;
         }
 
-        let (result, next_token) = predicate(lexer, token)?;
+        let (result, next_token) = predicate(parser, token)?;
         result_vec.push(result);
 
-        // if None, does not necessarily mean that there is no token next in the lexer
+        // if None, does not necessarily mean that there is no token next in the parser
         if let Some(token) = next_token {
             if token == end_token {
                 break;
@@ -285,7 +285,7 @@ where
                 continue;
             }
             return Err(ParsingError::unexpected(
-                lexer,
+                parser,
                 format!(
                     "one of {} or {}",
                     separator_tokens
@@ -308,14 +308,14 @@ where
 /// *NOTE*: This function is the same as `list_while_not_token2` except for one thing:
 /// it can take several end_tokens and returns the ending one.
 pub fn list_while_not_tokens<'source, R, F>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     separator_token: PklToken<'source>,
     end_tokens: &[PklToken<'source>],
     predicate: &F,
 ) -> ParsingResult<(Vec<R>, PklToken<'source>)>
 where
     F: Fn(
-            &mut PklLexer<'source>,
+            &mut PklParser<'source>,
             Option<PklToken<'source>>,
         ) -> ParsingResult<(R, Option<PklToken<'source>>)>
         + 'static,
@@ -324,10 +324,10 @@ where
     let mut _final_end_token = None;
 
     loop {
-        let (result, next_token) = predicate(lexer, None)?;
+        let (result, next_token) = predicate(parser, None)?;
         result_vec.push(result);
 
-        // if None, does not necessarily mean that there is no token next in the lexer
+        // if None, does not necessarily mean that there is no token next in the parser
         if let Some(token) = next_token {
             if end_tokens.contains(&token) {
                 _final_end_token = Some(token);
@@ -337,7 +337,7 @@ where
                 continue;
             }
             return Err(ParsingError::unexpected(
-                lexer,
+                parser,
                 format!("One of {:?} or {}", end_tokens, separator_token),
             ));
         }
@@ -354,19 +354,19 @@ where
 ///
 /// *NOTE*: This function also skips the `separator_token` before running the predicate for the first time
 pub fn hashmap_while_not_token0<'source, K, V, F>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     separator_token: PklToken<'source>,
     end_token: PklToken<'source>,
     predicate: &F,
 ) -> ParsingResult<HashMap<K, V>>
 where
     K: Eq + Hash,
-    F: Fn(&mut PklLexer<'source>, PklToken<'source>) -> ParsingResult<(K, V)> + 'static,
+    F: Fn(&mut PklParser<'source>, PklToken<'source>) -> ParsingResult<(K, V)> + 'static,
 {
     let mut result_vec = HashMap::new();
 
     loop {
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(parser)?;
 
         if end_token == token {
             break;
@@ -375,7 +375,7 @@ where
             continue;
         }
 
-        let (key, value) = predicate(lexer, token)?;
+        let (key, value) = predicate(parser, token)?;
         result_vec.insert(key, value);
     }
 
@@ -391,7 +391,7 @@ where
 ///
 /// *NOTE*: This function also skips the `separator_token` before running the predicate for the first time
 pub fn hashmap_while_not_token1<'source, K, V, F>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     separator_token: PklToken<'source>,
     end_token: PklToken<'source>,
     predicate: &F,
@@ -399,7 +399,7 @@ pub fn hashmap_while_not_token1<'source, K, V, F>(
 where
     K: Eq + Hash,
     F: Fn(
-            &mut PklLexer<'source>,
+            &mut PklParser<'source>,
             PklToken<'source>,
         ) -> ParsingResult<(K, V, Option<PklToken<'source>>)>
         + 'static,
@@ -407,7 +407,7 @@ where
     let mut result_vec = HashMap::new();
 
     loop {
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(parser)?;
 
         if separator_token == token {
             continue;
@@ -416,7 +416,7 @@ where
             break;
         }
 
-        let (key, value, next_token) = predicate(lexer, token)?;
+        let (key, value, next_token) = predicate(parser, token)?;
         result_vec.insert(key, value);
 
         if let Some(token) = next_token {
@@ -429,7 +429,7 @@ where
             }
 
             return Err(ParsingError::unexpected(
-                lexer,
+                parser,
                 format!("{} or {}", end_token, separator_token),
             ));
         }
@@ -446,7 +446,7 @@ where
 /// *NOTE*: This function is the same as `hashmap_while_not_token0` except for one thing:
 /// the `predicate` reads the next token and needs to return it.
 pub fn hashmap_while_not_token2<'source, K, V, F>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     separator_token: PklToken<'source>,
     end_token: PklToken<'source>,
     predicate: &F,
@@ -454,7 +454,7 @@ pub fn hashmap_while_not_token2<'source, K, V, F>(
 where
     K: Eq + Hash,
     F: Fn(
-            &mut PklLexer<'source>,
+            &mut PklParser<'source>,
             PklToken<'source>,
         ) -> ParsingResult<((K, V), Option<PklToken<'source>>)>
         + 'static,
@@ -462,7 +462,7 @@ where
     let mut result_vec = HashMap::new();
 
     loop {
-        let token = retrieve_next_token(lexer)?;
+        let token = retrieve_next_token(parser)?;
 
         if end_token == token {
             break;
@@ -471,10 +471,10 @@ where
             continue;
         }
 
-        let ((key, value), next_token) = predicate(lexer, token)?;
+        let ((key, value), next_token) = predicate(parser, token)?;
         result_vec.insert(key, value);
 
-        // if None, does not necessarily mean that there is no token next in the lexer
+        // if None, does not necessarily mean that there is no token next in the parser
         if let Some(token) = next_token {
             if end_token == token {
                 break;
@@ -483,7 +483,7 @@ where
                 continue;
             }
             return Err(ParsingError::unexpected(
-                lexer,
+                parser,
                 format!("{} or {}", end_token, separator_token),
             ));
         }
@@ -495,4 +495,4 @@ where
 pub use identifier::parse_identifier;
 pub use string::parse_string_literal;
 
-use super::PklLexer;
+use super::PklParser;

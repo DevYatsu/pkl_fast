@@ -8,7 +8,7 @@ use crate::{
         types::{parse_type, PklType},
         utils::{assert_token_eq, expect_token, parse_identifier, retrieve_next_token},
     },
-    prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
+    prelude::{ParsingError, ParsingResult, PklParser, PklToken},
 };
 
 use super::{parse_object, PklValue};
@@ -32,7 +32,7 @@ pub enum MappingField<'a> {
 }
 
 pub fn parse_mapping_field<'source>(
-    lexer: &mut PklLexer<'source>,
+    lexer: &mut PklParser<'source>,
     next_token: PklToken<'source>,
 ) -> ParsingResult<(MappingField<'source>, Option<PklToken<'source>>)> {
     match next_token {
@@ -83,7 +83,7 @@ pub fn parse_mapping_field<'source>(
 
 // parser called whenever a '[' was found
 pub fn parse_mapping_variable<'source>(
-    lexer: &mut PklLexer<'source>,
+    lexer: &mut PklParser<'source>,
 ) -> ParsingResult<(MappingField<'source>, Option<PklToken<'source>>)> {
     let (key, next_token) = parse_expr(lexer, None)?;
     assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;

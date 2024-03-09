@@ -3,6 +3,7 @@ use crate::{
     parser::{
         types::parse_type,
         utils::{assert_token_eq, parse_identifier, retrieve_next_token, retrieve_opt_next_token},
+        PklParser,
     },
     prelude::PklToken,
 };
@@ -11,57 +12,57 @@ use super::super::{
     errors::ParsingError,
     utils::{expect_token, expect_token_with_opt_newlines, parse_opt_newlines},
     value::{parse_value, PklValue},
-    ParsingResult, PklLexer,
+    ParsingResult,
 };
 
 pub fn parse_basic_expr<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
     let token = if opt_token.is_some() {
         opt_token.unwrap()
     } else {
-        retrieve_next_token(lexer)?
+        retrieve_next_token(parser)?
     };
 
     match token {
         PklToken::LogicalNotOperator => {
-            let (expr, next) = parse_basic_expr(lexer, None)?;
+            let (expr, next) = parse_basic_expr(parser, None)?;
             Ok((Expression::LogicalNot(expr.into()), next))
         }
         PklToken::OpenParenthesis => {
-            let (expr, next_token) = parse_expr(lexer, None)?;
+            let (expr, next_token) = parse_expr(parser, None)?;
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),
-                _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
+                _ => return Err(ParsingError::unexpected(parser, "')'".to_owned())),
             };
 
             let expr = Expression::Parenthesised(expr.into());
-            Ok(parse_opt_member_expr(lexer, expr)?)
+            Ok(parse_opt_member_expr(parser, expr)?)
         }
         PklToken::Identifier(ident) => {
             let expr = Expression::Identifier(ident);
 
-            Ok(parse_opt_member_expr(lexer, expr)?)
+            Ok(parse_opt_member_expr(parser, expr)?)
         }
         PklToken::ListIndexing(indexed) => {
-            let (expr, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
-            expect_token_with_opt_newlines(lexer, next_token, PklToken::CloseBrace)?;
+            let (expr, next_token) = parse_opt_newlines(parser, &parse_expr)?;
+            expect_token_with_opt_newlines(parser, next_token, PklToken::CloseBrace)?;
             let expr = Expression::ListIndexing {
                 indexed,
                 indexer: expr.into(),
             };
 
-            Ok(parse_opt_member_expr(lexer, expr)?)
+            Ok(parse_opt_member_expr(parser, expr)?)
         }
         PklToken::NonNullIdentifier(name) => {
             let expr = Expression::NonNull(Expression::Identifier(name).into());
 
-            Ok(parse_opt_member_expr(lexer, expr)?)
+            Ok(parse_opt_member_expr(parser, expr)?)
         }
         PklToken::FunctionCall(func_name) => {
-            let args = parse_fn_call_arguments(lexer)?;
+            let args = parse_fn_call_arguments(parser)?;
 
             let expr = match func_name {
                 "List" => Expression::Value(PklValue::List(args)),
@@ -70,19 +71,19 @@ pub fn parse_basic_expr<'source>(
                 _ => Expression::FunctionCall { func_name, args },
             };
 
-            Ok(parse_opt_member_expr(lexer, expr)?)
+            Ok(parse_opt_member_expr(parser, expr)?)
         }
         PklToken::If => {
-            expect_token(lexer, PklToken::OpenParenthesis)?;
+            expect_token(parser, PklToken::OpenParenthesis)?;
 
-            let (condition, next) = parse_expr(lexer, None)?;
-            assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
+            let (condition, next) = parse_expr(parser, None)?;
+            assert_token_eq(parser, next, PklToken::CloseParenthesis)?;
 
-            let (condition_true, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
+            let (condition_true, next_token) = parse_opt_newlines(parser, &parse_expr)?;
 
-            expect_token_with_opt_newlines(lexer, next_token, PklToken::Else)?;
+            expect_token_with_opt_newlines(parser, next_token, PklToken::Else)?;
 
-            let (_else, opt_token) = parse_opt_newlines(lexer, &parse_expr)?;
+            let (_else, opt_token) = parse_opt_newlines(parser, &parse_expr)?;
 
             Ok((
                 Expression::If {
@@ -94,24 +95,24 @@ pub fn parse_basic_expr<'source>(
             ))
         }
         PklToken::Let => {
-            expect_token_with_opt_newlines(lexer, None, PklToken::OpenParenthesis)?;
-            let name = parse_identifier(lexer)?;
+            expect_token_with_opt_newlines(parser, None, PklToken::OpenParenthesis)?;
+            let name = parse_identifier(parser)?;
 
-            let opt_type = match retrieve_next_token(lexer)? {
+            let opt_type = match retrieve_next_token(parser)? {
                 PklToken::EqualSign => None,
                 PklToken::Colon => {
-                    let (t, next) = parse_type(lexer, None)?;
-                    assert_token_eq(lexer, next, PklToken::EqualSign)?;
+                    let (t, next) = parse_type(parser, None)?;
+                    assert_token_eq(parser, next, PklToken::EqualSign)?;
                     Some(t.into())
                 }
-                _ => return Err(ParsingError::unexpected(lexer, "= or :".to_owned())),
+                _ => return Err(ParsingError::unexpected(parser, "= or :".to_owned())),
             };
 
-            let (value, next) = parse_expr(lexer, None)?;
+            let (value, next) = parse_expr(parser, None)?;
 
-            expect_token_with_opt_newlines(lexer, next, PklToken::CloseParenthesis)?;
+            expect_token_with_opt_newlines(parser, next, PklToken::CloseParenthesis)?;
 
-            let (expr, next_token) = parse_opt_newlines(lexer, &parse_expr)?;
+            let (expr, next_token) = parse_opt_newlines(parser, &parse_expr)?;
 
             Ok((
                 Expression::Let {
@@ -124,22 +125,22 @@ pub fn parse_basic_expr<'source>(
             ))
         }
         current_token => {
-            let expr = Expression::Value(parse_value(lexer, current_token)?);
-            Ok(parse_opt_member_expr(lexer, expr)?)
+            let expr = Expression::Value(parse_value(parser, current_token)?);
+            Ok(parse_opt_member_expr(parser, expr)?)
         }
     }
 }
 
 fn parse_opt_member_expr<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     expr: Expression<'source>,
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
-    let next_token = retrieve_opt_next_token(lexer)?;
+    let next_token = retrieve_opt_next_token(parser)?;
 
     match next_token {
         Some(PklToken::Dot) => {
             // function call or identifier
-            let (second_expr, next) = parse_basic_expr(lexer, None)?;
+            let (second_expr, next) = parse_basic_expr(parser, None)?;
 
             return Ok((
                 Expression::MemberExpression {

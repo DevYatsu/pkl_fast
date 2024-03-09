@@ -1,9 +1,9 @@
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use thiserror::Error;
 
-use crate::{
-    parser::errors::locating::{generate_source, get_error_location},
-    prelude::PklLexer,
+use crate::parser::{
+    errors::locating::{generate_source, get_error_location},
+    PklParser,
 };
 
 #[derive(Error, Diagnostic, Debug)]
@@ -18,22 +18,22 @@ pub enum TypeError {
 }
 
 impl TypeError {
-    pub fn no_restrictions_type<'source>(lexer: &mut PklLexer<'source>, advice: String) -> Self {
+    pub fn no_restrictions_type<'source>(parser: &mut PklParser<'source>, advice: String) -> Self {
         TypeError::CannotGiveRestriction(CannotGiveRestrictionError {
-            at: get_error_location(lexer),
-            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(&mut parser.lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
             advice,
         })
     }
 
     pub fn expect_generics<'source>(
-        lexer: &mut PklLexer<'source>,
+        parser: &mut PklParser<'source>,
         number: u8,
         type_name: &'source str,
     ) -> Self {
         TypeError::ExpectedGenerics(ExpectedGenericsError {
-            at: get_error_location(lexer),
-            src: generate_source("main.pkl", lexer.source()),
+            at: get_error_location(&mut parser.lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
             advice: format!("Expected `{}` generics for type `{}`!", number, type_name),
         })
     }

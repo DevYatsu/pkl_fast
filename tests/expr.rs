@@ -1,5 +1,3 @@
-use pkl_fast::{parser::parse, prelude::lex};
-
 #[test]
 fn expr() {
     let source = "x=1
@@ -25,11 +23,15 @@ res3 = !false
 res4 = true.xor(false) 
 res5 = true.implies(false) 
 ";
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(source);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
 
-    let lexer = lex(source);
-    let parser = parse(lexer);
-
-    assert_eq!(parser.is_ok(), true)
+    assert_eq!(statements.is_ok(), true)
 }
 
 #[test]
@@ -39,8 +41,12 @@ greeting = "Hi, \\(name)!"
 greeting = "Hi,\u{1F60A} \t efefef \refefef! \u{1F60A}"
 "#;
 
-    let lexer = lex(src);
-    let parser = parse(lexer);
-
-    assert_eq!(parser.is_ok(), true)
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(src);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
+    assert_eq!(statements.is_ok(), true)
 }

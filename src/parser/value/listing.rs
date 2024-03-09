@@ -8,7 +8,7 @@ use crate::{
         types::{parse_type, PklType},
         utils::{assert_token_eq, expect_token, parse_identifier, retrieve_next_token},
     },
-    prelude::{ParsingError, ParsingResult, PklLexer, PklToken},
+    prelude::{ParsingError, ParsingResult, PklParser, PklToken},
 };
 
 use super::{parse_object, PklValue};
@@ -28,7 +28,7 @@ pub enum ListingField<'a> {
 }
 
 pub fn parse_listing_field<'source>(
-    lexer: &mut PklLexer<'source>,
+    lexer: &mut PklParser<'source>,
     next_token: PklToken<'source>,
 ) -> ParsingResult<(ListingField<'source>, Option<PklToken<'source>>)> {
     match next_token {

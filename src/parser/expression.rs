@@ -2,7 +2,7 @@ use self::{basic::parse_basic_expr, complex::parse_complex_expr};
 use crate::prelude::{ParsingResult, PklToken};
 use std::fmt;
 
-use super::{operator::Operator, types::PklType, value::PklValue, PklLexer};
+use super::{operator::Operator, types::PklType, value::PklValue, PklParser};
 
 pub mod basic;
 pub mod complex;
@@ -56,12 +56,12 @@ pub enum Expression<'a> {
 }
 
 pub fn parse_expr<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
-    let (expr, opt_token) = parse_basic_expr(lexer, opt_token)?;
+    let (expr, opt_token) = parse_basic_expr(parser, opt_token)?;
 
-    parse_complex_expr(lexer, expr, opt_token)
+    parse_complex_expr(parser, expr, opt_token)
 }
 
 impl<'a> fmt::Display for Expression<'a> {

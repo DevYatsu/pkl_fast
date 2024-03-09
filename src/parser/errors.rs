@@ -3,16 +3,17 @@ use std::{
     num::{ParseFloatError, ParseIntError},
 };
 
-use crate::lexer::LexingError;
 use miette::{diagnostic, Diagnostic, NamedSource, SourceOffset, SourceSpan};
 use thiserror::Error;
+
+use crate::lexer::LexingError;
 
 use self::{
     lexing::parse_lexing_error,
     locating::{generate_source, get_error_location, set_error_location},
 };
 
-use super::{types::errors::TypeError, PklLexer};
+use super::{types::errors::TypeError, PklParser};
 pub mod lexing;
 pub mod locating;
 
@@ -169,9 +170,7 @@ pub struct InvalidAsStatement {
 
 #[derive(Error, Diagnostic, Debug)]
 #[error("Unexpected end of input")]
-#[diagnostic(
-    code(pkl_fast::error::unexpected_end_of_input),
-)]
+#[diagnostic(code(pkl_fast::error::unexpected_end_of_input))]
 pub struct UnexpectedEndOfInputError {
     #[label("here")]
     pub at: SourceSpan,
@@ -254,97 +253,97 @@ pub struct InterpolatedExprError {
 }
 
 impl ParsingError {
-    pub fn eof(lexer: &mut PklLexer<'_>, advice: &str) -> Self {
+    pub fn eof(parser: &mut PklParser<'_>, advice: &str) -> Self {
         ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer),
-            advice: format!("Add {advice}? Maybe you should...")
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: get_error_location(&mut parser.lexer),
+            advice: format!("Add {advice}? Maybe you should..."),
         })
     }
-    pub fn unexpected(lexer: &mut PklLexer<'_>, advice: String) -> Self {
+    pub fn unexpected(parser: &mut PklParser<'_>, advice: String) -> Self {
         ParsingError::UnexpectedToken(UnexpectedError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: get_error_location(&mut parser.lexer),
             advice,
         })
     }
-    pub fn invalid_string(lexer: &mut PklLexer<'_>) -> Self {
+    pub fn invalid_string(parser: &mut PklParser<'_>) -> Self {
         ParsingError::InvalidString(InvalidStringError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: get_error_location(&mut parser.lexer),
         })
     }
-    pub fn invalid_id(lexer: &mut PklLexer<'_>) -> Self {
+    pub fn invalid_id(parser: &mut PklParser<'_>) -> Self {
         ParsingError::InvalidIdentifier(InvalidIdentifierError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: get_error_location(&mut parser.lexer),
         })
     }
-    pub fn lexing(lexer: &mut PklLexer<'_>, e: LexingError) -> Self {
-        parse_lexing_error(lexer, e)
+    pub fn lexing(parser: &mut PklParser<'_>, e: LexingError) -> Self {
+        parse_lexing_error(parser, e)
     }
-    pub fn invalid_as_statement(lexer: &mut PklLexer<'_>) -> Self {
+    pub fn invalid_as_statement(parser: &mut PklParser<'_>) -> Self {
         ParsingError::AsStatementUnsupported(InvalidAsStatement {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: get_error_location(&mut parser.lexer),
         })
     }
-    pub fn no_default_value(lexer: &mut PklLexer<'_>, type_name: &str) -> Self {
+    pub fn no_default_value(parser: &mut PklParser<'_>, type_name: &str) -> Self {
         ParsingError::NoDefaultValue(NoDefaultValueError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: get_error_location(&mut parser.lexer),
             advice: format!("Type `{type_name}` does not possess a default value"),
         })
     }
-    pub fn invalid_char_escape(lexer: &mut PklLexer<'_>, index: usize) -> Self {
+    pub fn invalid_char_escape(parser: &mut PklParser<'_>, index: usize) -> Self {
         ParsingError::InvalidEscapedChar(EscapedCharError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: set_error_location(lexer, index, 2),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: set_error_location(&mut parser.lexer, index, 2),
         })
     }
-    pub fn invalid_unicode(lexer: &mut PklLexer<'_>, index: usize, length: usize) -> Self {
+    pub fn invalid_unicode(parser: &mut PklParser<'_>, index: usize, length: usize) -> Self {
         ParsingError::InvalidUnicodeEscape(UnicodeEscapeError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: set_error_location(lexer, index, length),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: set_error_location(&mut parser.lexer, index, length),
         })
     }
     pub fn invalid_interpolated_expr(
-        lexer: &mut PklLexer<'_>,
+        parser: &mut PklParser<'_>,
         index: usize,
         length: usize,
     ) -> Self {
-        let offset: SourceOffset = lexer.span().start.into();
+        let offset: SourceOffset = parser.lexer.span().start.into();
         ParsingError::InvalidInterpolatedExpr(InterpolatedExprError {
-            src: generate_source("main.pkl", lexer.source()),
+            src: generate_source("main.pkl", parser.lexer.source()),
             at: SourceSpan::new((offset.offset() + index).into(), length),
         })
     }
 
-    fn unexpected_token(lexer: &mut PklLexer<'_>, expected: &str) -> Self {
+    fn unexpected_token(parser: &mut PklParser<'_>, expected: &str) -> Self {
         ParsingError::UnexpectedToken(UnexpectedError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: get_error_location(&mut parser.lexer),
             advice: format!("Expected `{expected}`"),
         })
     }
 
-    pub fn expected_simple_string(lexer: &mut PklLexer<'_>) -> Self {
+    pub fn expected_simple_string(parser: &mut PklParser<'_>) -> Self {
         ParsingError::UnexpectedToken(UnexpectedError {
-            src: generate_source("main.pkl", lexer.source()),
-            at: get_error_location(lexer),
+            src: generate_source("main.pkl", parser.lexer.source()),
+            at: get_error_location(&mut parser.lexer),
             advice: format!(
                 "Expected a simple `String` without characters escape or interpolation"
             ),
         })
     }
-    pub fn expected_string(lexer: &mut PklLexer<'_>) -> Self {
-        Self::unexpected_token(lexer, "String")
+    pub fn expected_string(parser: &mut PklParser<'_>) -> Self {
+        Self::unexpected_token(parser, "String")
     }
-    pub fn expected_identifier(lexer: &mut PklLexer<'_>) -> Self {
-        Self::unexpected_token(lexer, "Identifier")
+    pub fn expected_identifier(parser: &mut PklParser<'_>) -> Self {
+        Self::unexpected_token(parser, "Identifier")
     }
-    pub fn expected_expression(lexer: &mut PklLexer<'_>) -> Self {
-        Self::unexpected_token(lexer, "Expression")
+    pub fn expected_expression(parser: &mut PklParser<'_>) -> Self {
+        Self::unexpected_token(parser, "Expression")
     }
 
     pub fn get_at(&self) -> SourceSpan {
@@ -405,7 +404,11 @@ impl ParsingError {
                 ParsingError::AsStatementUnsupported(InvalidAsStatement { src, at })
             }
             ParsingError::UnexpectedEndOfInput(e) => {
-                ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError { src, at, advice: e.advice })
+                ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError {
+                    src,
+                    at,
+                    advice: e.advice,
+                })
             }
             ParsingError::UnterminatedString(_) => {
                 ParsingError::UnterminatedString(UnterminatedStringError { src, at })

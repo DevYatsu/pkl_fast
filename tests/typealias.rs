@@ -1,5 +1,3 @@
-use pkl_fast::{parser::parse, prelude::lex};
-
 #[test]
 fn typealias() {
     let code = r#"x: Map<Int, String>(length <= 5) = Map(0, "0")
@@ -32,8 +30,13 @@ hey_string: Hey = "hey"
 typealias Foo = "foo"|"bar"|"baz"
 "#;
 
-    let lex_result = lex(code);
-    let parse_result = parse(lex_result);
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(code);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
 
-    assert_eq!(parse_result.is_ok(), true)
+    assert_eq!(statements.is_ok(), true)
 }

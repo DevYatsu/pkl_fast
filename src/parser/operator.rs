@@ -2,7 +2,7 @@ use super::{
     expression::{basic::parse_basic_expr, Expression},
     types::parse_type,
     utils::parse_opt_newlines,
-    ParsingResult, PklLexer,
+    ParsingResult, PklParser,
 };
 use crate::prelude::PklToken;
 use std::fmt;
@@ -34,7 +34,7 @@ pub enum Operator {
 ///
 /// **Simply put, this fn parses a mathematical expression and returns the next token.**
 pub fn parse_operation<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     expr: Expression<'source>,
     operator: &'source str,
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
@@ -45,7 +45,7 @@ pub fn parse_operation<'source>(
 
     // we take care of the initial expr and operator given as parameter
     let first_operator = Operator::from(operator);
-    let (first_expr, next) = parse_expr_following_op(lexer, &first_operator)?;
+    let (first_expr, next) = parse_expr_following_op(parser, &first_operator)?;
     output_queue.push(first_expr);
     operator_stack.push(first_operator);
 
@@ -56,7 +56,7 @@ pub fn parse_operation<'source>(
             Some(PklToken::Operator(op)) | Some(PklToken::RightAngleBracket(op)) => {
                 let new_operator = Operator::from(op);
 
-                let (new_expr, next) = parse_expr_following_op(lexer, &new_operator)?;
+                let (new_expr, next) = parse_expr_following_op(parser, &new_operator)?;
 
                 next_token = next;
 
@@ -106,15 +106,15 @@ pub fn parse_operation<'source>(
 }
 
 fn parse_expr_following_op<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     op: &Operator,
 ) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
     match op {
         Operator::TypeCast | Operator::TypeTest => {
-            let (t, next) = parse_opt_newlines(lexer, &parse_type)?;
+            let (t, next) = parse_opt_newlines(parser, &parse_type)?;
             Ok((Expression::ExpressionType(Box::new(t)), next))
         }
-        _ => parse_opt_newlines(lexer, &parse_basic_expr),
+        _ => parse_opt_newlines(parser, &parse_basic_expr),
     }
 }
 

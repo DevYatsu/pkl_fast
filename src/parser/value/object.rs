@@ -8,7 +8,7 @@ use crate::{
             parse_opt_newlines, retrieve_next_token, retrieve_opt_next_token,
         },
     },
-    prelude::{ParsingError, ParsingResult, PklLexer, PklToken, PklValue},
+    prelude::{ParsingError, ParsingResult, PklParser, PklToken, PklValue},
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -52,15 +52,15 @@ pub enum ObjectField<'a> {
 
 /// Function called to parse an object, we assume that '{' was already found
 pub fn parse_object<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     amended_by: Option<&'source str>,
 ) -> ParsingResult<(PklValue<'source>, Option<PklToken<'source>>)> {
-    let values = parse_object_values(lexer)?;
+    let values = parse_object_values(parser)?;
 
-    match retrieve_opt_next_token(lexer)? {
+    match retrieve_opt_next_token(parser)? {
         Some(PklToken::OpenBracket) => {
             let chained_body = list_while_not_token3(
-                lexer,
+                parser,
                 &[PklToken::NewLine, PklToken::SemiColon],
                 PklToken::CloseBracket,
                 &parse_block_field,
@@ -88,10 +88,10 @@ pub fn parse_object<'source>(
 }
 
 pub fn parse_object_values<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
 ) -> ParsingResult<Vec<ObjectField<'source>>> {
     list_while_not_token3(
-        lexer,
+        parser,
         &[PklToken::NewLine, PklToken::SemiColon],
         PklToken::CloseBracket,
         &parse_block_field,
@@ -99,50 +99,50 @@ pub fn parse_object_values<'source>(
 }
 
 pub fn parse_block_field<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     token: PklToken<'source>,
 ) -> ParsingResult<(ObjectField<'source>, Option<PklToken<'source>>)> {
     match token {
         PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
-            let next_token = retrieve_next_token(lexer)?;
+            let next_token = retrieve_next_token(parser)?;
 
             let (value, next_token) = match next_token {
                 PklToken::EqualSign => {
-                    let (value, next_token) = parse_expr(lexer, None)?;
+                    let (value, next_token) = parse_expr(parser, None)?;
                     (value, next_token)
                 }
                 PklToken::OpenBracket => {
                     // we sould see whether or not we add to this object that its parent object is amended
-                    let (value, token) = parse_object(lexer, None)?;
+                    let (value, token) = parse_object(parser, None)?;
 
                     (Expression::Value(value), token)
                 }
-                _ => return Err(ParsingError::unexpected(lexer, "'='".to_owned())),
+                _ => return Err(ParsingError::unexpected(parser, "'='".to_owned())),
             };
 
             Ok((ObjectField::Variable { name, value }, next_token))
         }
         PklToken::OpenBrace => {
-            let token = retrieve_next_token(lexer)?;
+            let token = retrieve_next_token(parser)?;
 
             match token {
                 PklToken::OpenBrace => {
-                    let (match_expr, next_token) = parse_expr(lexer, None)?;
-                    assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
-                    expect_token(lexer, PklToken::CloseBrace)?;
-                    expect_token(lexer, PklToken::OpenBracket)?;
+                    let (match_expr, next_token) = parse_expr(parser, None)?;
+                    assert_token_eq(parser, next_token, PklToken::CloseBrace)?;
+                    expect_token(parser, PklToken::CloseBrace)?;
+                    expect_token(parser, PklToken::OpenBracket)?;
 
-                    let values = parse_object_values(lexer)?;
+                    let values = parse_object_values(parser)?;
                     return Ok((ObjectField::MemberPredicate { match_expr, values }, None));
                 }
                 _ => (),
             };
 
-            let (expr, next_token) = parse_expr(lexer, Some(token))?;
-            assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
-            match retrieve_next_token(lexer)? {
+            let (expr, next_token) = parse_expr(parser, Some(token))?;
+            assert_token_eq(parser, next_token, PklToken::CloseBrace)?;
+            match retrieve_next_token(parser)? {
                 PklToken::OpenBracket => {
-                    let (value, token) = parse_object(lexer, None)?;
+                    let (value, token) = parse_object(parser, None)?;
                     Ok((
                         ObjectField::AmendedValue {
                             value: Expression::Value(value),
@@ -152,46 +152,46 @@ pub fn parse_block_field<'source>(
                     ))
                 }
                 PklToken::EqualSign => {
-                    let (value, next) = parse_expr(lexer, None)?;
+                    let (value, next) = parse_expr(parser, None)?;
                     Ok((ObjectField::AmendedValue { value, key: expr }, next))
                 }
-                _ => Err(ParsingError::unexpected(lexer, "'=' or '{'".to_owned())),
+                _ => Err(ParsingError::unexpected(parser, "'=' or '{'".to_owned())),
             }
         }
         PklToken::Default => {
-            expect_token(lexer, PklToken::OpenBracket)?;
-            let values = parse_object_values(lexer)?;
+            expect_token(parser, PklToken::OpenBracket)?;
+            let values = parse_object_values(parser)?;
 
             Ok((ObjectField::DefaultObject(values), None))
         }
         PklToken::SpreadSyntax => {
-            let ident = parse_identifier(lexer)?;
+            let ident = parse_identifier(parser)?;
             Ok((ObjectField::Spread(ident), None))
         }
         PklToken::NullableSpreadSyntax => {
-            let ident = parse_identifier(lexer)?;
+            let ident = parse_identifier(parser)?;
             Ok((ObjectField::NullableSpread(ident), None))
         }
         PklToken::When => {
-            expect_token(lexer, PklToken::OpenParenthesis)?;
-            let (condition, next) = parse_opt_newlines(lexer, &parse_expr)?;
-            assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
-            expect_token(lexer, PklToken::OpenBracket)?;
+            expect_token(parser, PklToken::OpenParenthesis)?;
+            let (condition, next) = parse_opt_newlines(parser, &parse_expr)?;
+            assert_token_eq(parser, next, PklToken::CloseParenthesis)?;
+            expect_token(parser, PklToken::OpenBracket)?;
 
             let members = list_while_not_token3(
-                lexer,
+                parser,
                 &[PklToken::NewLine],
                 PklToken::CloseBracket,
                 &parse_block_field,
             )?;
 
-            let next_token = retrieve_next_token(lexer)?;
+            let next_token = retrieve_next_token(parser)?;
 
             match next_token {
                 PklToken::Else => {
-                    expect_token(lexer, PklToken::OpenBracket)?;
+                    expect_token(parser, PklToken::OpenBracket)?;
                     let _else = list_while_not_token3(
-                        lexer,
+                        parser,
                         &[PklToken::NewLine],
                         PklToken::CloseBracket,
                         &parse_block_field,
@@ -217,20 +217,20 @@ pub fn parse_block_field<'source>(
             }
         }
         PklToken::For => {
-            expect_token(lexer, PklToken::OpenParenthesis)?;
-            let ident1 = parse_identifier(lexer)?;
-            let next = retrieve_next_token(lexer)?;
+            expect_token(parser, PklToken::OpenParenthesis)?;
+            let ident1 = parse_identifier(parser)?;
+            let next = retrieve_next_token(parser)?;
 
             match next {
                 PklToken::Comma => {
-                    let value = parse_identifier(lexer)?;
-                    expect_token(lexer, PklToken::In)?;
-                    let (iterable, next) = parse_expr(lexer, None)?;
-                    assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
-                    expect_token(lexer, PklToken::OpenBracket)?;
+                    let value = parse_identifier(parser)?;
+                    expect_token(parser, PklToken::In)?;
+                    let (iterable, next) = parse_expr(parser, None)?;
+                    assert_token_eq(parser, next, PklToken::CloseParenthesis)?;
+                    expect_token(parser, PklToken::OpenBracket)?;
 
                     let members = list_while_not_token3(
-                        lexer,
+                        parser,
                         &[PklToken::NewLine],
                         PklToken::CloseBracket,
                         &parse_block_field,
@@ -247,12 +247,12 @@ pub fn parse_block_field<'source>(
                     ))
                 }
                 PklToken::In => {
-                    let (iterable, next) = parse_expr(lexer, None)?;
-                    assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
-                    expect_token(lexer, PklToken::OpenBracket)?;
+                    let (iterable, next) = parse_expr(parser, None)?;
+                    assert_token_eq(parser, next, PklToken::CloseParenthesis)?;
+                    expect_token(parser, PklToken::OpenBracket)?;
 
                     let members = list_while_not_token3(
-                        lexer,
+                        parser,
                         &[PklToken::NewLine],
                         PklToken::CloseBracket,
                         &parse_block_field,
@@ -268,11 +268,11 @@ pub fn parse_block_field<'source>(
                         None,
                     ))
                 }
-                _ => Err(ParsingError::unexpected(lexer, "'in' or ','".to_owned())),
+                _ => Err(ParsingError::unexpected(parser, "'in' or ','".to_owned())),
             }
         }
         token => {
-            let (expr, next) = parse_expr(lexer, Some(token))?;
+            let (expr, next) = parse_expr(parser, Some(token))?;
 
             Ok((ObjectField::Expression(expr), next))
         }

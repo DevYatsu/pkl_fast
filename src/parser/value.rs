@@ -6,7 +6,7 @@ use self::mapping::MappingField;
 use self::object::ObjectField;
 use self::string::StringFragment;
 use super::expression::Expression;
-use super::PklLexer;
+use super::PklParser;
 use crate::parser::value::datasize::DataSizeUnit;
 use crate::parser::{errors::ParsingError, ParsingResult};
 use crate::prelude::PklToken;
@@ -75,21 +75,27 @@ pub enum PklValue<'a> {
 }
 
 pub fn parse_value<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     current_token: PklToken<'source>,
 ) -> ParsingResult<PklValue<'source>> {
     match current_token {
         PklToken::Boolean(b) => Ok(PklValue::Boolean(b)),
         PklToken::StringLiteral(value) => Ok(PklValue::String(StringFragment::from_raw_string(
-            lexer, value,
+            parser, value,
         )?)),
         PklToken::MultipleLinesString(value) => Ok(PklValue::String(
-            StringFragment::from_raw_string(lexer, value)?,
+            StringFragment::from_raw_string(parser, value)?,
         )),
         PklToken::Integer(i) => Ok(PklValue::Int(i)),
         PklToken::Float(f) => Ok(PklValue::Float(f)),
         PklToken::Null => Ok(PklValue::Null),
-        PklToken::DataSize => match lexer.slice().split('.').collect::<Vec<_>>().as_slice() {
+        PklToken::DataSize => match parser
+            .lexer
+            .slice()
+            .split('.')
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
             [value, unit] => {
                 let value: DataSizeValue = value.parse::<i64>()?.into();
                 let unit: DataSizeUnit = (*unit).into();
@@ -102,7 +108,13 @@ pub fn parse_value<'source>(
             }
             _ => unreachable!(),
         },
-        PklToken::Duration => match lexer.slice().split('.').collect::<Vec<_>>().as_slice() {
+        PklToken::Duration => match parser
+            .lexer
+            .slice()
+            .split('.')
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
             [value, unit] => {
                 let value: DurationValue = value.parse::<i64>()?.into();
                 let unit: DurationUnit = (*unit).into();
@@ -115,8 +127,8 @@ pub fn parse_value<'source>(
             }
             _ => unreachable!(),
         },
-        PklToken::New => parse_class_instance(lexer),
-        _ => Err(ParsingError::expected_expression(lexer)),
+        PklToken::New => parse_class_instance(parser),
+        _ => Err(ParsingError::expected_expression(parser)),
     }
 }
 

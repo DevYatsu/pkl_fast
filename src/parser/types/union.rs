@@ -1,25 +1,24 @@
 use crate::{
-    parser::utils::retrieve_opt_next_token,
-    prelude::{ParsingResult, PklLexer, PklToken},
+    parser::{utils::retrieve_opt_next_token, PklParser},
+    prelude::{ParsingResult, PklToken},
 };
 
 use super::{parse_type, PklType};
 
 pub fn parse_opt_union<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     mut base_type: PklType<'source>,
     opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(PklType<'source>, Option<PklToken<'source>>)> {
     let token = if opt_token.is_some() {
         opt_token
     } else {
-        retrieve_opt_next_token(lexer)?
+        retrieve_opt_next_token(parser)?
     };
 
-    println!("{:?}", token);
     let result = match token {
         Some(PklToken::UnionSerarator) => {
-            let (t, next_token) = parse_type(lexer, None)?;
+            let (t, next_token) = parse_type(parser, None)?;
 
             if let PklType::Union(ref mut values) = base_type {
                 match t {

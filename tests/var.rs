@@ -1,5 +1,3 @@
-use pkl_fast::prelude::{lex, parse};
-
 #[test]
 fn floats_var() {
     const S: &str = "num1 = .23
@@ -10,8 +8,13 @@ notANumber = NaN
 positiveInfinity = Infinity
 negativeInfinity = -Infinity";
 
-    let tokens = lex(S);
-    let statements = parse(tokens);
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(S);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }
@@ -27,8 +30,13 @@ num2 = 0x0134_64DE
 num3 = 0b0001_0111 
 num4 = 0o0134_6475";
 
-    let tokens = lex(S);
-    let statements = parse(tokens);
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(S);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }
@@ -59,8 +67,13 @@ datasize6 = 5.pib // pebibytes (largest unit)
 datasize7 = 1.6666666666666667.mb
 ";
 
-    let tokens = lex(S);
-    let statements = parse(tokens);
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(S);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }
@@ -83,8 +96,13 @@ the species will be remembered. \\
 
 "#;
 
-    let tokens = lex(code);
-    let statements = parse(tokens);
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(code);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }

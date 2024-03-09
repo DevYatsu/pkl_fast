@@ -1,5 +1,3 @@
-use pkl_fast::{parser::parse, prelude::lex};
-
 const SOURCE: &str = "amends \"Application.pkl\"
 
 hostname = \"localhost\"
@@ -20,8 +18,13 @@ database {
 
 #[test]
 fn localhost_doc_example() {
-    let tokens = lex(SOURCE);
-    let statements = parse(tokens);
+    use pkl_fast::{
+        lexer::string::sanitize_code,
+        prelude::{lex, parse},
+    };
+    let (code, str_vec) = sanitize_code(SOURCE);
+    let tokens = lex(&code);
+    let statements = parse(tokens, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }

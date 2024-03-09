@@ -5,7 +5,7 @@ use super::{
     expression::Expression,
     utils::{list_while_not_tokens, retrieve_next_token},
     value::{string::StringFragment, PklValue},
-    ParsingResult, PklLexer,
+    ParsingResult, PklParser,
 };
 use crate::{parser::expression::parse_expr, prelude::PklToken};
 use std::fmt;
@@ -104,21 +104,21 @@ pub enum PklType<'a> {
 }
 
 pub fn parse_type<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(PklType<'source>, Option<PklToken<'source>>)> {
     let token = if opt_token.is_some() {
         opt_token.unwrap()
     } else {
-        retrieve_next_token(lexer)?
+        retrieve_next_token(parser)?
     };
 
     let base_type = match token {
         PklToken::Identifier(value) => {
-            let next_token = retrieve_next_token(lexer)?;
+            let next_token = retrieve_next_token(parser)?;
 
             match next_token {
-                PklToken::Dot => match retrieve_next_token(lexer)? {
+                PklToken::Dot => match retrieve_next_token(parser)? {
                     PklToken::Identifier(name) => PklType::ImportedClass {
                         name,
                         module: value,
@@ -126,7 +126,7 @@ pub fn parse_type<'source>(
                     },
                     PklToken::GenericTypeAnnotationStart(type_as_str) => {
                         let (types, end_token) = list_while_not_tokens(
-                            lexer,
+                            parser,
                             PklToken::Comma,
                             &[PklToken::RightAngleBracket(">")],
                             &parse_type,
@@ -141,26 +141,26 @@ pub fn parse_type<'source>(
                             _ => unreachable!(),
                         }
                     }
-                    _ => return Err(ParsingError::expected_identifier(lexer)),
+                    _ => return Err(ParsingError::expected_identifier(parser)),
                 },
                 _ => {
                     let t: PklType = value.into();
-                    return Ok(parse_opt_union(lexer, t, Some(next_token))?);
+                    return Ok(parse_opt_union(parser, t, Some(next_token))?);
                 }
             }
         }
         PklToken::GenericTypeAnnotationStart(type_as_str) => {
-            parse_generic_type_annotation(lexer, type_as_str)?
+            parse_generic_type_annotation(parser, type_as_str)?
         }
         PklToken::FunctionCall(name) => {
             let mut base_type: PklType = name.into();
 
-            let (expr, next_token) = parse_expr(lexer, None)?;
+            let (expr, next_token) = parse_expr(parser, None)?;
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),
-                None => return Err(ParsingError::eof(lexer, "a closing parenthesis")),
-                _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
+                None => return Err(ParsingError::eof(parser, "a closing parenthesis")),
+                _ => return Err(ParsingError::unexpected(parser, "')'".to_owned())),
             }
 
             // check which types can receive restriction
@@ -219,7 +219,7 @@ pub fn parse_type<'source>(
                 | PklType::Regex
                 | _ => {
                     return Err((TypeError::no_restrictions_type(
-                        lexer,
+                        parser,
                         format!(
                             "Remove the constraints annotation, try writing `{}`",
                             base_type
@@ -237,21 +237,21 @@ pub fn parse_type<'source>(
         PklToken::DefaultUnionType(value) => PklType::UnionDefault(Box::new(value.into())),
         _ => {
             return Err(ParsingError::unexpected(
-                lexer,
+                parser,
                 "a valid type definition".to_owned(),
             ))
         }
     };
 
-    parse_opt_union(lexer, base_type, None)
+    parse_opt_union(parser, base_type, None)
 }
 
 fn parse_generic_type_annotation<'source>(
-    lexer: &mut PklLexer<'source>,
+    parser: &mut PklParser<'source>,
     type_as_str: &'source str,
 ) -> ParsingResult<PklType<'source>> {
     let (types, end_token) = list_while_not_tokens(
-        lexer,
+        parser,
         PklToken::Comma,
         &[
             PklToken::RightAngleBracket(">"),
@@ -262,15 +262,15 @@ fn parse_generic_type_annotation<'source>(
 
     match end_token {
         PklToken::RightAngleBracket(_) => {
-            Ok(PklType::generate_from_generics(lexer, type_as_str, types)?)
+            Ok(PklType::generate_from_generics(parser, type_as_str, types)?)
         }
         PklToken::GenericTypeAnnotationFunctionCall => {
-            let (expr, next_token) = parse_expr(lexer, None)?;
+            let (expr, next_token) = parse_expr(parser, None)?;
 
             match next_token {
                 Some(PklToken::CloseParenthesis) => (),
-                None => return Err(ParsingError::eof(lexer, "a closing parenthesis")),
-                _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
+                None => return Err(ParsingError::eof(parser, "a closing parenthesis")),
+                _ => return Err(ParsingError::unexpected(parser, "')'".to_owned())),
             }
 
             let mut base_type: PklType<'_> = type_as_str.into();
@@ -309,7 +309,7 @@ fn parse_generic_type_annotation<'source>(
                     Ok(base_type)
                 }
                 _ => Err(TypeError::no_restrictions_type(
-                    lexer,
+                    parser,
                     format!(
                         "Remove the constraints annotation, try writing `{}`",
                         base_type
@@ -387,16 +387,16 @@ impl<'a> From<&'a str> for PklType<'a> {
 }
 
 impl<'a> PklType<'a> {
-    pub fn default_value(&self, lexer: &mut PklLexer<'a>) -> ParsingResult<PklValue<'a>> {
+    pub fn default_value(&self, parser: &mut PklParser<'a>) -> ParsingResult<PklValue<'a>> {
         match self {
             PklType::String { matches, .. } => {
                 if let Some(value) = matches {
                     return Ok(PklValue::String(StringFragment::from_raw_string(
-                        lexer, value,
+                        parser, value,
                     )?));
                 }
 
-                Err(ParsingError::no_default_value(lexer, &self.to_string()))
+                Err(ParsingError::no_default_value(parser, &self.to_string()))
             }
             PklType::Null => Ok(PklValue::Null),
             PklType::Collection { .. } => Ok(PklValue::List(vec![])),
@@ -410,7 +410,7 @@ impl<'a> PklType<'a> {
                 arguments: Vec::new(),
             }),
             PklType::PotentiallyNull(t) => Ok(PklValue::Nullable(Box::new(Expression::Value(
-                t.default_value(lexer)?,
+                t.default_value(parser)?,
             )))),
             PklType::Union(values) => {
                 let result = values
@@ -422,24 +422,24 @@ impl<'a> PklType<'a> {
                     .collect::<Vec<_>>();
 
                 if result.len() != 1 {
-                    return Err(ParsingError::no_default_value(lexer, &self.to_string()));
+                    return Err(ParsingError::no_default_value(parser, &self.to_string()));
                 }
 
-                result[0].default_value(lexer)
+                result[0].default_value(parser)
             }
-            _ => Err(ParsingError::no_default_value(lexer, &self.to_string())),
+            _ => Err(ParsingError::no_default_value(parser, &self.to_string())),
         }
     }
 
     pub fn generate_from_generics(
-        lexer: &mut PklLexer<'a>,
+        parser: &mut PklParser<'a>,
         base_type: &'a str,
         generics: Vec<PklType<'a>>,
     ) -> Result<PklType<'a>, TypeError> {
         match base_type {
             "Collection" => {
                 if generics.len() != 1 {
-                    return Err(TypeError::expect_generics(lexer, 1, base_type));
+                    return Err(TypeError::expect_generics(parser, 1, base_type));
                 }
 
                 Ok(PklType::Collection {
@@ -449,7 +449,7 @@ impl<'a> PklType<'a> {
             }
             "Listing" => {
                 if generics.len() != 1 {
-                    return Err(TypeError::expect_generics(lexer, 1, base_type));
+                    return Err(TypeError::expect_generics(parser, 1, base_type));
                 }
 
                 Ok(PklType::Listing {
@@ -459,7 +459,7 @@ impl<'a> PklType<'a> {
             }
             "List" => {
                 if generics.len() != 1 {
-                    return Err(TypeError::expect_generics(lexer, 1, base_type));
+                    return Err(TypeError::expect_generics(parser, 1, base_type));
                 }
 
                 Ok(PklType::List {
@@ -469,7 +469,7 @@ impl<'a> PklType<'a> {
             }
             "Set" => {
                 if generics.len() != 1 {
-                    return Err(TypeError::expect_generics(lexer, 1, base_type));
+                    return Err(TypeError::expect_generics(parser, 1, base_type));
                 }
 
                 Ok(PklType::Set {
@@ -479,7 +479,7 @@ impl<'a> PklType<'a> {
             }
             "Pair" => {
                 if generics.len() != 2 {
-                    return Err(TypeError::expect_generics(lexer, 2, base_type));
+                    return Err(TypeError::expect_generics(parser, 2, base_type));
                 }
 
                 Ok(PklType::Pair {
@@ -490,7 +490,7 @@ impl<'a> PklType<'a> {
             }
             "Map" => {
                 if generics.len() != 2 {
-                    return Err(TypeError::expect_generics(lexer, 2, base_type));
+                    return Err(TypeError::expect_generics(parser, 2, base_type));
                 }
 
                 Ok(PklType::Map {
@@ -501,7 +501,7 @@ impl<'a> PklType<'a> {
             }
             "Mapping" => {
                 if generics.len() != 2 {
-                    return Err(TypeError::expect_generics(lexer, 2, base_type));
+                    return Err(TypeError::expect_generics(parser, 2, base_type));
                 }
 
                 Ok(PklType::Mapping {
@@ -523,7 +523,7 @@ impl<'a> PklType<'a> {
                         Ok(t)
                     }
 
-                    _ => Err(TypeError::expect_generics(lexer, 0, name)),
+                    _ => Err(TypeError::expect_generics(parser, 0, name)),
                 }
             }
         }
