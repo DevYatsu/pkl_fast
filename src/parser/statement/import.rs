@@ -1,8 +1,12 @@
 use std::path::Path;
 
-use winnow::{ascii::multispace1, stream::Stream, PResult, Parser};
+use winnow::{
+    ascii::{multispace1, space1},
+    combinator::{opt, preceded},
+    PResult, Parser,
+};
 
-use crate::parser::utils::string_literal;
+use crate::parser::utils::{expected, identifier, string_literal};
 
 use super::Statement;
 
@@ -15,27 +19,28 @@ pub enum ImportClause<'a> {
 }
 
 pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
-    let start = input.checkpoint();
-    if let Ok((_, _, value)) = ('*', multispace1, import_clause).parse_next(input) {
-        return Ok(Statement::Import {
-            clause: value,
-            imported_as: None,
-            is_globbed: true,
-        });
-    }
-
-    input.reset(&start);
-    let (_, value) = (multispace1, import_clause).parse_next(input)?;
+    let is_globbed = opt('*').parse_next(input)?.is_some();
+    let value = preceded(multispace1, import_clause).parse_next(input)?;
+    let imported_as = opt(parse_as).parse_next(input)?;
 
     Ok(Statement::Import {
         clause: value,
-        imported_as: None,
-        is_globbed: false,
+        imported_as,
+        is_globbed,
     })
 }
 
+fn parse_as<'source>(input: &mut &'source str) -> PResult<&'source str> {
+    multispace1.parse_next(input)?;
+    "as".parse_next(input)?;
+    multispace1.parse_next(input)?;
+    identifier.parse_next(input)
+}
+
 pub fn import_clause<'source>(input: &mut &'source str) -> PResult<ImportClause<'source>> {
-    let value = string_literal.parse_next(input)?;
+    let value = string_literal
+        .context(expected("import clause"))
+        .parse_next(input)?;
 
     let result = match value {
         value if value.starts_with("https://") => ImportClause::Https(value),

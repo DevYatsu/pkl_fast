@@ -10,6 +10,9 @@ pub fn line_ending_or_end<'source>(input: &mut &'source str) -> PResult<&'source
         Ok("")
     }
 }
+pub fn expected(what: &'static str) -> StrContext {
+    StrContext::Expected(StrContextValue::StringLiteral(what))
+}
 
 // pub fn retrieve_next_token<'source>(
 //     parser: &mut PklParser<'source>,
@@ -504,6 +507,7 @@ pub use string::string_literal;
 use winnow::{
     ascii::{line_ending, multispace0, space0},
     combinator::{opt, preceded},
+    error::{StrContext, StrContextValue},
     PResult, Parser,
 };
 

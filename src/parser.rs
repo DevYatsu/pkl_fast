@@ -76,7 +76,6 @@ impl<'source> PklParser<'source> {
             .parse_next(&mut self.input)?;
 
             line_ending_or_end.parse_next(&mut self.input)?;
-            println!("{:?}", self.input);
             self.statements.push(statement);
         }
 
