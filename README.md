@@ -8,7 +8,7 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 
 ## Features
 
-- Efficient lexer for tokenizing Pkl files (using the blazingly fast [logos](https://github.com/maciejhirsz/logos) crate)
+- ~Efficient lexer for tokenizing Pkl files (using the blazingly fast [logos](https://github.com/maciejhirsz/logos) crate)~, using winnow parsing library instead as logos is too limited (no support for look-ahead in regex)
 - The parser is currently under development and is intended to return the Pkl file as statements. It will also provide warnings for non-recommended code practices and display errors as needed.
 - Designed for speed and reliability.
 
