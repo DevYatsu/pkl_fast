@@ -1,13 +1,6 @@
-use crate::{
-    parser::{
-        utils::{expect_token, list_while_not_token0, parse_identifier, retrieve_next_token},
-        value::parse_value,
-        PklParser,
-    },
-    prelude::{ParsingResult, PklToken, PklValue},
-};
-
 use super::Statement;
+use crate::prelude::PklValue;
+use winnow::{combinator::todo, PResult};
 
 #[derive(Debug, PartialEq, Clone)]
 /// A struct representing an field of a @ModuleInfo annotation
@@ -17,37 +10,36 @@ pub struct InfoField<'a> {
 }
 
 /// Parsing @ModuleInfo annotation
-pub fn parse_module_info<'source>(
-    parser: &mut PklParser<'source>,
-) -> ParsingResult<Statement<'source>> {
-    let infos = parse_info(parser)?;
+pub fn parse_module_info<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+    todo(input)
+    // let infos = parse_info(parser)?;
 
-    Ok(Statement::ModuleInfo { infos })
+    // Ok(Statement::ModuleInfo { infos })
 }
 
 /// Parsing @Deprecated annotation
-pub fn parse_deprecated<'source>(
-    parser: &mut PklParser<'source>,
-) -> ParsingResult<Statement<'source>> {
-    let infos = parse_info(parser)?;
+pub fn parse_deprecated<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+    todo(input)
+    // let infos = parse_info(parser)?;
 
-    Ok(Statement::DeprecatedInfo { infos })
+    // Ok(Statement::DeprecatedInfo { infos })
 }
 
-fn parse_info<'source>(parser: &mut PklParser<'source>) -> ParsingResult<Vec<InfoField<'source>>> {
-    expect_token(parser, PklToken::OpenBracket)?;
+fn parse_info<'source>(input: &mut &'source str) -> PResult<Vec<InfoField<'source>>> {
+    todo(input)
+    // expect_token(parser, PklToken::OpenBracket)?;
 
-    let predicate = |parser: &mut PklParser<'source>| -> ParsingResult<InfoField<'source>> {
-        let name = parse_identifier(parser)?;
-        expect_token(parser, PklToken::EqualSign)?;
+    // let predicate = |parser: &mut PklParser<'source>| -> ParsingResult<InfoField<'source>> {
+    //     let name = parse_identifier(parser)?;
+    //     expect_token(parser, PklToken::EqualSign)?;
 
-        let next_token = retrieve_next_token(parser)?;
-        let value = parse_value(parser, next_token)?;
+    //     let next_token = retrieve_next_token(parser)?;
+    //     let value = parse_value(parser, next_token)?;
 
-        Ok(InfoField { name, value })
-    };
+    //     Ok(InfoField { name, value })
+    // };
 
-    let infos = list_while_not_token0(parser, PklToken::Comma, PklToken::CloseBracket, &predicate)?;
+    // let infos = list_while_not_token0(parser, PklToken::Comma, PklToken::CloseBracket, &predicate)?;
 
-    Ok(infos)
+    // Ok(infos)
 }

@@ -9,10 +9,7 @@ pub enum Statement<'a> {
     Import {
         clause: ImportClause<'a>,
         imported_as: Option<&'a str>,
-    },
-    GlobbedImport {
-        clause: ImportClause<'a>,
-        imported_as: Option<&'a str>,
+        is_globbed: bool,
     },
     Amends(&'a str),
     Module {
@@ -52,10 +49,10 @@ pub enum Statement<'a> {
 
 use std::collections::HashMap;
 
-pub use amends::parse_amends;
+pub use amends::amends_statement;
 pub use class::parse_class_field;
 pub use class::ClassArgument;
-pub use extends::parse_extends;
+pub use extends::extends_statement;
 pub use import::ImportClause;
 pub use info::parse_deprecated;
 pub use info::parse_module_info;

@@ -1,13 +1,11 @@
-use self::{errors::TypeError, union::parse_opt_union};
+use self::errors::TypeError;
 
 use super::{
-    errors::ParsingError,
     expression::Expression,
-    utils::{list_while_not_tokens, retrieve_next_token},
     value::{string::StringFragment, PklValue},
     ParsingResult, PklParser,
 };
-use crate::{parser::expression::parse_expr, prelude::PklToken};
+use crate::prelude::PklToken;
 use std::fmt;
 
 pub mod errors;
@@ -107,220 +105,222 @@ pub fn parse_type<'source>(
     parser: &mut PklParser<'source>,
     opt_token: Option<PklToken<'source>>,
 ) -> ParsingResult<(PklType<'source>, Option<PklToken<'source>>)> {
-    let token = if opt_token.is_some() {
-        opt_token.unwrap()
-    } else {
-        retrieve_next_token(parser)?
-    };
+    todo!()
+    // let token = if opt_token.is_some() {
+    //     opt_token.unwrap()
+    // } else {
+    //     retrieve_next_token(parser)?
+    // };
 
-    let base_type = match token {
-        PklToken::Identifier(value) => {
-            let next_token = retrieve_next_token(parser)?;
+    // let base_type = match token {
+    //     PklToken::Identifier(value) => {
+    //         let next_token = retrieve_next_token(parser)?;
 
-            match next_token {
-                PklToken::Dot => match retrieve_next_token(parser)? {
-                    PklToken::Identifier(name) => PklType::ImportedClass {
-                        name,
-                        module: value,
-                        generics_params: None,
-                    },
-                    PklToken::GenericTypeAnnotationStart(type_as_str) => {
-                        let (types, end_token) = list_while_not_tokens(
-                            parser,
-                            PklToken::Comma,
-                            &[PklToken::RightAngleBracket(">")],
-                            &parse_type,
-                        )?;
+    //         match next_token {
+    //             PklToken::Dot => match retrieve_next_token(parser)? {
+    //                 PklToken::Identifier(name) => PklType::ImportedClass {
+    //                     name,
+    //                     module: value,
+    //                     generics_params: None,
+    //                 },
+    //                 PklToken::GenericTypeAnnotationStart(type_as_str) => {
+    //                     let (types, end_token) = list_while_not_tokens(
+    //                         parser,
+    //                         PklToken::Comma,
+    //                         &[PklToken::RightAngleBracket(">")],
+    //                         &parse_type,
+    //                     )?;
 
-                        match end_token {
-                            PklToken::RightAngleBracket(_) => PklType::ImportedClass {
-                                name: type_as_str,
-                                module: value,
-                                generics_params: Some(types),
-                            },
-                            _ => unreachable!(),
-                        }
-                    }
-                    _ => return Err(ParsingError::expected_identifier(parser)),
-                },
-                _ => {
-                    let t: PklType = value.into();
-                    return Ok(parse_opt_union(parser, t, Some(next_token))?);
-                }
-            }
-        }
-        PklToken::GenericTypeAnnotationStart(type_as_str) => {
-            parse_generic_type_annotation(parser, type_as_str)?
-        }
-        PklToken::FunctionCall(name) => {
-            let mut base_type: PklType = name.into();
+    //                     match end_token {
+    //                         PklToken::RightAngleBracket(_) => PklType::ImportedClass {
+    //                             name: type_as_str,
+    //                             module: value,
+    //                             generics_params: Some(types),
+    //                         },
+    //                         _ => unreachable!(),
+    //                     }
+    //                 }
+    //                 _ => return Err(ParsingError::expected_identifier(parser)),
+    //             },
+    //             _ => {
+    //                 let t: PklType = value.into();
+    //                 return Ok(parse_opt_union(parser, t, Some(next_token))?);
+    //             }
+    //         }
+    //     }
+    //     PklToken::GenericTypeAnnotationStart(type_as_str) => {
+    //         parse_generic_type_annotation(parser, type_as_str)?
+    //     }
+    //     PklToken::FunctionCall(name) => {
+    //         let mut base_type: PklType = name.into();
 
-            let (expr, next_token) = parse_expr(parser, None)?;
+    //         let (expr, next_token) = parse_expr(parser, None)?;
 
-            match next_token {
-                Some(PklToken::CloseParenthesis) => (),
-                None => return Err(ParsingError::eof(parser, "a closing parenthesis")),
-                _ => return Err(ParsingError::unexpected(parser, "')'".to_owned())),
-            }
+    //         match next_token {
+    //             Some(PklToken::CloseParenthesis) => (),
+    //             None => return Err(ParsingError::eof(parser, "a closing parenthesis")),
+    //             _ => return Err(ParsingError::unexpected(parser, "')'".to_owned())),
+    //         }
 
-            // check which types can receive restriction
-            match base_type {
-                PklType::String {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Int {
-                    ref mut restriction,
-                }
-                | PklType::Float {
-                    ref mut restriction,
-                }
-                | PklType::Collection {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Listing {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::List {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Pair {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Map {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Mapping {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Set {
-                    ref mut restriction,
-                    ..
-                } => {
-                    *restriction = Some(expr);
-                    base_type
-                }
+    //         // check which types can receive restriction
+    //         match base_type {
+    //             PklType::String {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Int {
+    //                 ref mut restriction,
+    //             }
+    //             | PklType::Float {
+    //                 ref mut restriction,
+    //             }
+    //             | PklType::Collection {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Listing {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::List {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Pair {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Map {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Mapping {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Set {
+    //                 ref mut restriction,
+    //                 ..
+    //             } => {
+    //                 *restriction = Some(expr);
+    //                 base_type
+    //             }
 
-                PklType::PotentiallyNull(_) | PklType::UnionDefault(_) => unreachable!(),
+    //             PklType::PotentiallyNull(_) | PklType::UnionDefault(_) => unreachable!(),
 
-                // I intentionnally separated types and did not considere them all as _
-                // It will be clearer in case we need to change sth
-                PklType::Duration
-                | PklType::DataSize
-                | PklType::Null
-                | PklType::Class { .. }
-                | PklType::Union(_)
-                | PklType::Regex
-                | _ => {
-                    return Err((TypeError::no_restrictions_type(
-                        parser,
-                        format!(
-                            "Remove the constraints annotation, try writing `{}`",
-                            base_type
-                        ),
-                    ))
-                    .into())
-                }
-            }
-        }
-        PklToken::StringLiteral(value) => PklType::String {
-            matches: Some(value),
-            restriction: None,
-        },
-        PklToken::PotentiallyNullType(value) => PklType::PotentiallyNull(Box::new(value.into())),
-        PklToken::DefaultUnionType(value) => PklType::UnionDefault(Box::new(value.into())),
-        _ => {
-            return Err(ParsingError::unexpected(
-                parser,
-                "a valid type definition".to_owned(),
-            ))
-        }
-    };
+    //             // I intentionnally separated types and did not considere them all as _
+    //             // It will be clearer in case we need to change sth
+    //             PklType::Duration
+    //             | PklType::DataSize
+    //             | PklType::Null
+    //             | PklType::Class { .. }
+    //             | PklType::Union(_)
+    //             | PklType::Regex
+    //             | _ => {
+    //                 return Err((TypeError::no_restrictions_type(
+    //                     parser,
+    //                     format!(
+    //                         "Remove the constraints annotation, try writing `{}`",
+    //                         base_type
+    //                     ),
+    //                 ))
+    //                 .into())
+    //             }
+    //         }
+    //     }
+    //     PklToken::StringLiteral(value) => PklType::String {
+    //         matches: Some(value),
+    //         restriction: None,
+    //     },
+    //     PklToken::PotentiallyNullType(value) => PklType::PotentiallyNull(Box::new(value.into())),
+    //     PklToken::DefaultUnionType(value) => PklType::UnionDefault(Box::new(value.into())),
+    //     _ => {
+    //         return Err(ParsingError::unexpected(
+    //             parser,
+    //             "a valid type definition".to_owned(),
+    //         ))
+    //     }
+    // };
 
-    parse_opt_union(parser, base_type, None)
+    // parse_opt_union(parser, base_type, None)
 }
 
 fn parse_generic_type_annotation<'source>(
     parser: &mut PklParser<'source>,
     type_as_str: &'source str,
 ) -> ParsingResult<PklType<'source>> {
-    let (types, end_token) = list_while_not_tokens(
-        parser,
-        PklToken::Comma,
-        &[
-            PklToken::RightAngleBracket(">"),
-            PklToken::GenericTypeAnnotationFunctionCall,
-        ],
-        &parse_type,
-    )?;
+    todo!()
+    // let (types, end_token) = list_while_not_tokens(
+    //     parser,
+    //     PklToken::Comma,
+    //     &[
+    //         PklToken::RightAngleBracket(">"),
+    //         PklToken::GenericTypeAnnotationFunctionCall,
+    //     ],
+    //     &parse_type,
+    // )?;
 
-    match end_token {
-        PklToken::RightAngleBracket(_) => {
-            Ok(PklType::generate_from_generics(parser, type_as_str, types)?)
-        }
-        PklToken::GenericTypeAnnotationFunctionCall => {
-            let (expr, next_token) = parse_expr(parser, None)?;
+    // match end_token {
+    //     PklToken::RightAngleBracket(_) => {
+    //         Ok(PklType::generate_from_generics(parser, type_as_str, types)?)
+    //     }
+    //     PklToken::GenericTypeAnnotationFunctionCall => {
+    //         let (expr, next_token) = parse_expr(parser, None)?;
 
-            match next_token {
-                Some(PklToken::CloseParenthesis) => (),
-                None => return Err(ParsingError::eof(parser, "a closing parenthesis")),
-                _ => return Err(ParsingError::unexpected(parser, "')'".to_owned())),
-            }
+    //         match next_token {
+    //             Some(PklToken::CloseParenthesis) => (),
+    //             None => return Err(ParsingError::eof(parser, "a closing parenthesis")),
+    //             _ => return Err(ParsingError::unexpected(parser, "')'".to_owned())),
+    //         }
 
-            let mut base_type: PklType<'_> = type_as_str.into();
+    //         let mut base_type: PklType<'_> = type_as_str.into();
 
-            // allowed types should be checked in generate_from_2_generic and generate_from_1_generic
-            match base_type {
-                PklType::Collection {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Listing {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::List {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Pair {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Map {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Mapping {
-                    ref mut restriction,
-                    ..
-                }
-                | PklType::Set {
-                    ref mut restriction,
-                    ..
-                } => {
-                    *restriction = Some(expr);
-                    Ok(base_type)
-                }
-                _ => Err(TypeError::no_restrictions_type(
-                    parser,
-                    format!(
-                        "Remove the constraints annotation, try writing `{}`",
-                        base_type
-                    ),
-                )
-                .into()),
-            }
-        }
+    //         // allowed types should be checked in generate_from_2_generic and generate_from_1_generic
+    //         match base_type {
+    //             PklType::Collection {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Listing {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::List {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Pair {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Map {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Mapping {
+    //                 ref mut restriction,
+    //                 ..
+    //             }
+    //             | PklType::Set {
+    //                 ref mut restriction,
+    //                 ..
+    //             } => {
+    //                 *restriction = Some(expr);
+    //                 Ok(base_type)
+    //             }
+    //             _ => Err(TypeError::no_restrictions_type(
+    //                 parser,
+    //                 format!(
+    //                     "Remove the constraints annotation, try writing `{}`",
+    //                     base_type
+    //                 ),
+    //             )
+    //             .into()),
+    //         }
+    //     }
 
-        _ => unreachable!(),
-    }
+    //     _ => unreachable!(),
+    // }
 }
 
 impl<'a> From<&'a str> for PklType<'a> {
@@ -395,8 +395,8 @@ impl<'a> PklType<'a> {
                         parser, value,
                     )?));
                 }
-
-                Err(ParsingError::no_default_value(parser, &self.to_string()))
+                todo!()
+                // Err(ParsingError::no_default_value(parser, &self.to_string()))
             }
             PklType::Null => Ok(PklValue::Null),
             PklType::Collection { .. } => Ok(PklValue::List(vec![])),
@@ -422,12 +422,15 @@ impl<'a> PklType<'a> {
                     .collect::<Vec<_>>();
 
                 if result.len() != 1 {
-                    return Err(ParsingError::no_default_value(parser, &self.to_string()));
+                    todo!()
+                    // return Err(ParsingError::no_default_value(parser, &self.to_string()));
                 }
 
                 result[0].default_value(parser)
             }
-            _ => Err(ParsingError::no_default_value(parser, &self.to_string())),
+            _ => todo!(), //  Err(
+                          //     ParsingError::no_default_value(parser, &self.to_string())
+                          // )
         }
     }
 
@@ -439,7 +442,8 @@ impl<'a> PklType<'a> {
         match base_type {
             "Collection" => {
                 if generics.len() != 1 {
-                    return Err(TypeError::expect_generics(parser, 1, base_type));
+                    todo!()
+                    // return Err(TypeError::expect_generics(parser, 1, base_type));
                 }
 
                 Ok(PklType::Collection {
@@ -449,7 +453,8 @@ impl<'a> PklType<'a> {
             }
             "Listing" => {
                 if generics.len() != 1 {
-                    return Err(TypeError::expect_generics(parser, 1, base_type));
+                    todo!()
+                    // return Err(TypeError::expect_generics(parser, 1, base_type));
                 }
 
                 Ok(PklType::Listing {
@@ -459,7 +464,8 @@ impl<'a> PklType<'a> {
             }
             "List" => {
                 if generics.len() != 1 {
-                    return Err(TypeError::expect_generics(parser, 1, base_type));
+                    todo!()
+                    // return Err(TypeError::expect_generics(parser, 1, base_type));
                 }
 
                 Ok(PklType::List {
@@ -469,7 +475,8 @@ impl<'a> PklType<'a> {
             }
             "Set" => {
                 if generics.len() != 1 {
-                    return Err(TypeError::expect_generics(parser, 1, base_type));
+                    todo!()
+                    // return Err(TypeError::expect_generics(parser, 1, base_type));
                 }
 
                 Ok(PklType::Set {
@@ -479,7 +486,8 @@ impl<'a> PklType<'a> {
             }
             "Pair" => {
                 if generics.len() != 2 {
-                    return Err(TypeError::expect_generics(parser, 2, base_type));
+                    todo!()
+                    // return Err(TypeError::expect_generics(parser, 2, base_type));
                 }
 
                 Ok(PklType::Pair {
@@ -490,7 +498,8 @@ impl<'a> PklType<'a> {
             }
             "Map" => {
                 if generics.len() != 2 {
-                    return Err(TypeError::expect_generics(parser, 2, base_type));
+                    todo!()
+                    // return Err(TypeError::expect_generics(parser, 2, base_type));
                 }
 
                 Ok(PklType::Map {
@@ -501,7 +510,8 @@ impl<'a> PklType<'a> {
             }
             "Mapping" => {
                 if generics.len() != 2 {
-                    return Err(TypeError::expect_generics(parser, 2, base_type));
+                    todo!()
+                    // return Err(TypeError::expect_generics(parser, 2, base_type));
                 }
 
                 Ok(PklType::Mapping {
@@ -523,7 +533,7 @@ impl<'a> PklType<'a> {
                         Ok(t)
                     }
 
-                    _ => Err(TypeError::expect_generics(parser, 0, name)),
+                    _ => todo!(), // Err(TypeError::expect_generics(parser, 0, name))
                 }
             }
         }

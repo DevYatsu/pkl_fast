@@ -1,12 +1,10 @@
-use crate::{
-    parser::{utils::parse_string_literal, PklParser},
-    prelude::ParsingResult,
-};
+use crate::parser::utils::string_literal;
 
 use super::Statement;
+use winnow::{ascii::multispace1, PResult, Parser};
 
-pub fn parse_amends<'source>(parser: &mut PklParser<'source>) -> ParsingResult<Statement<'source>> {
-    let value = parse_string_literal(parser)?;
+pub fn amends_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+    let (_, _, value) = ("amends", multispace1, string_literal).parse_next(input)?;
 
     Ok(Statement::Amends(value))
 }

@@ -1,18 +1,5 @@
-use crate::{
-    parser::PklParser,
-    prelude::{ParsingError, ParsingResult, PklToken},
-};
+use winnow::{token::take_while, PResult, Parser};
 
-pub fn parse_identifier<'source>(parser: &mut PklParser<'source>) -> ParsingResult<&'source str> {
-    let token = parser.lexer.next();
-
-    if let Some(Ok(PklToken::Identifier(value))) = token {
-        Ok(value)
-    } else {
-        if token.is_some() {
-            Err(ParsingError::invalid_id(parser))
-        } else {
-            Err(ParsingError::eof(parser, "an identifier"))
-        }
-    }
+pub fn identifier<'source>(input: &mut &'source str) -> PResult<&'source str> {
+    take_while(0.., (('0'..='9'), ('A'..='F'), ('a'..='f'), '_')).parse_next(input)
 }

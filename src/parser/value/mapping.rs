@@ -1,14 +1,10 @@
 use std::fmt::Display;
 
+use winnow::{combinator::todo, PResult};
+
 use crate::{
-    parser::{
-        expression::{
-            basic::parse_basic_expr, complex::parse_complex_expr, parse_expr, Expression,
-        },
-        types::{parse_type, PklType},
-        utils::{assert_token_eq, expect_token, parse_identifier, retrieve_next_token},
-    },
-    prelude::{ParsingError, ParsingResult, PklParser, PklToken},
+    parser::{expression::Expression, types::PklType},
+    prelude::PklToken,
 };
 
 use super::{parse_object, PklValue};
@@ -32,133 +28,135 @@ pub enum MappingField<'a> {
 }
 
 pub fn parse_mapping_field<'source>(
-    lexer: &mut PklParser<'source>,
-    next_token: PklToken<'source>,
-) -> ParsingResult<(MappingField<'source>, Option<PklToken<'source>>)> {
-    match next_token {
-        PklToken::Local => {
-            let name = parse_identifier(lexer)?;
+    input: &mut &'source str,
+) -> PResult<(MappingField<'source>, Option<PklToken<'source>>)> {
+    todo(input)
+    // match next_token {
+    //     PklToken::Local => {
+    //         let name = parse_identifier(lexer)?;
 
-            match retrieve_next_token(lexer)? {
-                PklToken::EqualSign => {
-                    let (value, next) = parse_expr(lexer, None)?;
-                    Ok((
-                        MappingField::LocalVariable {
-                            name,
-                            _type: None,
-                            value,
-                        },
-                        next,
-                    ))
-                }
-                PklToken::Colon => {
-                    let (_type, opt_token) = parse_type(lexer, None)?;
-                    assert_token_eq(lexer, opt_token, PklToken::EqualSign)?;
-                    let (value, next) = parse_expr(lexer, Some(next_token))?;
-                    Ok((
-                        MappingField::LocalVariable {
-                            name,
-                            _type: Some(_type),
-                            value,
-                        },
-                        next,
-                    ))
-                }
-                _ => Err(ParsingError::unexpected(lexer, "'=' or ':'".to_owned())),
-            }
-        }
-        PklToken::Default => {
-            expect_token(lexer, PklToken::OpenBracket)?;
-            let (value, token) = parse_object(lexer, None)?;
+    //         match retrieve_next_token(lexer)? {
+    //             PklToken::EqualSign => {
+    //                 let (value, next) = parse_expr(lexer, None)?;
+    //                 Ok((
+    //                     MappingField::LocalVariable {
+    //                         name,
+    //                         _type: None,
+    //                         value,
+    //                     },
+    //                     next,
+    //                 ))
+    //             }
+    //             PklToken::Colon => {
+    //                 let (_type, opt_token) = parse_type(lexer, None)?;
+    //                 assert_token_eq(lexer, opt_token, PklToken::EqualSign)?;
+    //                 let (value, next) = parse_expr(lexer, Some(next_token))?;
+    //                 Ok((
+    //                     MappingField::LocalVariable {
+    //                         name,
+    //                         _type: Some(_type),
+    //                         value,
+    //                     },
+    //                     next,
+    //                 ))
+    //             }
+    //             _ => Err(ParsingError::unexpected(lexer, "'=' or ':'".to_owned())),
+    //         }
+    //     }
+    //     PklToken::Default => {
+    //         expect_token(lexer, PklToken::OpenBracket)?;
+    //         let (value, token) = parse_object(lexer, None)?;
 
-            Ok((MappingField::DefaultObject(Expression::Value(value)), token))
-        }
-        PklToken::OpenBrace => parse_mapping_variable(lexer),
-        _ => {
-            let (expr, next) = parse_expr(lexer, Some(next_token))?;
-            Ok((MappingField::Expression(expr), next))
-        }
-    }
+    //         Ok((MappingField::DefaultObject(Expression::Value(value)), token))
+    //     }
+    //     PklToken::OpenBrace => parse_mapping_variable(lexer),
+    //     _ => {
+    //         let (expr, next) = parse_expr(lexer, Some(next_token))?;
+    //         Ok((MappingField::Expression(expr), next))
+    //     }
+    // }
 }
 
 // parser called whenever a '[' was found
 pub fn parse_mapping_variable<'source>(
-    lexer: &mut PklParser<'source>,
-) -> ParsingResult<(MappingField<'source>, Option<PklToken<'source>>)> {
-    let (key, next_token) = parse_expr(lexer, None)?;
-    assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
+    input: &mut &'source str,
+) -> PResult<(MappingField<'source>, Option<PklToken<'source>>)> {
+    todo(input)
 
-    match retrieve_next_token(lexer)? {
-        PklToken::OpenBracket => {
-            let (value, token) = parse_object(lexer, None)?;
-            Ok((
-                MappingField::Pair {
-                    value: Expression::Value(value),
-                    key,
-                },
-                token,
-            ))
-        }
-        PklToken::EqualSign => {
-            match retrieve_next_token(lexer)? {
-                PklToken::OpenParenthesis => {
-                    let (expr, opt_token) = parse_basic_expr(lexer, None)?;
+    // let (key, next_token) = parse_expr(lexer, None)?;
+    // assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
 
-                    match opt_token {
-                        Some(PklToken::CloseParenthesis) => match expr {
-                            Expression::ListIndexing { indexed, indexer } => {
-                                if indexed == "this" {
-                                    expect_token(lexer, PklToken::OpenBracket)?;
-                                    let (value, token) = parse_object(lexer, None)?;
+    // match retrieve_next_token(lexer)? {
+    //     PklToken::OpenBracket => {
+    //         let (value, token) = parse_object(lexer, None)?;
+    //         Ok((
+    //             MappingField::Pair {
+    //                 value: Expression::Value(value),
+    //                 key,
+    //             },
+    //             token,
+    //         ))
+    //     }
+    //     PklToken::EqualSign => {
+    //         match retrieve_next_token(lexer)? {
+    //             PklToken::OpenParenthesis => {
+    //                 let (expr, opt_token) = parse_basic_expr(lexer, None)?;
 
-                                    Ok((
-                                        MappingField::AmendingElement {
-                                            index: *indexer,
-                                            value,
-                                        },
-                                        token,
-                                    ))
-                                } else {
-                                    let (expr, next) = parse_complex_expr(
-                                        lexer,
-                                        Expression::Parenthesised(Box::new(
-                                            Expression::ListIndexing { indexed, indexer },
-                                        )),
-                                        None,
-                                    )?;
-                                    Ok((MappingField::Expression(expr), next))
-                                }
-                            }
-                            _ => {
-                                let (expr, next) = parse_complex_expr(
-                                    lexer,
-                                    Expression::Parenthesised(Box::new(expr)),
-                                    None,
-                                )?;
-                                Ok((MappingField::Expression(expr), next))
-                            }
-                        },
+    //                 match opt_token {
+    //                     Some(PklToken::CloseParenthesis) => match expr {
+    //                         Expression::ListIndexing { indexed, indexer } => {
+    //                             if indexed == "this" {
+    //                                 expect_token(lexer, PklToken::OpenBracket)?;
+    //                                 let (value, token) = parse_object(lexer, None)?;
 
-                        Some(_) => {
-                            // first call to parse expr inside parenthesis
-                            let (expr, next) = parse_complex_expr(lexer, expr, opt_token)?;
-                            assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
-                            // second call to parse following expr if there is one
-                            let (expr, next) = parse_complex_expr(lexer, expr, None)?;
+    //                                 Ok((
+    //                                     MappingField::AmendingElement {
+    //                                         index: *indexer,
+    //                                         value,
+    //                                     },
+    //                                     token,
+    //                                 ))
+    //                             } else {
+    //                                 let (expr, next) = parse_complex_expr(
+    //                                     lexer,
+    //                                     Expression::Parenthesised(Box::new(
+    //                                         Expression::ListIndexing { indexed, indexer },
+    //                                     )),
+    //                                     None,
+    //                                 )?;
+    //                                 Ok((MappingField::Expression(expr), next))
+    //                             }
+    //                         }
+    //                         _ => {
+    //                             let (expr, next) = parse_complex_expr(
+    //                                 lexer,
+    //                                 Expression::Parenthesised(Box::new(expr)),
+    //                                 None,
+    //                             )?;
+    //                             Ok((MappingField::Expression(expr), next))
+    //                         }
+    //                     },
 
-                            Ok((MappingField::Expression(expr), next))
-                        }
-                        _ => Err(ParsingError::eof(lexer, "a closing parenthesis")),
-                    }
-                }
-                token => {
-                    let (value, next) = parse_expr(lexer, Some(token))?;
-                    Ok((MappingField::Pair { value, key }, next))
-                }
-            }
-        }
-        _ => Err(ParsingError::unexpected(lexer, "'=' or '{'".to_owned())),
-    }
+    //                     Some(_) => {
+    //                         // first call to parse expr inside parenthesis
+    //                         let (expr, next) = parse_complex_expr(lexer, expr, opt_token)?;
+    //                         assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
+    //                         // second call to parse following expr if there is one
+    //                         let (expr, next) = parse_complex_expr(lexer, expr, None)?;
+
+    //                         Ok((MappingField::Expression(expr), next))
+    //                     }
+    //                     _ => Err(ParsingError::eof(lexer, "a closing parenthesis")),
+    //                 }
+    //             }
+    //             token => {
+    //                 let (value, next) = parse_expr(lexer, Some(token))?;
+    //                 Ok((MappingField::Pair { value, key }, next))
+    //             }
+    //         }
+    //     }
+    //     _ => Err(ParsingError::unexpected(lexer, "'=' or '{'".to_owned())),
+    // }
 }
 
 impl<'a> Display for MappingField<'a> {

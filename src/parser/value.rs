@@ -74,63 +74,63 @@ pub enum PklValue<'a> {
     },
 }
 
-pub fn parse_value<'source>(
-    parser: &mut PklParser<'source>,
-    current_token: PklToken<'source>,
-) -> ParsingResult<PklValue<'source>> {
-    match current_token {
-        PklToken::Boolean(b) => Ok(PklValue::Boolean(b)),
-        PklToken::StringLiteral(value) => Ok(PklValue::String(StringFragment::from_raw_string(
-            parser, value,
-        )?)),
-        PklToken::MultipleLinesString(value) => Ok(PklValue::String(
-            StringFragment::from_raw_string(parser, value)?,
-        )),
-        PklToken::Integer(i) => Ok(PklValue::Int(i)),
-        PklToken::Float(f) => Ok(PklValue::Float(f)),
-        PklToken::Null => Ok(PklValue::Null),
-        PklToken::DataSize => match parser
-            .lexer
-            .slice()
-            .split('.')
-            .collect::<Vec<_>>()
-            .as_slice()
-        {
-            [value, unit] => {
-                let value: DataSizeValue = value.parse::<i64>()?.into();
-                let unit: DataSizeUnit = (*unit).into();
-                Ok(PklValue::DataSize(DataSize { value, unit }))
-            }
-            [value, frac, unit] => {
-                let value: DataSizeValue = format!("{}.{}", value, frac).parse::<f64>()?.into();
-                let unit: DataSizeUnit = (*unit).into();
-                Ok(PklValue::DataSize(DataSize { value, unit }))
-            }
-            _ => unreachable!(),
-        },
-        PklToken::Duration => match parser
-            .lexer
-            .slice()
-            .split('.')
-            .collect::<Vec<_>>()
-            .as_slice()
-        {
-            [value, unit] => {
-                let value: DurationValue = value.parse::<i64>()?.into();
-                let unit: DurationUnit = (*unit).into();
-                Ok(PklValue::Duration(Duration { value, unit }))
-            }
-            [value, frac, unit] => {
-                let value: DurationValue = format!("{}.{}", value, frac).parse::<f64>()?.into();
-                let unit: DurationUnit = (*unit).into();
-                Ok(PklValue::Duration(Duration { value, unit }))
-            }
-            _ => unreachable!(),
-        },
-        PklToken::New => parse_class_instance(parser),
-        _ => Err(ParsingError::expected_expression(parser)),
-    }
-}
+// pub fn parse_value<'source>(
+//     parser: &mut PklParser<'source>,
+//     current_token: PklToken<'source>,
+// ) -> ParsingResult<PklValue<'source>> {
+//     match current_token {
+//         PklToken::Boolean(b) => Ok(PklValue::Boolean(b)),
+//         PklToken::StringLiteral(value) => Ok(PklValue::String(StringFragment::from_raw_string(
+//             parser, value,
+//         )?)),
+//         PklToken::MultipleLinesString(value) => Ok(PklValue::String(
+//             StringFragment::from_raw_string(parser, value)?,
+//         )),
+//         PklToken::Integer(i) => Ok(PklValue::Int(i)),
+//         PklToken::Float(f) => Ok(PklValue::Float(f)),
+//         PklToken::Null => Ok(PklValue::Null),
+//         PklToken::DataSize => match parser
+//             .lexer
+//             .slice()
+//             .split('.')
+//             .collect::<Vec<_>>()
+//             .as_slice()
+//         {
+//             [value, unit] => {
+//                 let value: DataSizeValue = value.parse::<i64>()?.into();
+//                 let unit: DataSizeUnit = (*unit).into();
+//                 Ok(PklValue::DataSize(DataSize { value, unit }))
+//             }
+//             [value, frac, unit] => {
+//                 let value: DataSizeValue = format!("{}.{}", value, frac).parse::<f64>()?.into();
+//                 let unit: DataSizeUnit = (*unit).into();
+//                 Ok(PklValue::DataSize(DataSize { value, unit }))
+//             }
+//             _ => unreachable!(),
+//         },
+//         PklToken::Duration => match parser
+//             .lexer
+//             .slice()
+//             .split('.')
+//             .collect::<Vec<_>>()
+//             .as_slice()
+//         {
+//             [value, unit] => {
+//                 let value: DurationValue = value.parse::<i64>()?.into();
+//                 let unit: DurationUnit = (*unit).into();
+//                 Ok(PklValue::Duration(Duration { value, unit }))
+//             }
+//             [value, frac, unit] => {
+//                 let value: DurationValue = format!("{}.{}", value, frac).parse::<f64>()?.into();
+//                 let unit: DurationUnit = (*unit).into();
+//                 Ok(PklValue::Duration(Duration { value, unit }))
+//             }
+//             _ => unreachable!(),
+//         },
+//         PklToken::New => parse_class_instance(parser),
+//         _ => Err(ParsingError::expected_expression(parser)),
+//     }
+// }
 
 impl<'a> fmt::Display for PklValue<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

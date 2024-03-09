@@ -18,25 +18,25 @@ pub enum TypeError {
 }
 
 impl TypeError {
-    pub fn no_restrictions_type<'source>(parser: &mut PklParser<'source>, advice: String) -> Self {
-        TypeError::CannotGiveRestriction(CannotGiveRestrictionError {
-            at: get_error_location(&mut parser.lexer),
-            src: generate_source("main.pkl", parser.lexer.source()),
-            advice,
-        })
-    }
+    // pub fn no_restrictions_type<'source>(parser: &mut PklParser<'source>, advice: String) -> Self {
+    //     TypeError::CannotGiveRestriction(CannotGiveRestrictionError {
+    //         at: get_error_location(&mut parser.lexer),
+    //         src: generate_source("main.pkl", parser.lexer.source()),
+    //         advice,
+    //     })
+    // }
 
-    pub fn expect_generics<'source>(
-        parser: &mut PklParser<'source>,
-        number: u8,
-        type_name: &'source str,
-    ) -> Self {
-        TypeError::ExpectedGenerics(ExpectedGenericsError {
-            at: get_error_location(&mut parser.lexer),
-            src: generate_source("main.pkl", parser.lexer.source()),
-            advice: format!("Expected `{}` generics for type `{}`!", number, type_name),
-        })
-    }
+    // pub fn expect_generics<'source>(
+    //     parser: &mut PklParser<'source>,
+    //     number: u8,
+    //     type_name: &'source str,
+    // ) -> Self {
+    //     TypeError::ExpectedGenerics(ExpectedGenericsError {
+    //         at: get_error_location(&mut parser.lexer),
+    //         src: generate_source("main.pkl", parser.lexer.source()),
+    //         advice: format!("Expected `{}` generics for type `{}`!", number, type_name),
+    //     })
+    // }
 }
 
 #[derive(Error, Diagnostic, Debug)]

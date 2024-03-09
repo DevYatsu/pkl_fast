@@ -1,21 +1,21 @@
 use miette::Diagnostic;
 use pkl_fast::parser::parse;
-use pkl_fast::{lexer::string::sanitize_code, prelude::lex};
-use std::{env, fs, path::PathBuf, time::Instant};
+use std::{env, fs, path::PathBuf, process::exit, time::Instant};
 use thiserror::Error;
-
-fn main() -> miette::Result<()> {
+use winnow::PResult;
+fn main() -> PResult<()> {
     let args: Vec<String> = env::args().collect();
-    let target_path = get_target_file(&args)?;
-    let pkl_code = fs::read_to_string(&target_path).map_err(|_| ProgramError::InvalidFilePath)?;
-    let (pkl_code, updated_code, strings_vec) = sanitize_code(&pkl_code);
+    let target_path = get_target_file(&args).unwrap();
+    let source_code = fs::read_to_string(&target_path).map_err(|_| {
+        println!("Invalid file path");
+        exit(0)
+    })?;
 
     let start = Instant::now();
 
-    let _file_name = target_path
-        .file_name()
-        .ok_or_else(|| ProgramError::InvalidFilePath)?;
-    let _statements = parse(pkl_code, lex(&updated_code), strings_vec)?;
+    let _file_name = target_path.file_name().unwrap();
+
+    let _statements = parse(&source_code)?;
 
     for s in _statements {
         println!("{:?}", s)

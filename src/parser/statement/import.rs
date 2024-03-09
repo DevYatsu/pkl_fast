@@ -1,9 +1,10 @@
 use std::path::Path;
 
-use crate::{
-    parser::{utils::parse_string_literal, PklParser},
-    prelude::ParsingResult,
-};
+use winnow::{ascii::multispace1, stream::Stream, PResult, Parser};
+
+use crate::parser::utils::string_literal;
+
+use super::Statement;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ImportClause<'a> {
@@ -13,17 +14,38 @@ pub enum ImportClause<'a> {
     Https(&'a str),
 }
 
-pub fn parse_import_value<'source>(parser: &mut PklParser<'source>) -> ParsingResult<&'source str> {
-    let value = parse_string_literal(parser)?;
+pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+    "import".parse_next(input)?;
 
-    Ok(value)
+    let start = input.checkpoint();
+
+    if let Ok((_, _, value)) = ('*', multispace1, import_clause).parse_next(input) {
+        return Ok(Statement::Import {
+            clause: value,
+            imported_as: None,
+            is_globbed: true,
+        });
+    }
+
+    input.reset(&start);
+    let (_, value) = (multispace1, import_clause).parse_next(input)?;
+
+    Ok(Statement::Import {
+        clause: value,
+        imported_as: None,
+        is_globbed: false,
+    })
 }
 
-pub fn import_clause(value: &str) -> ImportClause {
-    match value {
+pub fn import_clause<'source>(input: &mut &'source str) -> PResult<ImportClause<'source>> {
+    let value = string_literal.parse_next(input)?;
+
+    let result = match value {
         value if value.starts_with("https://") => ImportClause::Https(value),
         value if value.starts_with("package://") => ImportClause::Package(value),
         value if value.starts_with("pkl:") => ImportClause::StandardLibrary(value),
         _ => ImportClause::LocalFile(&Path::new(value)),
-    }
+    };
+
+    Ok(result)
 }
