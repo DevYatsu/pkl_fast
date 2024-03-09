@@ -1,8 +1,6 @@
-use logos::{Lexer, Logos};
 use miette::Diagnostic;
-use pkl_fast::lexer::string::sanitize_code;
-use pkl_fast::lexer::PklToken;
 use pkl_fast::parser::parse;
+use pkl_fast::{lexer::string::sanitize_code, prelude::lex};
 use std::{env, fs, path::PathBuf, time::Instant};
 use thiserror::Error;
 
@@ -10,17 +8,14 @@ fn main() -> miette::Result<()> {
     let args: Vec<String> = env::args().collect();
     let target_path = get_target_file(&args)?;
     let pkl_code = fs::read_to_string(&target_path).map_err(|_| ProgramError::InvalidFilePath)?;
-    let (pkl_code, strings_vec) = sanitize_code(&pkl_code);
+    let (pkl_code, updated_code, strings_vec) = sanitize_code(&pkl_code);
 
     let start = Instant::now();
-
-    let lexer: Lexer<PklToken> = PklToken::lexer(&pkl_code);
 
     let _file_name = target_path
         .file_name()
         .ok_or_else(|| ProgramError::InvalidFilePath)?;
-
-    let _statements = parse(lexer, strings_vec)?;
+    let _statements = parse(pkl_code, lex(&updated_code), strings_vec)?;
 
     for s in _statements {
         println!("{:?}", s)

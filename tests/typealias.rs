@@ -1,6 +1,6 @@
 #[test]
 fn typealias() {
-    let code = r#"x: Map<Int, String>(length <= 5) = Map(0, "0")
+    let source = r#"x: Map<Int, String>(length <= 5) = Map(0, "0")
 
 class Bird {
   name: String(length >= 3)   
@@ -34,9 +34,9 @@ typealias Foo = "foo"|"bar"|"baz"
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(code);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
 
     assert_eq!(statements.is_ok(), true)
 }

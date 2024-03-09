@@ -1,6 +1,6 @@
 #[test]
 fn floats_var() {
-    const S: &str = "num1 = .23
+    const source: &str = "num1 = .23
 num2 = 1.23
 num3 = 1.23e2 
 num4 = 1.23e-2
@@ -12,16 +12,16 @@ negativeInfinity = -Infinity";
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(S);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }
 
 #[test]
 fn ints_var() {
-    const S: &str = "num1 = 123
+    const source: &str = "num1 = 123
 num2 = 0x012AFF 
 num3 = 0b00010111 
 num4 = 0o755 
@@ -34,16 +34,16 @@ num4 = 0o0134_6475";
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(S);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }
 
 #[test]
 fn duration_and_datasize() {
-    const S: &str = "duration1 = 5.ns  // nanoseconds (smallest unit)
+    const source: &str = "duration1 = 5.ns  // nanoseconds (smallest unit)
 duration2 = 5.us  // microseconds
 duration3 = 5.ms  // milliseconds
 duration4 = 5.s   // seconds
@@ -71,16 +71,16 @@ datasize7 = 1.6666666666666667.mb
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(S);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }
 
 #[test]
 fn str_var() {
-    let code = r#"ENV_VALUE="TEST_VALUE"
+    let source = r#"ENV_VALUE="TEST_VALUE"
 s="str"
 greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n \(ENV_VALUE + s)"
 
@@ -100,9 +100,9 @@ the species will be remembered. \\
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(code);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
 
     assert_eq!(statements.is_ok(), true);
 }

@@ -3,14 +3,14 @@ use std::path::Path;
 
 #[test]
 fn import_as() {
-    const IMPORT_STR: &str = "import \"test.pkl\" as test";
+    let source: &str = "import \"test.pkl\" as test";
     use pkl_fast::{
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(IMPORT_STR);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
 
     assert_eq!(
         statements.unwrap(),
@@ -23,14 +23,14 @@ fn import_as() {
 
 #[test]
 fn import() {
-    const IMPORT_STR: &str = "import \"test.pkl\"";
+    let source: &str = "import \"test.pkl\"";
     use pkl_fast::{
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(IMPORT_STR);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
 
     assert_eq!(
         statements.unwrap(),

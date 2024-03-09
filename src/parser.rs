@@ -39,10 +39,11 @@ pub type ParsingResult<T> = miette::Result<T, ParsingError>;
 pub type PklLexer<'source> = Lexer<'source, PklToken<'source>>;
 
 pub fn parse<'source>(
+    source: &'source str,
     lexer: PklLexer<'source>,
     strings_vec: Vec<StringKind<'source>>,
 ) -> ParsingResult<Vec<statement::Statement<'source>>> {
-    let mut parser = PklParser::new(lexer, strings_vec);
+    let mut parser = PklParser::new(source, lexer, strings_vec);
 
     parser.parse()?;
     Ok(parser.statements)
@@ -57,18 +58,24 @@ pub fn parse<'source>(
 pub struct PklParser<'source> {
     pub statements: Vec<Statement<'source>>,
     lexer: PklLexer<'source>,
+    initial_source: &'source str,
     new_line_parsed: bool,
     strings_vec: Vec<StringKind<'source>>,
 }
 
 impl<'source> PklParser<'source> {
     /// The function to initialize an instance of PklParser.
-    pub fn new(lexer: PklLexer<'source>, strings_vec: Vec<StringKind<'source>>) -> Self {
+    pub fn new(
+        initial_source: &'source str,
+        lexer: PklLexer<'source>,
+        strings_vec: Vec<StringKind<'source>>,
+    ) -> Self {
         Self {
             statements: vec![],
             new_line_parsed: false,
             lexer,
             strings_vec,
+            initial_source,
         }
     }
 

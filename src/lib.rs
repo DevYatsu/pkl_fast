@@ -25,11 +25,11 @@
 //! };
 //! fn main() -> ParsingResult<()> {
 //!     let source: String = fs::read_to_string("file.pkl").unwrap_or("".to_owned());
-//!     let (pkl_code, strings_vec) = sanitize_code(&source);
-//!     let tokens = lex(&pkl_code);
-//!     let statements = parse(tokens, strings_vec)?;
+//!     let (code, updated_code, str_vec) = sanitize_code(&source);
+//!     let lexer = lex(&updated_code);
+//!     let statements = parse(code, lexer, str_vec);
 //!     // statements now contains a representation of the source string as a Vec<Statements>
-//!
+//!    
 //!     Ok(())
 //! }
 //!

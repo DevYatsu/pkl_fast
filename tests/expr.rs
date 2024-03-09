@@ -27,16 +27,16 @@ res5 = true.implies(false)
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(source);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
 
     assert_eq!(statements.is_ok(), true)
 }
 
 #[test]
 fn other() {
-    let src = r#"name = "Dodo"
+    let source = r#"name = "Dodo"
 greeting = "Hi, \\(name)!" 
 greeting = "Hi,\u{1F60A} \t efefef \refefef! \u{1F60A}"
 "#;
@@ -45,8 +45,8 @@ greeting = "Hi,\u{1F60A} \t efefef \refefef! \u{1F60A}"
         lexer::string::sanitize_code,
         prelude::{lex, parse},
     };
-    let (code, str_vec) = sanitize_code(src);
-    let tokens = lex(&code);
-    let statements = parse(tokens, str_vec);
+    let (code, updated_code, str_vec) = sanitize_code(source);
+    let lexer = lex(&updated_code);
+    let statements = parse(code, lexer, str_vec);
     assert_eq!(statements.is_ok(), true)
 }

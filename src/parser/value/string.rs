@@ -1,8 +1,10 @@
 use crate::{
-    lexer::string::StringKind, parser::{
+    lexer::string::StringKind,
+    parser::{
         errors::locating::{generate_source, set_error_location},
         expression::{parse_expr, Expression},
-    }, prelude::{lex, ParsingError, ParsingResult, PklParser}
+    },
+    prelude::{lex, ParsingError, ParsingResult, PklParser},
 };
 use logos::Logos;
 use std::fmt;
@@ -73,7 +75,11 @@ impl<'source> StringFragment<'source> {
                                                 if open_paren_count == 0 {
                                                     let expr_str = &rest_of_string[..i];
                                                     let result = parse_expr(
-                                                        &mut PklParser::new(lex(expr_str), vec![]),
+                                                        &mut PklParser::new(
+                                                            expr_str,
+                                                            lex(expr_str),
+                                                            vec![],
+                                                        ),
                                                         None,
                                                     );
 
