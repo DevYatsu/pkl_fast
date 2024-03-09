@@ -1,7 +1,10 @@
-use crate::parser::{
-    errors::{lexing::parse_lexing_error, ParsingError},
-    statement::Statement,
-    utils::retrieve_next_token,
+use crate::{
+    lexer::string::StringKind,
+    parser::{
+        errors::{lexing::parse_lexing_error, ParsingError},
+        statement::Statement,
+        utils::retrieve_next_token,
+    },
 };
 
 use crate::lexer::PklToken;
@@ -37,7 +40,7 @@ pub type PklLexer<'source> = Lexer<'source, PklToken<'source>>;
 
 pub fn parse<'source>(
     lexer: PklLexer<'source>,
-    strings_vec: Vec<&'source str>,
+    strings_vec: Vec<StringKind<'source>>,
 ) -> ParsingResult<Vec<statement::Statement<'source>>> {
     let mut parser = PklParser::new(lexer, strings_vec);
 
@@ -55,12 +58,12 @@ pub struct PklParser<'source> {
     pub statements: Vec<Statement<'source>>,
     lexer: PklLexer<'source>,
     new_line_parsed: bool,
-    strings_vec: Vec<&'source str>,
+    strings_vec: Vec<StringKind<'source>>,
 }
 
 impl<'source> PklParser<'source> {
     /// The function to initialize an instance of PklParser.
-    pub fn new(lexer: PklLexer<'source>, strings_vec: Vec<&'source str>) -> Self {
+    pub fn new(lexer: PklLexer<'source>, strings_vec: Vec<StringKind<'source>>) -> Self {
         Self {
             statements: vec![],
             new_line_parsed: false,
