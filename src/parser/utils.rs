@@ -1,10 +1,9 @@
-use std::{collections::HashMap, hash::Hash};
-
-use crate::prelude::{ParsingError, ParsingResult, PklToken};
 mod identifier;
 mod string;
 
 pub fn line_ending_or_end<'source>(input: &mut &'source str) -> PResult<&'source str> {
+    space0.parse_next(input)?;
+
     if input.len() > 0 {
         line_ending.parse_next(input)
     } else {
@@ -502,6 +501,10 @@ pub fn line_ending_or_end<'source>(input: &mut &'source str) -> PResult<&'source
 
 pub use identifier::identifier;
 pub use string::string_literal;
-use winnow::{ascii::line_ending, PResult, Parser};
+use winnow::{
+    ascii::{line_ending, multispace0, space0},
+    combinator::{opt, preceded},
+    PResult, Parser,
+};
 
 use super::PklParser;

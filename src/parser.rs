@@ -2,7 +2,11 @@ use crate::parser::{errors::ParsingError, statement::Statement};
 
 use crate::lexer::PklToken;
 use logos::Lexer;
-use winnow::{ascii::line_ending, stream::Stream, PResult, Parser};
+use winnow::ascii::{alpha1, multispace0, newline};
+use winnow::combinator::{alt, fail, opt, separated, Alt};
+use winnow::stream::AsChar;
+use winnow::token::take_while;
+use winnow::{dispatch, stream::Stream, PResult, Parser};
 
 use self::statement::import::import_statement;
 use self::statement::{amends_statement, extends_statement, ClassType};
@@ -56,31 +60,24 @@ impl<'source> PklParser<'source> {
     /// To access the parsed statements, use the `statements` field.
     pub fn parse(&mut self) -> PResult<()> {
         loop {
+            opt(take_while(0.., |c: char| c.is_newline() || c.is_space()))
+                .parse_next(&mut self.input)?;
+
             if self.input.len() == 0 {
                 break;
             }
 
-            let start = self.input.checkpoint();
+            let statement = dispatch!(alpha1;
+                "amends" => amends_statement,
+                "extends" => extends_statement,
+                "import" => import_statement,
+                _ => fail,
+            )
+            .parse_next(&mut self.input)?;
 
-            if let Ok(output) = amends_statement.parse_next(&mut self.input) {
-                line_ending_or_end.parse_next(&mut self.input)?;
-                self.statements.push(output);
-                continue;
-            }
-
-            self.input.reset(&start);
-            if let Ok(output) = extends_statement.parse_next(&mut self.input) {
-                line_ending_or_end.parse_next(&mut self.input)?;
-                self.statements.push(output);
-                continue;
-            }
-
-            self.input.reset(&start);
-            if let Ok(output) = import_statement.parse_next(&mut self.input) {
-                line_ending_or_end.parse_next(&mut self.input)?;
-                self.statements.push(output);
-                continue;
-            }
+            line_ending_or_end.parse_next(&mut self.input)?;
+            println!("{:?}", self.input);
+            self.statements.push(statement);
         }
 
         Ok(())

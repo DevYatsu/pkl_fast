@@ -15,10 +15,7 @@ pub enum ImportClause<'a> {
 }
 
 pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
-    "import".parse_next(input)?;
-
     let start = input.checkpoint();
-
     if let Ok((_, _, value)) = ('*', multispace1, import_clause).parse_next(input) {
         return Ok(Statement::Import {
             clause: value,
