@@ -1,8 +1,21 @@
 use std::fmt;
 
-use winnow::{combinator::todo, PResult};
+use winnow::{
+    ascii::{multispace0, multispace1, space0},
+    combinator::{alt, cut_err, delimited, opt, preceded, separated},
+    token::one_of,
+    PResult, Parser,
+};
 
-use crate::{parser::expression::Expression, prelude::PklValue};
+use crate::{
+    parser::{
+        expression::{parse_expr, Expression},
+        utils::{expected, identifier},
+    },
+    prelude::PklValue,
+};
+
+use super::parse_value;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ObjectField<'a> {
@@ -44,8 +57,36 @@ pub enum ObjectField<'a> {
 }
 
 /// Function called to parse an object, we assume that '{' was already found
-pub fn parse_object<'source>(input: &mut &'source str) -> PResult<(PklValue<'source>)> {
-    todo(input)
+pub fn parse_object<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+    // '{' already parsed
+
+    let values = parse_object_values.parse_next(input)?;        
+    multispace0.parse_next(input)?;
+
+    cut_err('}')
+        .context(expected("closing bracket"))
+        .parse_next(input)?;
+
+    if opt(preceded(multispace0, '{')).parse_next(input)?.is_some() {
+        let chained_body = parse_object_values.map(|v| Some(v)).parse_next(input)?;
+
+        cut_err('}')
+            .context(expected("closing bracket"))
+            .parse_next(input)?;
+
+        return Ok(PklValue::Object {
+            values,
+            amended_by: None,
+            chained_body,
+        });
+    }
+
+    Ok(PklValue::Object {
+        values,
+        amended_by: None,
+        chained_body: None,
+    })
+
     // let values = parse_object_values(parser)?;
 
     // match retrieve_opt_next_token(parser)? {
@@ -81,17 +122,23 @@ pub fn parse_object<'source>(input: &mut &'source str) -> PResult<(PklValue<'sou
 pub fn parse_object_values<'source>(
     input: &mut &'source str,
 ) -> PResult<Vec<ObjectField<'source>>> {
-    todo(input)
-    // list_while_not_token3(
-    //     parser,
-    //     &[PklToken::NewLine, PklToken::SemiColon],
-    //     PklToken::CloseBracket,
-    //     &parse_block_field,
-    // )
+    separated(
+        0..,
+        parse_block_field,
+        opt(delimited(space0, one_of([';', '\n']), space0)),
+    )
+    .parse_next(input)
 }
 
-pub fn parse_block_field<'source>(input: &mut &'source str) -> PResult<(ObjectField<'source>)> {
-    todo(input)
+fn parse_block_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'source>> {
+    alt((
+        variable_field,
+        default_field,
+        when_generator_field,
+        for_generator_field,
+        spread_syntax_field,
+    ))
+    .parse_next(input)
 
     // match token {
     //     PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
@@ -268,6 +315,143 @@ pub fn parse_block_field<'source>(input: &mut &'source str) -> PResult<(ObjectFi
     //         Ok((ObjectField::Expression(expr), next))
     //     }
     // }
+}
+
+fn variable_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'source>> {
+    let name = identifier(input)?;
+    multispace0.parse_next(input)?;
+
+    let (_, _, value) = alt((
+        ('=', multispace0, parse_value),
+        ('{', multispace0, parse_object),
+    ))
+    .parse_next(input)?;
+
+    Ok(ObjectField::Variable {
+        name,
+        value: Expression::Value(value),
+    })
+}
+
+fn default_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'source>> {
+    "default".parse_next(input)?;
+    let values = parse_object_values(input)?;
+
+    Ok(ObjectField::DefaultObject(values))
+}
+
+/// covers `Spread` and `NullableSpread`
+fn spread_syntax_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'source>> {
+    "...".parse_next(input)?;
+
+    alt((
+        ('?', identifier).map(|(_, id)| ObjectField::NullableSpread(id)),
+        (identifier.map(|id| ObjectField::NullableSpread(id))),
+    ))
+    .parse_next(input)
+}
+
+fn when_generator_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'source>> {
+    "when".parse_next(input)?;
+    multispace0.parse_next(input)?;
+    cut_err('(')
+        .context(expected("opening parenthesis"))
+        .parse_next(input)?;
+
+    let condition = parse_expr(input)?;
+
+    cut_err(')')
+        .context(expected("closing parenthesis"))
+        .parse_next(input)?;
+    multispace0.parse_next(input)?;
+    cut_err('{')
+        .context(expected("opening bracket"))
+        .parse_next(input)?;
+
+    let members = parse_object_values(input)?;
+    cut_err('}')
+        .context(expected("closing bracket"))
+        .parse_next(input)?;
+
+    let _else = opt(preceded(multispace0, when_generator_else_branch)).parse_next(input)?;
+
+    Ok(ObjectField::WhenGenerator {
+        condition,
+        members,
+        _else,
+    })
+}
+fn when_generator_else_branch<'source>(
+    input: &mut &'source str,
+) -> PResult<Vec<ObjectField<'source>>> {
+    "else".parse_next(input)?;
+    multispace0.parse_next(input)?;
+    cut_err('{')
+        .context(expected("opening bracket"))
+        .parse_next(input)?;
+    let members = parse_object_values(input)?;
+    cut_err('}')
+        .context(expected("closing bracket"))
+        .parse_next(input)?;
+
+    Ok(members)
+}
+
+fn for_generator_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'source>> {
+    "for".parse_next(input)?;
+    multispace0.parse_next(input)?;
+    cut_err('(')
+        .context(expected("opening parenthesis"))
+        .parse_next(input)?;
+    multispace0.parse_next(input)?;
+
+    let (key, value, iterable) = for_generator_iterables(input)?;
+
+    cut_err(')')
+        .context(expected("closing parenthesis"))
+        .parse_next(input)?;
+    multispace0.parse_next(input)?;
+    cut_err('{')
+        .context(expected("opening bracket"))
+        .parse_next(input)?;
+
+    let members = parse_object_values(input)?;
+    cut_err('}')
+        .context(expected("closing bracket"))
+        .parse_next(input)?;
+
+    let _else = opt(preceded(multispace0, when_generator_else_branch)).parse_next(input)?;
+
+    Ok(ObjectField::ForGenerator {
+        key,
+        value,
+        iterable,
+        members,
+    })
+}
+
+fn for_generator_iterables<'source>(
+    input: &mut &'source str,
+) -> PResult<(Option<&'source str>, &'source str, Expression<'source>)> {
+    let first_id = identifier(input)?;
+    let second_id = opt(preceded(
+        multispace0,
+        preceded(',', preceded(multispace0, identifier)),
+    ))
+    .parse_next(input)?;
+
+    multispace1.parse_next(input)?;
+    cut_err("in").context(expected("in")).parse_next(input)?;
+    multispace1.parse_next(input)?;
+
+    let iterable = parse_expr(input)?;
+
+    // return (key, value, iterable) yet if Some(second_id), second_id is value otherwise it ain't
+    if second_id.is_some() {
+        Ok((Some(first_id), second_id.unwrap(), iterable))
+    } else {
+        Ok((second_id, first_id, iterable))
+    }
 }
 
 impl<'a> fmt::Display for ObjectField<'a> {

@@ -1,4 +1,5 @@
 use winnow::{
+    combinator::{alt, preceded, terminated},
     token::{one_of, take_while},
     PResult, Parser,
 };
@@ -12,10 +13,16 @@ pub fn identifier<'source>(input: &mut &'source str) -> PResult<&'source str> {
 }
 
 pub fn recognize_identifier<'source>(input: &mut &'source str) -> PResult<&'source str> {
-    (
-        one_of(('_', 'A'..='Z', 'a'..='z')),
-        take_while(0.., ('0'..='9', 'A'..='Z', 'a'..='z', '_')),
-    )
-        .recognize()
-        .parse_next(input)
+    alt((
+        (
+            one_of(('_', 'A'..='Z', 'a'..='z')),
+            take_while(0.., ('0'..='9', 'A'..='Z', 'a'..='z', '_')),
+        ),
+        (
+            preceded('`', one_of(('_', 'A'..='Z', 'a'..='z'))),
+            terminated(take_while(0.., ('0'..='9', 'A'..='Z', 'a'..='z', '_')), '`'),
+        ),
+    ))
+    .recognize()
+    .parse_next(input)
 }

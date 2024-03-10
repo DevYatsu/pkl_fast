@@ -1,14 +1,15 @@
 use winnow::{
     ascii::{multispace0, multispace1},
-    combinator::{opt, preceded, terminated},
+    combinator::{alt, cut_err, opt, preceded, terminated},
+    token::one_of,
     PResult, Parser,
 };
 
 use crate::parser::{
     expression::Expression,
     types::{parse_type, PklType},
-    utils::identifier,
-    value::parse_value,
+    utils::{expected, identifier},
+    value::{parse_object, parse_value},
 };
 
 use super::Statement;
@@ -42,11 +43,12 @@ pub fn var_statement<'source>(input: &mut &'source str) -> PResult<Statement<'so
     }
 
     multispace0.parse_next(input)?;
-    '='.parse_next(input)?;
-    multispace0.parse_next(input)?;
 
-    let value = parse_value.parse_next(input)?;
-
+    let (_, _, value) = alt((
+        ('=', multispace0, parse_value),
+        ('{', multispace0, parse_object),
+    ))
+    .parse_next(input)?;
     Ok(Statement::VariableDeclaration {
         name,
         optional_type,
@@ -56,14 +58,19 @@ pub fn var_statement<'source>(input: &mut &'source str) -> PResult<Statement<'so
 }
 
 pub fn is_local<'source>(input: &mut &'source str) -> PResult<bool> {
-    opt(terminated("local", multispace1))
-        .map(|opt| opt.is_some())
-        .parse_next(input)
+    opt(terminated(
+        "local",
+        cut_err(multispace1).context(expected("space")),
+    ))
+    .map(|opt| opt.is_some())
+    .parse_next(input)
 }
 
 pub fn parse_var_type<'source>(input: &mut &'source str) -> PResult<PklType<'source>> {
     ':'.parse_next(input)?;
     multispace0(input)?;
 
-    parse_type.parse_next(input)
+    cut_err(parse_type)
+        .context(expected("type"))
+        .parse_next(input)
 }
