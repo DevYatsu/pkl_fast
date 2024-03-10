@@ -6,7 +6,7 @@ use self::int::int;
 use self::listing::ListingField;
 use self::mapping::MappingField;
 use self::object::ObjectField;
-use self::string::{string_value, StringFragment};
+use self::string::{multiline_string_value, string_value, StringFragment};
 use super::expression::Expression;
 use std::fmt;
 
@@ -78,10 +78,11 @@ pub enum PklValue<'a> {
 
 pub fn parse_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
     alt((
-        string_value,
         "true".map(|_| PklValue::Boolean(true)),
         "false".map(|_| PklValue::Boolean(false)),
         "null".map(|_| PklValue::Null),
+        multiline_string_value, // need to return an error whenever the end """ is not preceded by a newline
+        string_value,
         float,
         int,
     ))

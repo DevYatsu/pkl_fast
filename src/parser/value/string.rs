@@ -8,8 +8,8 @@ use crate::{
 use logos::Logos;
 use std::fmt;
 use winnow::{
-    ascii::hex_digit1,
-    combinator::{alt, cut_err, delimited, repeat_till},
+    ascii::{hex_digit1, newline, space0},
+    combinator::{alt, cut_err, delimited, opt, preceded, repeat_till},
     token::{one_of, take_while},
     PResult, Parser,
 };
@@ -50,15 +50,39 @@ pub enum StringLexer<'source> {
 pub fn string_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
     '"'.parse_next(input)?;
 
+    repeat_till(
+        0..,
+        alt((
+            escape_sequence,
+            take_while(0.., |c: char| '"' != c && '\\' != c)
+                .map(StringFragment::RawText)
+                .context(expected("string content")),
+        )),
+        '"',
+    )
+    .map(|(vec, _)| PklValue::String(vec))
+    .parse_next(input)
+}
+
+pub fn multiline_string_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+    r#"""""#.parse_next(input)?;
+    // content starts on the first line after '"""' token
+    space0.parse_next(input)?;
+    cut_err(newline)
+        .context(expected("new line after multiline string start"))
+        .parse_next(input)?;
 
     cut_err(repeat_till(
         0..,
         alt((
+            newline.map(StringFragment::Escaped),
             escape_sequence,
-            take_while(0.., |c:char| '"' != c && '\\' != c).map(StringFragment::RawText),
+            take_while(1.., |c: char| '"' != c && '\\' != c && '\n' != c)
+                .map(StringFragment::RawText),
         )),
-        '"',
-    )).context(expected("string content"))
+        (newline, r#"""""#),
+    ))
+    .context(expected("valid multiline string"))
     .map(|(vec, _)| PklValue::String(vec))
     .parse_next(input)
 }
