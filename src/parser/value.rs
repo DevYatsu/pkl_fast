@@ -6,7 +6,7 @@ use self::int::int;
 use self::listing::ListingField;
 use self::mapping::MappingField;
 use self::object::ObjectField;
-use self::string::StringFragment;
+use self::string::{string_value, StringFragment};
 use super::expression::Expression;
 use std::fmt;
 
@@ -77,7 +77,15 @@ pub enum PklValue<'a> {
 }
 
 pub fn parse_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
-    alt((float, int)).parse_next(input)
+    alt((
+        string_value,
+        "true".map(|_| PklValue::Boolean(true)),
+        "false".map(|_| PklValue::Boolean(false)),
+        "null".map(|_| PklValue::Null),
+        float,
+        int,
+    ))
+    .parse_next(input)
 }
 
 // pub fn parse_value<'source>(

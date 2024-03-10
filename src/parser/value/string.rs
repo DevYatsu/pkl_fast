@@ -1,9 +1,20 @@
 use crate::{
-    parser::expression::Expression,
+    parser::{
+        expression::{parse_expr, Expression},
+        utils::expected,
+    },
     prelude::{ParsingResult, PklParser},
 };
 use logos::Logos;
 use std::fmt;
+use winnow::{
+    ascii::hex_digit1,
+    combinator::{alt, cut_err, delimited, repeat_till},
+    token::{one_of, take_while},
+    PResult, Parser,
+};
+
+use super::PklValue;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StringKind<'source> {
@@ -34,6 +45,55 @@ pub enum StringLexer<'source> {
 
     #[regex(r"\\u\{[0-9A-Fa-f]{1,6}\}", |lex| {let val=lex.slice();&val[3..val.len()-1]})]
     UnicodeEscape(&'source str),
+}
+
+pub fn string_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+    '"'.parse_next(input)?;
+
+
+    cut_err(repeat_till(
+        0..,
+        alt((
+            escape_sequence,
+            take_while(0.., |c:char| '"' != c && '\\' != c).map(StringFragment::RawText),
+        )),
+        '"',
+    )).context(expected("string content"))
+    .map(|(vec, _)| PklValue::String(vec))
+    .parse_next(input)
+}
+
+fn escape_sequence<'source>(input: &mut &'source str) -> PResult<StringFragment<'source>> {
+    "\\".parse_next(input)?;
+
+    cut_err(alt((
+        delimited(
+            '(',
+            parse_expr,
+            cut_err(')').context(expected("closing parenthesis")),
+        )
+        .map(StringFragment::Interpolated),
+        (
+            'u',
+            delimited(
+                cut_err('{').context(expected("opening bracket")),
+                unicode,
+                cut_err('}').context(expected("closing bracket")),
+            ),
+        )
+            .map(|(_, value)| StringFragment::UnicodeEscape(value)),
+        cut_err(one_of(['n', 't', '\\', 'r', '"']))
+            .context(expected("valid escape char"))
+            .map(StringFragment::Escaped),
+    )))
+    .parse_next(input)
+}
+
+fn unicode<'source>(input: &mut &'source str) -> PResult<&'source str> {
+    cut_err(hex_digit1)
+        .verify(|s: &str| 3 <= s.len() && s.len() <= 6)
+        .context(expected("valid hex"))
+        .parse_next(input)
 }
 
 impl<'source> StringFragment<'source> {
