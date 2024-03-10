@@ -60,8 +60,7 @@ pub enum ObjectField<'a> {
 pub fn parse_object<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
     // '{' already parsed
 
-    let values = parse_object_values.parse_next(input)?;        
-    multispace0.parse_next(input)?;
+    let values = parse_object_values.parse_next(input)?;
 
     cut_err('}')
         .context(expected("closing bracket"))
@@ -122,12 +121,16 @@ pub fn parse_object<'source>(input: &mut &'source str) -> PResult<PklValue<'sour
 pub fn parse_object_values<'source>(
     input: &mut &'source str,
 ) -> PResult<Vec<ObjectField<'source>>> {
-    separated(
+    let values = separated(
         0..,
         parse_block_field,
-        opt(delimited(space0, one_of([';', '\n']), space0)),
+        delimited(space0, one_of([';', '\n']), multispace0),
     )
-    .parse_next(input)
+    .parse_next(input)?;
+
+    multispace0.parse_next(input)?;
+
+    Ok(values)
 }
 
 fn parse_block_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'source>> {
@@ -137,6 +140,9 @@ fn parse_block_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'
         when_generator_field,
         for_generator_field,
         spread_syntax_field,
+        // still need to impl AmendedValue and MemberPredicate
+
+        parse_expr.map(|expr| ObjectField::Expression(expr))
     ))
     .parse_next(input)
 
@@ -346,7 +352,7 @@ fn spread_syntax_field<'source>(input: &mut &'source str) -> PResult<ObjectField
 
     alt((
         ('?', identifier).map(|(_, id)| ObjectField::NullableSpread(id)),
-        (identifier.map(|id| ObjectField::NullableSpread(id))),
+        (identifier.map(|id| ObjectField::Spread(id))),
     ))
     .parse_next(input)
 }
