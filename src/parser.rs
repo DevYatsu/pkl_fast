@@ -1,3 +1,4 @@
+use crate::parser::statement::comment::{doc_comment, line_comment, multiline_comment};
 use crate::parser::statement::{info_statement, module_statement, open_module_statement};
 use crate::parser::{errors::ParsingError, statement::Statement};
 
@@ -67,18 +68,20 @@ impl<'source> PklParser<'source> {
                 continue;
             }
 
-            let statement = dispatch!(alt((alphanumeric1, "@"));
+            let statement = dispatch!(alt((alphanumeric1, "@", "///","//", "/*"));
                 "amends" => amends_statement,
                 "extends" => extends_statement,
                 "import" => import_statement,
                 "module" => module_statement,
                 "@" => info_statement,// need to support values not only string literals
                 "open" => open_module_statement, // need to add open class
+                "///" => doc_comment,
+                "//" => line_comment,
+                "/*" => multiline_comment,
                 _ => fail,
             )
             .parse_next(&mut self.input)?;
 
-            line_ending_or_end.parse_next(&mut self.input)?;
             self.statements.push(statement);
         }
 

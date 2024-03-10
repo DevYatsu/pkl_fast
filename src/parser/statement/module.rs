@@ -6,7 +6,7 @@ use winnow::{
     PResult, Parser,
 };
 
-use crate::parser::utils::{expected, identifier};
+use crate::parser::utils::{expected, identifier, line_ending_or_end};
 
 use super::Statement;
 pub fn module_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
@@ -17,6 +17,7 @@ pub fn module_statement<'source>(input: &mut &'source str) -> PResult<Statement<
     let value = cut_err(module_segment)
         .context(expected("module name"))
         .parse_next(input)?;
+    line_ending_or_end.parse_next(input)?;
 
     Ok(Statement::Module { value, open: false })
 }

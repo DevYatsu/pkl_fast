@@ -1,5 +1,6 @@
 mod amends;
 mod class;
+pub mod comment;
 mod extends;
 pub mod import;
 mod info;
@@ -44,6 +45,15 @@ pub enum Statement<'a> {
         name: &'a str,
         infos: Vec<InfoField<'a>>,
     },
+
+    /// A documentation comment with the same syntax as rust: `///`.
+    DocComment {
+        lines: Vec<&'a str>,
+    },
+    /// A line comment with the same syntax as rust: `//`.
+    LineComment(&'a str),
+    /// A multiline comment with the same syntax as rust: `/* ... */`.
+    MultiLineComment(&'a str),
 
     Expression(Expression<'a>),
 }

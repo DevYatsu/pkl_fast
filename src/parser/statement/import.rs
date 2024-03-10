@@ -6,7 +6,7 @@ use winnow::{
     PResult, Parser,
 };
 
-use crate::parser::utils::{expected, identifier, string_literal};
+use crate::parser::utils::{expected, identifier, line_ending_or_end, string_literal};
 
 use super::Statement;
 
@@ -27,6 +27,7 @@ pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<
     )
     .parse_next(input)?;
     let imported_as = opt(parse_as).parse_next(input)?;
+    line_ending_or_end.parse_next(input)?;
 
     Ok(Statement::Import {
         clause: value,
