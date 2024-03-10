@@ -89,34 +89,6 @@ impl<'source> PklParser<'source> {
         Ok(())
     }
 
-    // fn parse_module(&mut self) -> ParsingResult<Statement<'source>> {
-    //     self.parse_mod(false)
-    // }
-    // fn parse_open_module(&mut self) -> ParsingResult<Statement<'source>> {
-    //     self.parse_mod(true)
-    // }
-
-    // fn parse_mod(&mut self, open: bool) -> ParsingResult<Statement<'source>> {
-    //     let (value, next_token) = parse_expr(self, None)?;
-
-    //     match next_token {
-    //         Some(PklToken::NewLine)
-    //         | Some(PklToken::LineComment)
-    //         | Some(PklToken::DocComment)
-    //         | None => {
-    //             self.new_line_parsed = true;
-    //         }
-    //         _ => {
-    //             return Err(ParsingError::unexpected(
-    //                 self,
-    //                 "'as <identifier>' or line end".to_owned(),
-    //             ))
-    //         }
-    //     };
-
-    //     Ok(Statement::Module { value, open })
-    // }
-
     fn parse_basic_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
         self.parse_class_declaration(ClassType::None)
     }
