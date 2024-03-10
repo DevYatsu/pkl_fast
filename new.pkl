@@ -44,5 +44,7 @@ local s = " str \t efef \u{AF222}"
 
 local sss = """ 
 multiline string let's goooo
-i like it, to be honest 
+i like it, to be honest
+here is a newline ->
+
 """
