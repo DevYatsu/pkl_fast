@@ -142,7 +142,7 @@ fn parse_block_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'
         spread_syntax_field,
         // still need to impl AmendedValue and MemberPredicate
 
-        parse_expr.map(|expr| ObjectField::Expression(expr))
+        // parse_expr.map(|expr| ObjectField::Expression(expr))
     ))
     .parse_next(input)
 
