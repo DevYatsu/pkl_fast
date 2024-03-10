@@ -2,10 +2,7 @@ use std::fmt::Display;
 
 use winnow::{combinator::todo, PResult};
 
-use crate::{
-    parser::expression::Expression,
-    prelude::{PklToken, PklValue},
-};
+use crate::{parser::expression::Expression, prelude::PklValue};
 
 use super::mapping::MappingField;
 
@@ -72,9 +69,7 @@ pub fn parse_class_instance<'source>(input: &mut &'source str) -> PResult<PklVal
     // Ok(PklValue::ClassInstance { name, arguments })
 }
 
-fn parse_class_instance_field<'source>(
-    input: &mut &'source str,
-) -> PResult<(ClassField<'source>, Option<PklToken<'source>>)> {
+fn parse_class_instance_field<'source>(input: &mut &'source str) -> PResult<(ClassField<'source>)> {
     todo(input)
     // match token {
     //     PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {

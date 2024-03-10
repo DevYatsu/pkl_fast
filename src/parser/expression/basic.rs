@@ -1,15 +1,11 @@
-use super::{fn_call::parse_fn_call_arguments, parse_expr, Expression};
-use crate::{
-    parser::{types::parse_type, PklParser},
-    prelude::PklToken,
-};
+use super::Expression;
+use crate::parser::PklParser;
 
-use super::super::{errors::ParsingError, value::PklValue, ParsingResult};
+use super::super::ParsingResult;
 
 pub fn parse_basic_expr<'source>(
     parser: &mut PklParser<'source>,
-    opt_token: Option<PklToken<'source>>,
-) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
+) -> ParsingResult<Expression<'source>> {
     todo!()
 
     // let token = if opt_token.is_some() {
@@ -127,7 +123,7 @@ pub fn parse_basic_expr<'source>(
 fn parse_opt_member_expr<'source>(
     parser: &mut PklParser<'source>,
     expr: Expression<'source>,
-) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
+) -> ParsingResult<(Expression<'source>)> {
     todo!()
     // let next_token = retrieve_opt_next_token(parser)?;
 

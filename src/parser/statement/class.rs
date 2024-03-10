@@ -1,9 +1,6 @@
 use winnow::{combinator::todo, PResult};
 
-use crate::{
-    parser::types::PklType,
-    prelude::{PklToken, PklValue},
-};
+use crate::{parser::types::PklType, prelude::PklValue};
 
 #[derive(Debug, PartialEq, Clone)]
 /// A struct representing the type of a `ClassDeclaration`.
@@ -39,10 +36,7 @@ pub enum ClassArgument<'a> {
 
 pub fn parse_class_field<'source>(
     input: &mut &'source str,
-) -> PResult<(
-    (&'source str, ClassArgument<'source>),
-    Option<PklToken<'source>>,
-)> {
+) -> PResult<((&'source str, ClassArgument<'source>),)> {
     todo(input)
     // match token {
     //     PklToken::Hidden => {
@@ -148,9 +142,7 @@ pub fn parse_class_field<'source>(
     // }
 }
 
-fn parse_fn_arg<'a>(
-    input: &mut &'a str,
-) -> PResult<((&'a str, PklType<'a>), Option<PklToken<'a>>)> {
+fn parse_fn_arg<'a>(input: &mut &'a str) -> PResult<((&'a str, PklType<'a>))> {
     todo(input)
     // let name = if opt_token.is_some() {
     //     match opt_token.unwrap() {

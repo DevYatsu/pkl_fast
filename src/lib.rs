@@ -43,20 +43,13 @@
 //! It also includes code taken from [`miette`](https://github.com/zkat/miette),
 //! and some from [`thiserror`](https://github.com/dtolnay/thiserror) and [`logos`](https://github.com/maciejhirsz/logos), which are Apache licensed.
 
-pub mod lexer;
 pub mod parser;
 pub use logos::Logos;
 
 pub mod prelude {
-    pub use crate::lexer::PklToken;
-    pub use crate::parser::PklLexer;
     pub use crate::parser::{
         errors::ParsingError, parse, statement::Statement, value::PklValue, ParsingResult,
         PklParser,
     };
     pub use logos::Logos;
-
-    pub fn lex<'source>(source: &'source str) -> PklLexer<'source> {
-        PklToken::lexer(source)
-    }
 }

@@ -1,15 +1,14 @@
+use crate::parser::statement::{info_statement, module_statement, open_module_statement};
 use crate::parser::{errors::ParsingError, statement::Statement};
 
-use crate::lexer::PklToken;
-use logos::Lexer;
-use winnow::ascii::{alpha1, multispace0, newline};
-use winnow::combinator::{alt, fail, opt, separated, Alt};
+use winnow::ascii::alphanumeric1;
+use winnow::combinator::{alt, fail, opt};
 use winnow::stream::AsChar;
 use winnow::token::take_while;
-use winnow::{dispatch, stream::Stream, PResult, Parser};
+use winnow::{dispatch, PResult, Parser};
 
 use self::statement::import::import_statement;
-use self::statement::{amends_statement, extends_statement, ClassType};
+use self::statement::{amends_statement, extends_statement, var_statement, ClassType};
 use self::utils::line_ending_or_end;
 
 pub mod errors;
@@ -24,9 +23,6 @@ mod utils;
 pub mod value;
 
 pub type ParsingResult<T> = miette::Result<T, ParsingError>;
-pub type PklLexer<'source> = Lexer<'source, PklToken<'source>>;
-
-pub type Input<'source> = &'source mut &'source str;
 
 pub fn parse<'source>(source: &'source str) -> PResult<Vec<statement::Statement<'source>>> {
     let mut parser = PklParser::new(source);
@@ -67,10 +63,21 @@ impl<'source> PklParser<'source> {
                 break;
             }
 
-            let statement = dispatch!(alpha1;
+            let opt_variable_statement = opt(var_statement).parse_next(&mut self.input)?;
+
+            if let Some(s) = opt_variable_statement {
+                // line ending is in the parser directly as there is no need for one when the var is an object
+                self.statements.push(s);
+                continue;
+            }
+
+            let statement = dispatch!(alt((alphanumeric1, "@"));
                 "amends" => amends_statement,
                 "extends" => extends_statement,
                 "import" => import_statement,
+                "module" => module_statement,
+                "@" => info_statement,// need to support values not only string literals
+                "open" => open_module_statement, // need to add open class
                 _ => fail,
             )
             .parse_next(&mut self.input)?;
@@ -296,12 +303,4 @@ impl<'source> PklParser<'source> {
         //     generics_params,
         // })
     }
-
-    // fn parse_module_info(&mut self) -> ParsingResult<Statement<'source>> {
-    //     statement::parse_module_info(self)
-    // }
-
-    // fn parse_deprecated(&mut self) -> ParsingResult<Statement<'source>> {
-    //     statement::parse_deprecated(self)
-    // }
 }

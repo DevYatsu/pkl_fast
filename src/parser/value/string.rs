@@ -1,13 +1,20 @@
 use crate::{
-    lexer::string::StringKind,
-    parser::{
-        errors::locating::{generate_source, set_error_location},
-        expression::{parse_expr, Expression},
-    },
-    prelude::{lex, ParsingError, ParsingResult, PklParser},
+    parser::expression::Expression,
+    prelude::{ParsingResult, PklParser},
 };
 use logos::Logos;
 use std::fmt;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum StringKind<'source> {
+    Classic(&'source str),
+    MultiLine(&'source str),
+    Delimited {
+        start_delimiter: &'source str,
+        end_delimiter: &'source str,
+        value: &'source str,
+    },
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum StringFragment<'source> {

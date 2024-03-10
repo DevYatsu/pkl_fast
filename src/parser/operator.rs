@@ -1,5 +1,4 @@
 use super::{expression::Expression, ParsingResult, PklParser};
-use crate::prelude::PklToken;
 use std::fmt;
 
 mod arithmetic;
@@ -32,7 +31,7 @@ pub fn parse_operation<'source>(
     parser: &mut PklParser<'source>,
     expr: Expression<'source>,
     operator: &'source str,
-) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
+) -> ParsingResult<Expression<'source>> {
     todo!()
     // let mut output_queue = Vec::new();
     // let mut operator_stack: Vec<Operator> = Vec::new();
@@ -104,7 +103,7 @@ pub fn parse_operation<'source>(
 fn parse_expr_following_op<'source>(
     parser: &mut PklParser<'source>,
     op: &Operator,
-) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
+) -> ParsingResult<Expression<'source>> {
     todo!()
     //     match op {
     //         Operator::TypeCast | Operator::TypeTest => {

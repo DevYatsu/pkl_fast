@@ -2,10 +2,7 @@ use std::fmt::Display;
 
 use winnow::{combinator::todo, PResult};
 
-use crate::{
-    parser::{expression::Expression, types::PklType},
-    prelude::PklToken,
-};
+use crate::parser::{expression::Expression, types::PklType};
 
 use super::PklValue;
 #[derive(Debug, PartialEq, Clone)]
@@ -23,9 +20,7 @@ pub enum ListingField<'a> {
     },
 }
 
-pub fn parse_listing_field<'source>(
-    input: &mut &'source str,
-) -> PResult<(ListingField<'source>, Option<PklToken<'source>>)> {
+pub fn parse_listing_field<'source>(input: &mut &'source str) -> PResult<(ListingField<'source>)> {
     todo(input)
 
     // match next_token {

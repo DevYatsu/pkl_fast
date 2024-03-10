@@ -505,10 +505,7 @@ pub fn expected(what: &'static str) -> StrContext {
 pub use identifier::identifier;
 pub use string::string_literal;
 use winnow::{
-    ascii::{line_ending, multispace0, space0},
-    combinator::{opt, preceded},
+    ascii::{line_ending, space0},
     error::{StrContext, StrContextValue},
     PResult, Parser,
 };
-
-use super::PklParser;

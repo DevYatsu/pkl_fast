@@ -6,8 +6,6 @@ use std::{
 use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
 use thiserror::Error;
 
-use crate::lexer::LexingError;
-
 use super::types::errors::TypeError;
 pub mod locating;
 
@@ -24,9 +22,6 @@ pub enum ParsingError {
     #[diagnostic(code(num::parse_float))]
     ParseFloatError(#[from] ParseFloatError),
 
-    #[error(transparent)]
-    #[diagnostic(transparent)]
-    LexingError(#[from] LexingError),
     #[error(transparent)]
     #[diagnostic(transparent)]
     TypeError(#[from] TypeError),

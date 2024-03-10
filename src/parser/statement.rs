@@ -3,6 +3,8 @@ mod class;
 mod extends;
 pub mod import;
 mod info;
+mod module;
+mod var_declaration;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement<'a> {
@@ -13,7 +15,7 @@ pub enum Statement<'a> {
     },
     Amends(&'a str),
     Module {
-        value: Expression<'a>,
+        value: ModuleSegment<'a>,
         open: bool,
     },
     Extends(&'a str),
@@ -35,12 +37,11 @@ pub enum Statement<'a> {
         generics_params: Option<Vec<PklType<'a>>>,
         equivalent_type: PklType<'a>,
     },
-    /// ModuleInfo variant represents the annotation @ModuleInfo { package: "version" }
-    /// The documentation does not contain any precise information on this annotation, so I write the enum variant so that there can be several infos add in one @ModuleInfo, that is ModuleInfo contains a Vec<ModuleField>
-    ModuleInfo {
-        infos: Vec<InfoField<'a>>,
-    },
-    DeprecatedInfo {
+    /// Info represents the information annotation may be `@ModuleInfo` or `@Deprecated` for instance.
+    ///
+    /// **WARNING**: The name can contain a dot, that's the case for `@go.Package` in the pkl-go package.
+    Info {
+        name: &'a str,
         infos: Vec<InfoField<'a>>,
     },
 
@@ -49,16 +50,17 @@ pub enum Statement<'a> {
 
 use std::collections::HashMap;
 
+pub use self::class::ClassType;
+use self::info::InfoField;
+use self::module::ModuleSegment;
 pub use amends::amends_statement;
 pub use class::parse_class_field;
 pub use class::ClassArgument;
 pub use extends::extends_statement;
 pub use import::ImportClause;
-pub use info::parse_deprecated;
-pub use info::parse_module_info;
-
-pub use self::class::ClassType;
-use self::info::InfoField;
+pub use info::info_statement;
+pub use module::{module_statement, open_module_statement};
+pub use var_declaration::var_statement;
 
 use super::expression::Expression;
 use super::types::PklType;

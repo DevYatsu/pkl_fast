@@ -1,20 +1,20 @@
 use self::class::ClassField;
 use self::datasize::{DataSize, DataSizeValue};
 use self::duration::{Duration, DurationUnit, DurationValue};
+use self::float::float;
+use self::int::int;
 use self::listing::ListingField;
 use self::mapping::MappingField;
 use self::object::ObjectField;
 use self::string::StringFragment;
 use super::expression::Expression;
-use super::PklParser;
-use crate::parser::value::datasize::DataSizeUnit;
-use crate::parser::{errors::ParsingError, ParsingResult};
-use crate::prelude::PklToken;
 use std::fmt;
 
 mod class;
 mod datasize;
 mod duration;
+mod float;
+mod int;
 mod listing;
 mod mapping;
 pub mod object;
@@ -22,6 +22,8 @@ pub mod string;
 
 pub use class::parse_class_instance;
 pub use object::parse_object;
+use winnow::combinator::alt;
+use winnow::{PResult, Parser};
 
 #[derive(Debug, Clone, PartialEq)]
 /// An enum representing any Pkl value
@@ -72,6 +74,10 @@ pub enum PklValue<'a> {
         name: Option<&'a str>,
         arguments: Vec<ClassField<'a>>,
     },
+}
+
+pub fn parse_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+    alt((float, int)).parse_next(input)
 }
 
 // pub fn parse_value<'source>(

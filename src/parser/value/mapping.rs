@@ -2,12 +2,9 @@ use std::fmt::Display;
 
 use winnow::{combinator::todo, PResult};
 
-use crate::{
-    parser::{expression::Expression, types::PklType},
-    prelude::PklToken,
-};
+use crate::parser::{expression::Expression, types::PklType};
 
-use super::{parse_object, PklValue};
+use super::PklValue;
 #[derive(Debug, PartialEq, Clone)]
 pub enum MappingField<'a> {
     Expression(Expression<'a>),
@@ -27,9 +24,7 @@ pub enum MappingField<'a> {
     },
 }
 
-pub fn parse_mapping_field<'source>(
-    input: &mut &'source str,
-) -> PResult<(MappingField<'source>, Option<PklToken<'source>>)> {
+pub fn parse_mapping_field<'source>(input: &mut &'source str) -> PResult<(MappingField<'source>)> {
     todo(input)
     // match next_token {
     //     PklToken::Local => {
@@ -80,7 +75,7 @@ pub fn parse_mapping_field<'source>(
 // parser called whenever a '[' was found
 pub fn parse_mapping_variable<'source>(
     input: &mut &'source str,
-) -> PResult<(MappingField<'source>, Option<PklToken<'source>>)> {
+) -> PResult<(MappingField<'source>)> {
     todo(input)
 
     // let (key, next_token) = parse_expr(lexer, None)?;

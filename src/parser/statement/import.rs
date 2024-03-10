@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use winnow::{
-    ascii::{multispace1, space1},
-    combinator::{opt, preceded},
+    ascii::multispace1,
+    combinator::{cut_err, opt, preceded},
     PResult, Parser,
 };
 
@@ -19,8 +19,13 @@ pub enum ImportClause<'a> {
 }
 
 pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+    // import keyword already parsed
     let is_globbed = opt('*').parse_next(input)?.is_some();
-    let value = preceded(multispace1, import_clause).parse_next(input)?;
+    let value = preceded(
+        cut_err(multispace1).context(expected("space")),
+        import_clause,
+    )
+    .parse_next(input)?;
     let imported_as = opt(parse_as).parse_next(input)?;
 
     Ok(Statement::Import {
@@ -33,12 +38,14 @@ pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<
 fn parse_as<'source>(input: &mut &'source str) -> PResult<&'source str> {
     multispace1.parse_next(input)?;
     "as".parse_next(input)?;
-    multispace1.parse_next(input)?;
-    identifier.parse_next(input)
+    cut_err(multispace1)
+        .context(expected("space"))
+        .parse_next(input)?;
+    cut_err(identifier).parse_next(input)
 }
 
 pub fn import_clause<'source>(input: &mut &'source str) -> PResult<ImportClause<'source>> {
-    let value = string_literal
+    let value = cut_err(string_literal)
         .context(expected("import clause"))
         .parse_next(input)?;
 

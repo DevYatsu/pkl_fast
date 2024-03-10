@@ -2,10 +2,7 @@ use std::fmt;
 
 use winnow::{combinator::todo, PResult};
 
-use crate::{
-    parser::expression::{parse_expr, Expression},
-    prelude::{ParsingError, ParsingResult, PklParser, PklToken, PklValue},
-};
+use crate::{parser::expression::Expression, prelude::PklValue};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ObjectField<'a> {
@@ -47,9 +44,7 @@ pub enum ObjectField<'a> {
 }
 
 /// Function called to parse an object, we assume that '{' was already found
-pub fn parse_object<'source>(
-    input: &mut &'source str,
-) -> PResult<(PklValue<'source>, Option<PklToken<'source>>)> {
+pub fn parse_object<'source>(input: &mut &'source str) -> PResult<(PklValue<'source>)> {
     todo(input)
     // let values = parse_object_values(parser)?;
 
@@ -95,9 +90,7 @@ pub fn parse_object_values<'source>(
     // )
 }
 
-pub fn parse_block_field<'source>(
-    input: &mut &'source str,
-) -> PResult<(ObjectField<'source>, Option<PklToken<'source>>)> {
+pub fn parse_block_field<'source>(input: &mut &'source str) -> PResult<(ObjectField<'source>)> {
     todo(input)
 
     // match token {

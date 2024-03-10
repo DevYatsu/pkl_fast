@@ -1,45 +1,49 @@
 use super::Statement;
-use crate::prelude::PklValue;
-use winnow::{combinator::todo, PResult};
+use crate::parser::utils::{expected, identifier, string_literal};
+use winnow::{
+    ascii::multispace0,
+    combinator::{cut_err, delimited, preceded, separated},
+    token::take_while,
+    PResult, Parser,
+};
 
 #[derive(Debug, PartialEq, Clone)]
 /// A struct representing an field of a @ModuleInfo annotation
 pub struct InfoField<'a> {
     pub name: &'a str,
-    pub value: PklValue<'a>,
+    pub value: &'a str,
 }
 
-/// Parsing @ModuleInfo annotation
-pub fn parse_module_info<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
-    todo(input)
-    // let infos = parse_info(parser)?;
+/// Parsing informationnal annotation, for instance `@ModuleInfo`
+pub fn info_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+    // '@' already parsed
 
-    // Ok(Statement::ModuleInfo { infos })
+    let name = take_while(1.., ('a'..='z', 'A'..='Z', '.')).parse_next(input)?;
+
+    multispace0.parse_next(input)?;
+    cut_err('{')
+        .context(expected("open bracket"))
+        .parse_next(input)?;
+    multispace0.parse_next(input)?;
+
+    let infos =
+        separated(0.., info_field, delimited(multispace0, ',', multispace0)).parse_next(input)?;
+
+    preceded(multispace0, '}').parse_next(input)?;
+    Ok(Statement::Info { name, infos })
 }
 
-/// Parsing @Deprecated annotation
-pub fn parse_deprecated<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
-    todo(input)
-    // let infos = parse_info(parser)?;
+fn info_field<'source>(input: &mut &'source str) -> PResult<InfoField<'source>> {
+    let name = identifier.parse_next(input)?;
+    multispace0.parse_next(input)?;
 
-    // Ok(Statement::DeprecatedInfo { infos })
-}
+    cut_err('=')
+        .context(expected("equal sign"))
+        .parse_next(input)?;
+    multispace0.parse_next(input)?;
 
-fn parse_info<'source>(input: &mut &'source str) -> PResult<Vec<InfoField<'source>>> {
-    todo(input)
-    // expect_token(parser, PklToken::OpenBracket)?;
+    let value = string_literal(input)?;
+    //todo! need to support values not only string_literal
 
-    // let predicate = |parser: &mut PklParser<'source>| -> ParsingResult<InfoField<'source>> {
-    //     let name = parse_identifier(parser)?;
-    //     expect_token(parser, PklToken::EqualSign)?;
-
-    //     let next_token = retrieve_next_token(parser)?;
-    //     let value = parse_value(parser, next_token)?;
-
-    //     Ok(InfoField { name, value })
-    // };
-
-    // let infos = list_while_not_token0(parser, PklToken::Comma, PklToken::CloseBracket, &predicate)?;
-
-    // Ok(infos)
+    Ok(InfoField { name, value })
 }

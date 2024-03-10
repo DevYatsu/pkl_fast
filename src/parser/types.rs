@@ -1,11 +1,13 @@
+use winnow::{
+    combinator::todo,
+    error::{AddContext, ContextError},
+    stream::Stream,
+    PResult,
+};
+
 use self::errors::TypeError;
 
-use super::{
-    expression::Expression,
-    value::{string::StringFragment, PklValue},
-    ParsingResult, PklParser,
-};
-use crate::prelude::PklToken;
+use super::{expression::Expression, utils::expected, value::PklValue, ParsingResult, PklParser};
 use std::fmt;
 
 pub mod errors;
@@ -101,11 +103,8 @@ pub enum PklType<'a> {
     PotentiallyNull(Box<PklType<'a>>),
 }
 
-pub fn parse_type<'source>(
-    parser: &mut PklParser<'source>,
-    opt_token: Option<PklToken<'source>>,
-) -> ParsingResult<(PklType<'source>, Option<PklToken<'source>>)> {
-    todo!()
+pub fn parse_type<'source>(input: &mut &'source str) -> PResult<PklType<'source>> {
+    todo(input)
     // let token = if opt_token.is_some() {
     //     opt_token.unwrap()
     // } else {
@@ -387,13 +386,14 @@ impl<'a> From<&'a str> for PklType<'a> {
 }
 
 impl<'a> PklType<'a> {
-    pub fn default_value(&self, parser: &mut PklParser<'a>) -> ParsingResult<PklValue<'a>> {
+    pub fn default_value(&self, input: &mut &'a str) -> PResult<PklValue<'a>> {
         match self {
             PklType::String { matches, .. } => {
                 if let Some(value) = matches {
-                    return Ok(PklValue::String(StringFragment::from_raw_string(
-                        parser, value,
-                    )?));
+                    todo!()
+                    // return Ok(PklValue::String(StringFragment::from_raw_string(
+                    //     parser, value,
+                    // )?));
                 }
                 todo!()
                 // Err(ParsingError::no_default_value(parser, &self.to_string()))
@@ -410,7 +410,7 @@ impl<'a> PklType<'a> {
                 arguments: Vec::new(),
             }),
             PklType::PotentiallyNull(t) => Ok(PklValue::Nullable(Box::new(Expression::Value(
-                t.default_value(parser)?,
+                t.default_value(input)?,
             )))),
             PklType::Union(values) => {
                 let result = values
@@ -426,11 +426,11 @@ impl<'a> PklType<'a> {
                     // return Err(ParsingError::no_default_value(parser, &self.to_string()));
                 }
 
-                result[0].default_value(parser)
+                result[0].default_value(input)
             }
-            _ => todo!(), //  Err(
-                          //     ParsingError::no_default_value(parser, &self.to_string())
-                          // )
+            _ => Err(winnow::error::ErrMode::Cut(
+                ContextError::new().add_context(input, &input.checkpoint(), expected("what")),
+            )),
         }
     }
 

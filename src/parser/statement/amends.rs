@@ -4,6 +4,7 @@ use super::Statement;
 use winnow::{ascii::multispace1, PResult, Parser};
 
 pub fn amends_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+    // amends keyword already parsed
     let (_, value) = (multispace1, string_literal).parse_next(input)?;
 
     Ok(Statement::Amends(value))

@@ -1,8 +1,8 @@
-use self::{basic::parse_basic_expr, complex::parse_complex_expr};
-use crate::prelude::{ParsingResult, PklToken};
+use winnow::{combinator::todo, PResult};
+
 use std::fmt;
 
-use super::{operator::Operator, types::PklType, value::PklValue, PklParser};
+use super::{operator::Operator, types::PklType, value::PklValue};
 
 pub mod basic;
 pub mod complex;
@@ -55,13 +55,11 @@ pub enum Expression<'a> {
     Parenthesised(Box<Expression<'a>>),
 }
 
-pub fn parse_expr<'source>(
-    parser: &mut PklParser<'source>,
-    opt_token: Option<PklToken<'source>>,
-) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
-    let (expr, opt_token) = parse_basic_expr(parser, opt_token)?;
+pub fn parse_expr<'source>(input: &mut &'source str) -> PResult<Expression<'source>> {
+    todo(input)
+    // let (expr, opt_token) = parse_basic_expr(parser, opt_token)?;
 
-    parse_complex_expr(parser, expr, opt_token)
+    // parse_complex_expr(parser, expr, opt_token)
 }
 
 impl<'a> fmt::Display for Expression<'a> {

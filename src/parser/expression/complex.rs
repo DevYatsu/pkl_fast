@@ -1,13 +1,12 @@
 use super::Expression;
-use crate::{parser::PklParser, prelude::PklToken};
+use crate::parser::PklParser;
 
 use super::super::ParsingResult;
 
 pub fn parse_complex_expr<'source>(
     parser: &mut PklParser<'source>,
     expr: Expression<'source>,
-    opt_token: Option<PklToken<'source>>,
-) -> ParsingResult<(Expression<'source>, Option<PklToken<'source>>)> {
+) -> ParsingResult<Expression<'source>> {
     todo!()
     // let token = if opt_token.is_some() {
     //     opt_token
