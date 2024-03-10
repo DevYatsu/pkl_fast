@@ -1,6 +1,6 @@
 use self::class::ClassField;
-use self::datasize::{DataSize, DataSizeValue};
-use self::duration::{Duration, DurationUnit, DurationValue};
+use self::datasize::{datasize_unit, DataSize};
+use self::duration::{duration_unit, Duration};
 use self::float::float;
 use self::int::int;
 use self::listing::ListingField;
@@ -8,6 +8,7 @@ use self::mapping::MappingField;
 use self::object::ObjectField;
 use self::string::{multiline_string_value, string_value, StringFragment};
 use super::expression::Expression;
+use super::utils::expected;
 use std::fmt;
 
 mod class;
@@ -22,7 +23,8 @@ pub mod string;
 
 pub use class::parse_class_instance;
 pub use object::parse_object;
-use winnow::combinator::alt;
+use winnow::ascii::alpha1;
+use winnow::combinator::{alt, cut_err, opt, preceded};
 use winnow::{PResult, Parser};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -83,10 +85,69 @@ pub fn parse_value<'source>(input: &mut &'source str) -> PResult<PklValue<'sourc
         "null".map(|_| PklValue::Null),
         multiline_string_value, // need to return an error whenever the end """ is not preceded by a newline
         string_value,
-        float,
-        int,
+        float.map(PklValue::Float),
+        int.map(PklValue::Int),
     ))
     .parse_next(input)
+}
+
+/// We keep this function in case we decide to parse duration and datasize directly here
+/// 
+/// But I believe it's better to parse them with other methods and properties indexing
+fn _float_or_derived<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+    let f = float.parse_next(input)?;
+
+    let dot_exists = opt('.').parse_next(input)?.is_some();
+
+    if dot_exists {
+        let unit = opt(datasize_unit).parse_next(input)?;
+
+        if let Some(datasize_unit) = unit {
+            return Ok(PklValue::DataSize(DataSize {
+                value: f.into(),
+                unit: datasize_unit,
+            }));
+        }
+
+        let unit = cut_err(duration_unit)
+            .context(expected("datasize/duration unit"))
+            .parse_next(input)?;
+        Ok(PklValue::Duration(Duration {
+            value: f.into(),
+            unit,
+        }))
+    } else {
+        Ok(PklValue::Float(f))
+    }
+}
+/// We keep this function in case we decide to parse duration and datasize directly here
+/// 
+/// But I believe it's better to parse them with other methods and properties indexing
+fn _int_or_derived<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+    let i = int.parse_next(input)?;
+
+    let dot_exists = opt('.').parse_next(input)?.is_some();
+
+    if dot_exists {
+        let unit = opt(datasize_unit).parse_next(input)?;
+
+        if let Some(datasize_unit) = unit {
+            return Ok(PklValue::DataSize(DataSize {
+                value: i.into(),
+                unit: datasize_unit,
+            }));
+        }
+
+        let unit = cut_err(duration_unit)
+            .context(expected("datasize/duration unit"))
+            .parse_next(input)?;
+        Ok(PklValue::Duration(Duration {
+            value: i.into(),
+            unit,
+        }))
+    } else {
+        Ok(PklValue::Int(i))
+    }
 }
 
 // pub fn parse_value<'source>(
@@ -237,5 +298,17 @@ impl<'a> fmt::Display for PklValue<'a> {
                 write!(f, "Null({})", *value)
             }
         }
+    }
+}
+
+impl<'a> Into<PklValue<'a>> for (f64, &'a str) {
+    fn into(self) -> PklValue<'a> {
+        todo!()
+    }
+}
+
+impl<'a> Into<PklValue<'a>> for (i64, &'a str) {
+    fn into(self) -> PklValue<'a> {
+        todo!()
     }
 }

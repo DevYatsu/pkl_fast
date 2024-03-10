@@ -1,17 +1,17 @@
 use winnow::{
     ascii::digit1,
     combinator::{alt, cut_err, opt},
-    token::one_of,
+    token::{ one_of},
     PResult, Parser,
 };
 
 use super::PklValue;
 use crate::parser::utils::expected;
 
-pub fn float<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+pub fn float<'source>(input: &mut &'source str) -> PResult<f64> {
     let number = recognize_float(input)?;
 
-    Ok(number.into())
+    Ok(number)
 }
 
 fn recognize_float<'source>(input: &mut &'source str) -> PResult<f64> {
@@ -27,7 +27,7 @@ fn recognize_float<'source>(input: &mut &'source str) -> PResult<f64> {
 fn recognize_float_number<'source>(input: &mut &'source str) -> PResult<&'source str> {
     (
         opt(one_of(['+', '-'])),
-        alt(((digit1, ('.', opt(digit1))).void(), ('.', digit1).void())),
+        alt(((digit1, ('.', (opt(digit1)))).void(), ('.', digit1).void())),
         opt((
             one_of(['e', 'E']),
             opt(one_of(['+', '-'])),

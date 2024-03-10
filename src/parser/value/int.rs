@@ -7,7 +7,7 @@ use winnow::{
 
 use super::PklValue;
 
-pub fn int<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+pub fn int<'source>(input: &mut &'source str) -> PResult<i64> {
     let is_negative = opt(one_of(['+', '-'])).parse_next(input)?.is_some();
 
     let number = opt(dispatch!(take(2usize);
@@ -20,9 +20,9 @@ pub fn int<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
 
     if let Some(num) = number {
         if is_negative {
-            return Ok(PklValue::Int(-num));
+            return Ok(-num);
         } else {
-            return Ok(PklValue::Int(num));
+            return Ok(num);
         }
     }
 
@@ -31,9 +31,9 @@ pub fn int<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
         .parse_next(input)?;
 
     if is_negative {
-        return Ok(PklValue::Int(-number));
+        return Ok(-number);
     } else {
-        return Ok(PklValue::Int(number));
+        return Ok(number);
     }
 }
 

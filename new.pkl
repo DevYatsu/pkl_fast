@@ -46,7 +46,6 @@ local sss = """
 multiline string let's goooo
 i like it, to be honest
 here is a newline ->
-
 """
 
 // ENV_VALUE="TEST_VALUE"
@@ -62,3 +61,4 @@ here is a newline ->
 // Although the \(bird) is ex\ntinct, \u{a2e3e}
 // the species will be remembered. \\
 // """
+

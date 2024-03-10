@@ -12,6 +12,19 @@ pub enum DurationValue {
     Float(f64),
 }
 
+pub fn duration_unit<'source>(input: &mut &'source str) -> PResult<DurationUnit> {
+    alt((
+        "ns".map(|_| DurationUnit::NanoSeconds),
+        "us".map(|_| DurationUnit::MicroSeconds),
+        "ms".map(|_| DurationUnit::MilliSeconds),
+        "s".map(|_| DurationUnit::Seconds),
+        "min".map(|_| DurationUnit::Minutes),
+        "h".map(|_| DurationUnit::Hours),
+        "d".map(|_| DurationUnit::Days),
+    ))
+    .parse_next(input)
+}
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Hash, Clone)]
 /// DurationUnit represents the unit of the DataSize, restricted to these values: "ns"|"us"|"ms"|"s"|"min"|"h"|"d".
 pub enum DurationUnit {
@@ -52,6 +65,8 @@ impl From<i64> for DurationValue {
 }
 
 use std::fmt;
+
+use winnow::{combinator::alt, PResult, Parser};
 
 impl fmt::Display for Duration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

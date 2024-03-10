@@ -12,6 +12,23 @@ pub enum DataSizeValue {
     Float(f64),
 }
 
+pub fn datasize_unit<'source>(input: &mut &'source str) -> PResult<DataSizeUnit> {
+    alt((
+        "b".map(|_| DataSizeUnit::Bytes),
+        "kb".map(|_| DataSizeUnit::Kylobytes),
+        "kib".map(|_| DataSizeUnit::KibiBytes),
+        "mb".map(|_| DataSizeUnit::Megabytes),
+        "mib".map(|_| DataSizeUnit::MebiBytes),
+        "gb".map(|_| DataSizeUnit::Gigabytes),
+        "gib".map(|_| DataSizeUnit::GibiBytes),
+        "tb".map(|_| DataSizeUnit::Terabytes),
+        "tib".map(|_| DataSizeUnit::Tebibytes),
+        "pb".map(|_| DataSizeUnit::Petabytes),
+        "pib".map(|_| DataSizeUnit::Pebibytes),
+    ))
+    .parse_next(input)
+}
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Hash, Clone)]
 /// DataSizeUnit represents the unit of the DataSize, restricted to these values: "b"|"kb"|"kib"|"mb"|"mib"|"gb"|"gib"|"tb"|"tib"|"pb"|"pib".
 pub enum DataSizeUnit {
@@ -65,6 +82,8 @@ impl From<i64> for DataSizeValue {
 }
 
 use std::fmt;
+
+use winnow::{combinator::alt, PResult, Parser};
 
 impl fmt::Display for DataSize {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
