@@ -18,7 +18,6 @@ mod operator;
 pub mod statement;
 mod types;
 
-#[macro_use]
 mod utils;
 pub mod value;
 
@@ -27,7 +26,12 @@ pub type ParsingResult<T> = miette::Result<T, ParsingError>;
 pub fn parse<'source>(source: &'source str) -> PResult<Vec<statement::Statement<'source>>> {
     let mut parser = PklParser::new(source);
 
-    parser.parse()?;
+    match parser.parse() {
+        Ok(_) =>(),
+        Err(e) => {
+            println!("{:?}", source);
+        }
+    }
     Ok(parser.statements)
 }
 
