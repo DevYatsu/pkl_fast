@@ -16,7 +16,7 @@ pub enum Statement<'a> {
     },
     Amends(&'a str),
     Module {
-        value: ModuleSegment<'a>,
+        value: &'a str,
         open: bool,
     },
     Extends(&'a str),
@@ -62,7 +62,6 @@ use std::collections::HashMap;
 
 pub use self::class::ClassType;
 use self::info::InfoField;
-use self::module::ModuleSegment;
 pub use amends::amends_statement;
 pub use class::parse_class_field;
 pub use class::ClassArgument;

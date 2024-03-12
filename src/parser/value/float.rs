@@ -30,7 +30,10 @@ fn recognize_float<'source>(input: &mut &'source str) -> PResult<f64> {
 fn recognize_float_number<'source>(input: &mut &'source str) -> PResult<&'source str> {
     (
         opt(one_of(['+', '-'])),
-        alt(((decimal, ('.', (opt(decimal)))).void(), ('.', decimal).void())),
+        alt((
+            (decimal, ('.', (opt(decimal)))).void(),
+            ('.', decimal).void(),
+        )),
         opt((
             one_of(['e', 'E']),
             opt(one_of(['+', '-'])),

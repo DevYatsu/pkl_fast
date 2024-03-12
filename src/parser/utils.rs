@@ -1,6 +1,9 @@
 use winnow::{
+    ascii::multispace0,
     ascii::{line_ending, multispace1, space0},
     combinator::cut_err,
+    combinator::delimited,
+    error::ParserError,
     error::{StrContext, StrContextValue},
     PResult, Parser,
 };
@@ -61,6 +64,15 @@ pub fn cut_multispace1<'source>(input: &mut &'source str) -> PResult<&'source st
     cut_err(multispace1)
         .context(expected("space"))
         .parse_next(input)
+}
+
+/// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
+/// trailing whitespace, returning the output of `inner`.
+pub fn ws<'a, F, O, E: ParserError<&'a str>>(inner: F) -> impl Parser<&'a str, O, E>
+where
+    F: Parser<&'a str, O, E>,
+{
+    delimited(multispace0, inner, multispace0)
 }
 
 // pub fn retrieve_next_token<'source>(

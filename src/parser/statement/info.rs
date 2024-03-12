@@ -1,8 +1,8 @@
 use super::Statement;
-use crate::parser::utils::{expected, id::identifier, string::string_literal};
+use crate::parser::utils::{expected, id::identifier, string::string_literal, ws};
 use winnow::{
     ascii::multispace0,
-    combinator::{cut_err, delimited, preceded, separated},
+    combinator::{cut_err, preceded, separated},
     token::take_while,
     PResult, Parser,
 };
@@ -21,14 +21,11 @@ pub fn info_statement<'source>(input: &mut &'source str) -> PResult<Statement<'s
     //todo! prevent names with several dots one after another
     let name = take_while(1.., ('a'..='z', 'A'..='Z', '.')).parse_next(input)?;
 
-    multispace0.parse_next(input)?;
-    cut_err('{')
+    cut_err(ws('{'))
         .context(expected("open bracket"))
         .parse_next(input)?;
-    multispace0.parse_next(input)?;
 
-    let infos =
-        separated(0.., info_field, delimited(multispace0, ',', multispace0)).parse_next(input)?;
+    let infos = separated(0.., info_field, ws(',')).parse_next(input)?;
 
     preceded(multispace0, '}').parse_next(input)?;
     Ok(Statement::Info { name, infos })
@@ -36,12 +33,10 @@ pub fn info_statement<'source>(input: &mut &'source str) -> PResult<Statement<'s
 
 fn info_field<'source>(input: &mut &'source str) -> PResult<InfoField<'source>> {
     let name = identifier.parse_next(input)?;
-    multispace0.parse_next(input)?;
 
-    cut_err('=')
+    cut_err(ws('='))
         .context(expected("equal sign"))
         .parse_next(input)?;
-    multispace0.parse_next(input)?;
 
     let value = string_literal(input)?;
     //todo! need to support values not only string_literal
