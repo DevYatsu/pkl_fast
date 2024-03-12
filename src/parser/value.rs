@@ -21,6 +21,7 @@ mod listing;
 mod mapping;
 mod object;
 pub mod string;
+mod utils;
 
 pub use class::class_instance;
 pub use object::{object, object_values};

@@ -4,7 +4,9 @@ use winnow::{combinator::alt, PResult, Parser};
 
 use crate::parser::{expression::Expression, types::PklType, utils::var::local_variable};
 
-use super::{amending::utils::default_field, object::ObjectField, PklValue};
+use super::{
+    amending::utils::default_field, object::ObjectField, utils::object_kind_list, PklValue,
+};
 #[derive(Debug, PartialEq, Clone)]
 pub enum ListingField<'a> {
     Expression(Expression<'a>),
@@ -24,7 +26,11 @@ pub enum ListingField<'a> {
     },
 }
 
-pub fn parse_listing_field<'source>(input: &mut &'source str) -> PResult<ListingField<'source>> {
+pub fn listing<'source>(input: &mut &'source str) -> PResult<Vec<ListingField<'source>>> {
+    object_kind_list(listing_field).parse_next(input)
+}
+
+fn listing_field<'source>(input: &mut &'source str) -> PResult<ListingField<'source>> {
     alt((
         local_variable.map(|(name, _type, value)| ListingField::LocalVariable {
             name,
@@ -145,7 +151,7 @@ impl<'a> Display for ListingField<'a> {
             ListingField::DefaultObject(fields) => {
                 write!(f, "default {{\n")?;
                 for field in fields {
-                    write!(f, "\t{field},\n");
+                    write!(f, "\t{field},\n")?;
                 }
                 write!(f, "}}")
             }

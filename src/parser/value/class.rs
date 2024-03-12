@@ -1,7 +1,8 @@
 use std::fmt::Display;
 
 use winnow::{
-    combinator::{alt, preceded, todo},
+    ascii::multispace1,
+    combinator::{alt, opt, preceded, todo},
     PResult, Parser,
 };
 
@@ -14,7 +15,8 @@ use crate::{
 };
 
 use super::{
-    mapping::{mapping_field, MappingField},
+    listing::listing,
+    mapping::{mapping, mapping_field, MappingField},
     object::object,
 };
 
@@ -35,6 +37,17 @@ pub enum ClassField<'a> {
 /// - Mapping
 /// - Other classes
 pub fn class_instance<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+    "new".parse_next(input)?;
+    let opt_id = opt(preceded(multispace1, identifier)).parse_next(input)?;
+
+    if let Some(id) = opt_id {
+        match id {
+            "Listing" => return Ok(PklValue::Listing(listing.parse_next(input)?)),
+            "Mapping" => return Ok(PklValue::Mapping(mapping.parse_next(input)?)),
+            _ => todo!(),
+        };
+    }
+
     todo(input)
     // let next_token = retrieve_next_token(parser)?;
 

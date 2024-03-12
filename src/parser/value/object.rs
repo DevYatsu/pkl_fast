@@ -18,7 +18,7 @@ use crate::{
     prelude::PklValue,
 };
 
-use super::parse_value;
+use super::{parse_value, utils::object_kind_list};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ObjectField<'a> {
@@ -69,24 +69,7 @@ pub fn object<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
 ///
 /// **The ending `}` keyword will be parsed or a cut error will get returned**.
 pub fn object_values<'source>(input: &mut &'source str) -> PResult<Vec<ObjectField<'source>>> {
-    cut_err('{')
-        .context(expected("opening bracket"))
-        .parse_next(input)?;
-    multispace0.parse_next(input)?;
-
-    let values = separated(
-        0..,
-        object_field,
-        delimited(space0, one_of([';', '\n']), multispace0),
-    )
-    .parse_next(input)?;
-
-    multispace0.parse_next(input)?;
-    cut_err('}')
-        .context(expected("closing bracket"))
-        .parse_next(input)?;
-
-    Ok(values)
+    object_kind_list(object_field).parse_next(input)
 }
 
 fn object_field<'source>(input: &mut &'source str) -> PResult<ObjectField<'source>> {

@@ -15,6 +15,7 @@ use crate::parser::{
 use super::{
     amending::utils::default_field,
     object::{object, object_values, ObjectField},
+    utils::object_kind_list,
 };
 #[derive(Debug, PartialEq, Clone)]
 pub enum MappingField<'a> {
@@ -34,6 +35,10 @@ pub enum MappingField<'a> {
         value: Expression<'a>,
         dynamic: Option<Expression<'a>>,
     },
+}
+
+pub fn mapping<'source>(input: &mut &'source str) -> PResult<Vec<MappingField<'source>>> {
+    object_kind_list(mapping_field).parse_next(input)
 }
 
 pub fn mapping_field<'source>(input: &mut &'source str) -> PResult<MappingField<'source>> {
@@ -147,7 +152,7 @@ impl<'a> Display for MappingField<'a> {
             MappingField::DefaultObject(fields) => {
                 write!(f, "default {{\n")?;
                 for field in fields {
-                    write!(f, "\t{field},\n");
+                    write!(f, "\t{field},\n")?;
                 }
                 write!(f, "}}")
             }

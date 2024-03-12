@@ -19,10 +19,7 @@ pub fn var_statement<'source>(input: &mut &'source str) -> PResult<Statement<'so
 }
 
 pub fn is_local<'source>(input: &mut &'source str) -> PResult<bool> {
-    opt(terminated(
-        "local",
-        cut_multispace1,
-    ))
-    .map(|opt| opt.is_some())
-    .parse_next(input)
+    opt(terminated("local", cut_multispace1))
+        .map(|opt| opt.is_some())
+        .parse_next(input)
 }
