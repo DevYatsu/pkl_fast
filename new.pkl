@@ -32,10 +32,6 @@ x {}
 local test {
     x = 2
     d = 3
-    
-    default {
-        dude = 2
-    }
 
     ...x
 }

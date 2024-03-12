@@ -1,6 +1,5 @@
 use winnow::{
-    ascii::digit1,
-    combinator::{alt, cut_err, opt},
+    combinator::{alt, cut_err, opt, repeat, terminated},
     token::one_of,
     PResult, Parser,
 };
@@ -31,15 +30,25 @@ fn recognize_float<'source>(input: &mut &'source str) -> PResult<f64> {
 fn recognize_float_number<'source>(input: &mut &'source str) -> PResult<&'source str> {
     (
         opt(one_of(['+', '-'])),
-        alt(((digit1, ('.', (opt(digit1)))).void(), ('.', digit1).void())),
+        alt(((decimal, ('.', (opt(decimal)))).void(), ('.', decimal).void())),
         opt((
             one_of(['e', 'E']),
             opt(one_of(['+', '-'])),
-            cut_err(digit1).context(expected("exponential integer")),
+            cut_err(decimal).context(expected("exponential integer")),
         )),
     )
         .recognize()
         .parse_next(input)
+}
+
+fn decimal<'s>(input: &mut &'s str) -> PResult<&'s str> {
+    repeat(
+        1..,
+        terminated(one_of('0'..='9'), repeat(0.., '_').map(|()| ())),
+    )
+    .map(|()| ())
+    .recognize()
+    .parse_next(input)
 }
 
 impl<'a> Into<PklValue<'a>> for f64 {

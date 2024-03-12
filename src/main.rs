@@ -17,9 +17,9 @@ fn main() -> PResult<()> {
 
     let _statements = parse(&source_code)?;
 
-    for s in _statements {
-        println!("{:?}", s)
-    }
+    // for s in _statements {
+    //     println!("{:?}", s)
+    // }
 
     let end = Instant::now();
     println!("Total time: {} microseconds", (end - start).as_micros());
