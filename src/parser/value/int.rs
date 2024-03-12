@@ -23,9 +23,9 @@ pub fn int<'source>(input: &mut &'source str) -> PResult<i64> {
     if let Some(num) = number {
         if is_negative {
             return Ok(-num);
-        } else {
-            return Ok(num);
         }
+
+        return Ok(num);
     }
 
     let number = take_while(1.., ('0'..='9', '_'))
