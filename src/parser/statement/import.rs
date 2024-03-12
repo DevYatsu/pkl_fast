@@ -20,6 +20,7 @@ pub enum ImportClause<'a> {
     Https(&'a str),
 }
 
+/// Parse an `import` statement, assuming the `import` keyword has already been consumed.
 pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
     // import keyword already parsed
     let is_globbed = opt('*').parse_next(input)?.is_some();

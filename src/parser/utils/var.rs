@@ -10,13 +10,13 @@ use crate::parser::{
     value::object,
 };
 
-use super::{cut_multispace1, expected, id::identifier};
+use super::{cut_multispace1, expected, id::identifier_not_keyword};
 
 /// Parses a variable with format (name, Option<Type>, expression)
 pub fn variable<'source>(
     input: &mut &'source str,
 ) -> PResult<(&'source str, Option<PklType<'source>>, Expression<'source>)> {
-    let name = identifier.parse_next(input)?;
+    let name = identifier_not_keyword.parse_next(input)?;
     multispace0.parse_next(input)?;
 
     if let Some(_type) = opt(parse_var_type).parse_next(input)? {
@@ -31,7 +31,6 @@ pub fn variable<'source>(
     }
 
     // there is no type if we are here
-    multispace0.parse_next(input)?;
 
     let expr = alt((
         preceded(('=', multispace0), parse_expr),

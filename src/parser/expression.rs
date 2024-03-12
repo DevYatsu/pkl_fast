@@ -1,8 +1,15 @@
-use winnow::{combinator::todo, PResult};
+use winnow::{
+    combinator::{alt, todo},
+    PResult, Parser,
+};
 
 use std::fmt;
 
-use super::{operator::Operator, types::PklType, value::PklValue};
+use super::{
+    operator::Operator,
+    types::PklType,
+    value::{parse_value, PklValue},
+};
 
 pub mod basic;
 pub mod complex;
@@ -59,7 +66,8 @@ pub enum Expression<'a> {
 }
 
 pub fn parse_expr<'source>(input: &mut &'source str) -> PResult<Expression<'source>> {
-    todo(input)
+    alt((parse_value.map(Expression::Value), todo)).parse_next(input)
+
     // let (expr, opt_token) = parse_basic_expr(parser, opt_token)?;
 
     // parse_complex_expr(parser, expr, opt_token)

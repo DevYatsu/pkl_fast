@@ -13,9 +13,9 @@ pub fn int<'source>(input: &mut &'source str) -> PResult<i64> {
     let is_negative = opt(one_of(['+', '-'])).parse_next(input)?.is_some();
 
     let number = opt(dispatch!(take(2usize);
-        "0b" => bin_digit1,
-        "0o" => oct_digit1,
-        "0x" => hex_digit1,
+        "0b" | "0B" => bin_digit1,
+        "0o" | "0O" => oct_digit1,
+        "0x" | "0X" => hex_digit1,
         _ => fail,
     ))
     .parse_next(input)?;
@@ -33,9 +33,9 @@ pub fn int<'source>(input: &mut &'source str) -> PResult<i64> {
         .parse_next(input)?;
 
     if is_negative {
-        return Ok(-number);
+        Ok(-number)
     } else {
-        return Ok(number);
+        Ok(number)
     }
 }
 

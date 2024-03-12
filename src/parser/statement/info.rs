@@ -18,6 +18,7 @@ pub struct InfoField<'a> {
 pub fn info_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
     // '@' already parsed
 
+    //todo! prevent names with several dots one after another
     let name = take_while(1.., ('a'..='z', 'A'..='Z', '.')).parse_next(input)?;
 
     multispace0.parse_next(input)?;

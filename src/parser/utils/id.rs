@@ -1,14 +1,20 @@
 use winnow::{
-    combinator::{alt, cut_err, preceded, terminated},
-    token::{one_of, take_while},
+    combinator::{alt, cut_err, terminated},
+    token::{one_of, take_until, take_while},
     PResult, Parser,
 };
 
-use super::expected;
+use super::{expected, GLOBAL_KEYWORDS};
 
+/// A valid Pkl identifier ([see](https://pkl-lang.org/main/current/language-reference/index.html#quoted-identifiers)).
 pub fn identifier<'source>(input: &mut &'source str) -> PResult<&'source str> {
+    recognize_identifier.parse_next(input)
+}
+
+/// A valid identifier that is not a Pkl's keyword, this parser is bound to only be used when declaring variables.
+pub fn identifier_not_keyword<'source>(input: &mut &'source str) -> PResult<&'source str> {
     recognize_identifier
-        .context(expected("identifier"))
+        .verify(|id: &str| !GLOBAL_KEYWORDS.contains(&id))
         .parse_next(input)
 }
 
@@ -20,14 +26,13 @@ pub fn cut_identifier<'source>(input: &mut &'source str) -> PResult<&'source str
 
 pub fn recognize_identifier<'source>(input: &mut &'source str) -> PResult<&'source str> {
     alt((
+        // an identifier conforming to Unicode’s UAX31-R1-1 syntax
         (
-            one_of(('_', 'A'..='Z', 'a'..='z')),
-            take_while(0.., ('0'..='9', 'A'..='Z', 'a'..='z', '_')),
+            one_of(('_', '$', 'A'..='Z', 'a'..='z')),
+            take_while(0.., ('0'..='9', 'A'..='Z', 'a'..='z')),
         ),
-        (
-            preceded('`', one_of(('_', 'A'..='Z', 'a'..='z'))),
-            terminated(take_while(0.., ('0'..='9', 'A'..='Z', 'a'..='z', '_')), '`'),
-        ),
+        // an illegal identifier
+        ('`', terminated(take_until(0.., '`'), '`')),
     ))
     .recognize()
     .parse_next(input)

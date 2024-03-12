@@ -9,6 +9,41 @@ pub mod id;
 pub mod string;
 pub mod var;
 
+pub const GLOBAL_KEYWORDS: [&str; 30] = [
+    "amends",
+    "extends",
+    "import",
+    "module",
+    "open",
+    "abstract",
+    "hidden",
+    "local",
+    "class",
+    "typealias",
+    "let",
+    "for",
+    "when",
+    "default",
+    "true",
+    "false",
+    // reserved for future use
+    "protected",
+    "override",
+    "record",
+    "delete",
+    "match",
+    "case",
+    "switch",
+    "vararg",
+    "const",
+    //types
+    "number",
+    "Int",
+    "Float",
+    "unknown",
+    "any",
+];
+
 pub fn line_ending_or_end<'source>(input: &mut &'source str) -> PResult<&'source str> {
     space0.parse_next(input)?;
 
@@ -19,7 +54,7 @@ pub fn line_ending_or_end<'source>(input: &mut &'source str) -> PResult<&'source
     }
 }
 pub fn expected(what: &'static str) -> StrContext {
-    StrContext::Expected(StrContextValue::StringLiteral(what))
+    StrContext::Expected(StrContextValue::Description(what))
 }
 
 pub fn cut_multispace1<'source>(input: &mut &'source str) -> PResult<&'source str> {

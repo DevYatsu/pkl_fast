@@ -24,7 +24,7 @@ pub fn open_module_statement<'source>(input: &mut &'source str) -> PResult<State
 
     // do not throw a cut error as the `open` keyword is not necessarily followed by a module
     multispace1.parse_next(input)?;
-    "module".context(expected("module")).parse_next(input)?;
+    "module".parse_next(input)?;
     cut_multispace1.parse_next(input)?;
     let value = cut_module_segment.parse_next(input)?;
 

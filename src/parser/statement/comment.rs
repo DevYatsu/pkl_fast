@@ -28,5 +28,5 @@ pub fn multiline_comment<'source>(input: &mut &'source str) -> PResult<Statement
     let value = take_until(0.., "*/").parse_next(input)?;
     "*/".parse_next(input)?;
 
-    Ok(Statement::Amends(value))
+    Ok(Statement::MultiLineComment(value))
 }
