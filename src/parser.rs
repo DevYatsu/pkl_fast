@@ -10,7 +10,6 @@ use winnow::{dispatch, PResult, Parser};
 
 use self::statement::import::import_statement;
 use self::statement::{amends_statement, extends_statement, var_statement, ClassType};
-use self::utils::line_ending_or_end;
 
 pub mod errors;
 mod expression;

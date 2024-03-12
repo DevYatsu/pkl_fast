@@ -1,5 +1,13 @@
-mod identifier;
-mod string;
+use winnow::{
+    ascii::{line_ending, multispace1, space0},
+    combinator::cut_err,
+    error::{StrContext, StrContextValue},
+    PResult, Parser,
+};
+
+pub mod id;
+pub mod string;
+pub mod var;
 
 pub fn line_ending_or_end<'source>(input: &mut &'source str) -> PResult<&'source str> {
     space0.parse_next(input)?;
@@ -12,6 +20,12 @@ pub fn line_ending_or_end<'source>(input: &mut &'source str) -> PResult<&'source
 }
 pub fn expected(what: &'static str) -> StrContext {
     StrContext::Expected(StrContextValue::StringLiteral(what))
+}
+
+pub fn cut_multispace1<'source>(input: &mut &'source str) -> PResult<&'source str> {
+    cut_err(multispace1)
+        .context(expected("space"))
+        .parse_next(input)
 }
 
 // pub fn retrieve_next_token<'source>(
@@ -501,11 +515,3 @@ pub fn expected(what: &'static str) -> StrContext {
 
 //     Ok(result_vec)
 // }
-
-pub use identifier::identifier;
-pub use string::string_literal;
-use winnow::{
-    ascii::{line_ending, space0},
-    error::{StrContext, StrContextValue},
-    PResult, Parser,
-};

@@ -1,30 +1,51 @@
-use std::fmt::Display;
+use std::{fmt::Display, rc::Rc};
 
-use winnow::{combinator::todo, PResult};
+use winnow::{
+    ascii::multispace0,
+    combinator::{alt, cut_err, delimited, preceded, todo},
+    PResult, Parser,
+};
 
-use crate::parser::{expression::Expression, types::PklType};
+use crate::parser::{
+    expression::{parse_expr, Expression},
+    types::PklType,
+    utils::{expected, var::local_variable},
+};
 
-use super::PklValue;
+use super::{
+    amending::utils::default_field,
+    object::{object, object_values, ObjectField},
+};
 #[derive(Debug, PartialEq, Clone)]
 pub enum MappingField<'a> {
-    Expression(Expression<'a>),
     LocalVariable {
         name: &'a str,
         _type: Option<PklType<'a>>,
         value: Expression<'a>,
     },
-    DefaultObject(Expression<'a>),
+    DefaultObject(Vec<ObjectField<'a>>),
     AmendingElement {
-        index: Expression<'a>,
-        value: PklValue<'a>,
+        key: Rc<Expression<'a>>,
+        amended_fields: Vec<ObjectField<'a>>,
     },
+
     Pair {
-        key: Expression<'a>,
+        key: Rc<Expression<'a>>,
         value: Expression<'a>,
+        dynamic: Option<Expression<'a>>,
     },
 }
 
-pub fn parse_mapping_field<'source>(input: &mut &'source str) -> PResult<(MappingField<'source>)> {
+pub fn mapping_field<'source>(input: &mut &'source str) -> PResult<MappingField<'source>> {
+    alt((
+        local_variable.map(|(name, optional_type, value)| MappingField::LocalVariable {
+            name,
+            _type: optional_type,
+            value,
+        }),
+        default_field.map(MappingField::DefaultObject),
+    ));
+
     todo(input)
     // match next_token {
     //     PklToken::Local => {
@@ -73,91 +94,49 @@ pub fn parse_mapping_field<'source>(input: &mut &'source str) -> PResult<(Mappin
 }
 
 // parser called whenever a '[' was found
-pub fn parse_mapping_variable<'source>(
-    input: &mut &'source str,
-) -> PResult<(MappingField<'source>)> {
-    todo(input)
+pub fn parse_mapping_variable<'source>(input: &mut &'source str) -> PResult<MappingField<'source>> {
+    '['.parse_next(input)?;
+    multispace0(input)?;
+    let key = Rc::new(parse_expr(input)?);
+    multispace0(input)?;
+    cut_err(']')
+        .context(expected("closing brace"))
+        .parse_next(input)?;
+    multispace0(input)?;
 
-    // let (key, next_token) = parse_expr(lexer, None)?;
-    // assert_token_eq(lexer, next_token, PklToken::CloseBrace)?;
+    let field = alt((
+        object_values.map(|amended_fields| MappingField::AmendingElement {
+            key: Rc::clone(&key),
+            amended_fields,
+        }),
+        preceded(
+            ('=', multispace0),
+            alt((
+                (
+                    delimited(('(', multispace0), parse_expr, (multispace0, ')')).map(Some),
+                    object.map(Expression::Value),
+                )
+                    .map(|(dynamic, value)| MappingField::Pair {
+                        key: Rc::clone(&key),
+                        value,
+                        dynamic,
+                    }),
+                parse_expr.map(|value| MappingField::Pair {
+                    key: Rc::clone(&key),
+                    value,
+                    dynamic: None,
+                }),
+            )),
+        ),
+    ))
+    .parse_next(input)?;
 
-    // match retrieve_next_token(lexer)? {
-    //     PklToken::OpenBracket => {
-    //         let (value, token) = parse_object(lexer, None)?;
-    //         Ok((
-    //             MappingField::Pair {
-    //                 value: Expression::Value(value),
-    //                 key,
-    //             },
-    //             token,
-    //         ))
-    //     }
-    //     PklToken::EqualSign => {
-    //         match retrieve_next_token(lexer)? {
-    //             PklToken::OpenParenthesis => {
-    //                 let (expr, opt_token) = parse_basic_expr(lexer, None)?;
-
-    //                 match opt_token {
-    //                     Some(PklToken::CloseParenthesis) => match expr {
-    //                         Expression::ListIndexing { indexed, indexer } => {
-    //                             if indexed == "this" {
-    //                                 expect_token(lexer, PklToken::OpenBracket)?;
-    //                                 let (value, token) = parse_object(lexer, None)?;
-
-    //                                 Ok((
-    //                                     MappingField::AmendingElement {
-    //                                         index: *indexer,
-    //                                         value,
-    //                                     },
-    //                                     token,
-    //                                 ))
-    //                             } else {
-    //                                 let (expr, next) = parse_complex_expr(
-    //                                     lexer,
-    //                                     Expression::Parenthesised(Box::new(
-    //                                         Expression::ListIndexing { indexed, indexer },
-    //                                     )),
-    //                                     None,
-    //                                 )?;
-    //                                 Ok((MappingField::Expression(expr), next))
-    //                             }
-    //                         }
-    //                         _ => {
-    //                             let (expr, next) = parse_complex_expr(
-    //                                 lexer,
-    //                                 Expression::Parenthesised(Box::new(expr)),
-    //                                 None,
-    //                             )?;
-    //                             Ok((MappingField::Expression(expr), next))
-    //                         }
-    //                     },
-
-    //                     Some(_) => {
-    //                         // first call to parse expr inside parenthesis
-    //                         let (expr, next) = parse_complex_expr(lexer, expr, opt_token)?;
-    //                         assert_token_eq(lexer, next, PklToken::CloseParenthesis)?;
-    //                         // second call to parse following expr if there is one
-    //                         let (expr, next) = parse_complex_expr(lexer, expr, None)?;
-
-    //                         Ok((MappingField::Expression(expr), next))
-    //                     }
-    //                     _ => Err(ParsingError::eof(lexer, "a closing parenthesis")),
-    //                 }
-    //             }
-    //             token => {
-    //                 let (value, next) = parse_expr(lexer, Some(token))?;
-    //                 Ok((MappingField::Pair { value, key }, next))
-    //             }
-    //         }
-    //     }
-    //     _ => Err(ParsingError::unexpected(lexer, "'=' or '{'".to_owned())),
-    // }
+    Ok(field)
 }
 
 impl<'a> Display for MappingField<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MappingField::Expression(expr) => write!(f, "{expr}"),
             MappingField::LocalVariable { name, value, _type } => {
                 if _type.is_some() {
                     write!(f, "local {name}: {} = {value}", _type.clone().unwrap())
@@ -165,15 +144,34 @@ impl<'a> Display for MappingField<'a> {
                     write!(f, "local {name} = {value}")
                 }
             }
-            MappingField::DefaultObject(x) => write!(f, "default {x}"),
-            MappingField::AmendingElement { index, value } => write!(f, "(this[{index}]) {value}"),
-            MappingField::Pair { key, value } => match value {
-                Expression::Value(v) => match v {
-                    PklValue::Object { .. } => write!(f, "[{key}] {value}"),
-                    _ => write!(f, "[{key}] = {value}"),
-                },
-                _ => write!(f, "[{key}] = {value}"),
-            },
+            MappingField::DefaultObject(fields) => {
+                write!(f, "default {{\n")?;
+                for field in fields {
+                    write!(f, "\t{field},\n");
+                }
+                write!(f, "}}")
+            }
+            MappingField::AmendingElement {
+                key,
+                amended_fields,
+            } => {
+                write!(f, "({key}) {{\n")?;
+                for field in amended_fields {
+                    write!(f, "\t{field}\n")?;
+                }
+                write!(f, "}}")
+            }
+            MappingField::Pair {
+                key,
+                value,
+                dynamic,
+            } => {
+                if dynamic.is_some() {
+                    write!(f, "[{key}] = ({}) {value}", dynamic.as_ref().unwrap())
+                } else {
+                    write!(f, "[{key}] = {value}")
+                }
+            }
         }
     }
 }

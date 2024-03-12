@@ -44,12 +44,10 @@
 //! and some from [`thiserror`](https://github.com/dtolnay/thiserror) and [`logos`](https://github.com/maciejhirsz/logos), which are Apache licensed.
 
 pub mod parser;
-pub use logos::Logos;
 
 pub mod prelude {
     pub use crate::parser::{
         errors::ParsingError, parse, statement::Statement, value::PklValue, ParsingResult,
         PklParser,
     };
-    pub use logos::Logos;
 }

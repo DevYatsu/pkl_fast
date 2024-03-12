@@ -6,17 +6,14 @@ use winnow::{
     PResult, Parser,
 };
 
-use crate::parser::utils::{expected, identifier, line_ending_or_end};
+use crate::parser::utils::{cut_multispace1, expected, id::identifier, line_ending_or_end};
 
 use super::Statement;
 pub fn module_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
     // module keyword already parsed
-    cut_err(multispace1)
-        .context(expected("space"))
-        .parse_next(input)?;
-    let value = cut_err(module_segment)
-        .context(expected("module name"))
-        .parse_next(input)?;
+
+    cut_multispace1.parse_next(input)?;
+    let value = cut_module_segment.parse_next(input)?;
     line_ending_or_end.parse_next(input)?;
 
     Ok(Statement::Module { value, open: false })
@@ -24,14 +21,12 @@ pub fn module_statement<'source>(input: &mut &'source str) -> PResult<Statement<
 
 pub fn open_module_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
     // open keyword already parsed
+
+    // do not throw a cut error as the `open` keyword is not necessarily followed by a module
     multispace1.parse_next(input)?;
     "module".context(expected("module")).parse_next(input)?;
-    cut_err(multispace1)
-        .context(expected("space"))
-        .parse_next(input)?;
-    let value = cut_err(module_segment)
-        .context(expected("module name"))
-        .parse_next(input)?;
+    cut_multispace1.parse_next(input)?;
+    let value = cut_module_segment.parse_next(input)?;
 
     Ok(Statement::Module { value, open: true })
 }
@@ -41,6 +36,12 @@ pub fn open_module_statement<'source>(input: &mut &'source str) -> PResult<State
 pub struct ModuleSegment<'a> {
     name: &'a str,
     child: Option<Box<ModuleSegment<'a>>>,
+}
+
+fn cut_module_segment<'source>(input: &mut &'source str) -> PResult<ModuleSegment<'source>> {
+    cut_err(module_segment)
+        .context(expected("module name"))
+        .parse_next(input)
 }
 
 /// Parse dot-separated identifier segments recursively

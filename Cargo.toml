@@ -11,7 +11,6 @@ license = "MIT"
 keywords = ["pkl_fast", "pkl", "serialization", "apple", "fast"]
 
 [dependencies]
-logos = "0.14.0"
 miette = {version = "7.0.0", features = ["fancy"]}
 regex = "1.10.3"
 thiserror = "1.0.57"

@@ -1,6 +1,6 @@
 use winnow::{ascii::multispace1, PResult, Parser};
 
-use crate::parser::utils::{line_ending_or_end, string_literal};
+use crate::parser::utils::{line_ending_or_end, string::string_literal};
 
 use super::Statement;
 pub fn extends_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {

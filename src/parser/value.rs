@@ -11,6 +11,7 @@ use super::expression::Expression;
 use super::utils::expected;
 use std::fmt;
 
+mod amending;
 mod class;
 mod datasize;
 mod duration;
@@ -18,13 +19,12 @@ mod float;
 mod int;
 mod listing;
 mod mapping;
-pub mod object;
+mod object;
 pub mod string;
 
-pub use class::parse_class_instance;
-pub use object::parse_object;
-use winnow::ascii::alpha1;
-use winnow::combinator::{alt, cut_err, opt, preceded};
+pub use class::class_instance;
+pub use object::{object, object_values};
+use winnow::combinator::{alt, cut_err, opt};
 use winnow::{PResult, Parser};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -83,6 +83,7 @@ pub fn parse_value<'source>(input: &mut &'source str) -> PResult<PklValue<'sourc
         "true".map(|_| PklValue::Boolean(true)),
         "false".map(|_| PklValue::Boolean(false)),
         "null".map(|_| PklValue::Null),
+        class_instance,
         multiline_string_value, // need to return an error whenever the end """ is not preceded by a newline
         string_value,
         float.map(PklValue::Float),
@@ -92,7 +93,7 @@ pub fn parse_value<'source>(input: &mut &'source str) -> PResult<PklValue<'sourc
 }
 
 /// We keep this function in case we decide to parse duration and datasize directly here
-/// 
+///
 /// But I believe it's better to parse them with other methods and properties indexing
 fn _float_or_derived<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
     let f = float.parse_next(input)?;
@@ -121,7 +122,7 @@ fn _float_or_derived<'source>(input: &mut &'source str) -> PResult<PklValue<'sou
     }
 }
 /// We keep this function in case we decide to parse duration and datasize directly here
-/// 
+///
 /// But I believe it's better to parse them with other methods and properties indexing
 fn _int_or_derived<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
     let i = int.parse_next(input)?;

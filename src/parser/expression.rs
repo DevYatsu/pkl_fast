@@ -18,6 +18,9 @@ pub enum Expression<'a> {
         args: Vec<Expression<'a>>,
     },
 
+    // this keyword
+    This(Box<Expression<'a>>),
+
     // object indexing: `object.property` and recursively we can obtain several object indexing
     MemberExpression {
         object: Box<Expression<'a>>,
@@ -107,6 +110,7 @@ impl<'a> fmt::Display for Expression<'a> {
             }
             Expression::ExpressionType(s) => write!(f, "{s}",),
             Expression::MemberExpression { object, property } => write!(f, "{object}.{property}"),
+            Expression::This(e) => write!(f, "this[{}]", e),
         }
     }
 }

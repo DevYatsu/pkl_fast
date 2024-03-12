@@ -6,7 +6,9 @@ use winnow::{
     PResult, Parser,
 };
 
-use crate::parser::utils::{expected, identifier, line_ending_or_end, string_literal};
+use crate::parser::utils::{
+    cut_multispace1, expected, id::cut_identifier, line_ending_or_end, string::string_literal,
+};
 
 use super::Statement;
 
@@ -21,11 +23,7 @@ pub enum ImportClause<'a> {
 pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
     // import keyword already parsed
     let is_globbed = opt('*').parse_next(input)?.is_some();
-    let value = preceded(
-        cut_err(multispace1).context(expected("space")),
-        import_clause,
-    )
-    .parse_next(input)?;
+    let value = preceded(cut_multispace1, import_clause).parse_next(input)?;
     let imported_as = opt(parse_as).parse_next(input)?;
     line_ending_or_end.parse_next(input)?;
 
@@ -39,10 +37,8 @@ pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<
 fn parse_as<'source>(input: &mut &'source str) -> PResult<&'source str> {
     multispace1.parse_next(input)?;
     "as".parse_next(input)?;
-    cut_err(multispace1)
-        .context(expected("space"))
-        .parse_next(input)?;
-    cut_err(identifier).parse_next(input)
+    cut_multispace1.parse_next(input)?;
+    cut_identifier.parse_next(input)
 }
 
 pub fn import_clause<'source>(input: &mut &'source str) -> PResult<ImportClause<'source>> {

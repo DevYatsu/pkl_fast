@@ -1,13 +1,17 @@
 use winnow::{
     ascii::digit1,
     combinator::{alt, cut_err, opt},
-    token::{ one_of},
+    token::one_of,
     PResult, Parser,
 };
 
 use super::PklValue;
 use crate::parser::utils::expected;
 
+/// Parsing a 64-bit double-precision floating point number, using decimal notation.
+/// They consist of an integer part, decimal point, fractional part, and exponent part. The integer and exponent part are optional.
+///
+/// **WE URGENTLY NEED TO ADD SUPPORT FOR _ IN FLOATS!!**
 pub fn float<'source>(input: &mut &'source str) -> PResult<f64> {
     let number = recognize_float(input)?;
 

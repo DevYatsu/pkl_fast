@@ -5,11 +5,10 @@ use crate::{
     },
     prelude::{ParsingResult, PklParser},
 };
-use logos::Logos;
 use std::fmt;
 use winnow::{
     ascii::{hex_digit1, newline, space0},
-    combinator::{alt, cut_err, delimited, opt, preceded, repeat_till},
+    combinator::{alt, cut_err, delimited, repeat_till},
     token::{one_of, take_while},
     PResult, Parser,
 };
@@ -35,18 +34,12 @@ pub enum StringFragment<'source> {
     UnicodeEscape(&'source str),
 }
 
-#[derive(Logos, Debug, PartialEq, Clone)]
-pub enum StringLexer<'source> {
-    #[regex(r"\\[a-mo-zA-MO-Z]", |lex| lex.slice().chars().nth(1).unwrap())]
-    EscapedValue(char),
-
-    #[regex(r"\\\(\w+\)", |lex| let val=lex.slice();&val[2..val.len()-1])]
-    EscapeForInterpolated(&'source str),
-
-    #[regex(r"\\u\{[0-9A-Fa-f]{1,6}\}", |lex| {let val=lex.slice();&val[3..val.len()-1]})]
-    UnicodeEscape(&'source str),
-}
-
+/// Parsing a string literal (aka a sequence of Unicode code points), optionnaly composed of:
+/// - escape sequences: `\t`, `\n`, `\r`, `\"`, `\\`
+/// - unicode escape: `\u{<codePoint>}` where `<codePoint>` is a hexadecimal number between 0 and 10FFFF
+/// - string interpolation: `\(<expr>)` to embed the result of an `<expr>` in a string
+///
+/// *NOTE*: CUSTOM STRINGS DELIMITERS SUPPORT INCOMING!
 pub fn string_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
     '"'.parse_next(input)?;
 
@@ -64,6 +57,12 @@ pub fn string_value<'source>(input: &mut &'source str) -> PResult<PklValue<'sour
     .parse_next(input)
 }
 
+/// Parsing a multiline string literal, starting with `"""`, and optionnaly composed of:
+/// - escape sequences: `\t`, `\n`, `\r`, `\"`, `\\`
+/// - unicode escape: `\u{<codePoint>}` where `<codePoint>` is a hexadecimal number between 0 and 10FFFF
+/// - string interpolation: `\(<expr>)` to embed the result of an `<expr>` in a string
+///
+/// *NOTE*: Multiline string literals are delimited by three double quotes. String content and closing delimiter must each start on a new line.
 pub fn multiline_string_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
     r#"""""#.parse_next(input)?;
     // content starts on the first line after '"""' token
@@ -115,7 +114,7 @@ fn escape_sequence<'source>(input: &mut &'source str) -> PResult<StringFragment<
 
 fn unicode<'source>(input: &mut &'source str) -> PResult<&'source str> {
     cut_err(hex_digit1)
-        .verify(|s: &str| 3 <= s.len() && s.len() <= 6)
+        .verify(|s: &str| s.len() <= 6)
         .context(expected("valid hex"))
         .parse_next(input)
 }

@@ -1,10 +1,22 @@
 use std::fmt::Display;
 
-use winnow::{combinator::todo, PResult};
+use winnow::{
+    combinator::{alt, preceded, todo},
+    PResult, Parser,
+};
 
-use crate::{parser::expression::Expression, prelude::PklValue};
+use crate::{
+    parser::{
+        expression::{parse_expr, Expression},
+        utils::id::identifier,
+    },
+    prelude::PklValue,
+};
 
-use super::mapping::MappingField;
+use super::{
+    mapping::{mapping_field, MappingField},
+    object::object,
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ClassField<'a> {
@@ -16,8 +28,13 @@ pub enum ClassField<'a> {
     MappingField(MappingField<'a>),
 }
 
-/// Function called to parse a class instance, we assume that 'new' was already found
-pub fn parse_class_instance<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+/// Function called to parse a class instance.
+///
+/// There are 3 kinds of class instances:
+/// - Listing
+/// - Mapping
+/// - Other classes
+pub fn class_instance<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
     todo(input)
     // let next_token = retrieve_next_token(parser)?;
 
@@ -69,7 +86,7 @@ pub fn parse_class_instance<'source>(input: &mut &'source str) -> PResult<PklVal
     // Ok(PklValue::ClassInstance { name, arguments })
 }
 
-fn parse_class_instance_field<'source>(input: &mut &'source str) -> PResult<(ClassField<'source>)> {
+fn class_instance_field<'source>(input: &mut &'source str) -> PResult<ClassField<'source>> {
     todo(input)
     // match token {
     //     PklToken::Identifier(name) | PklToken::IllegalIdentifier(name) => {
@@ -107,6 +124,18 @@ fn parse_class_instance_field<'source>(input: &mut &'source str) -> PResult<(Cla
     //         Ok((ClassField::Expression(expr), next))
     //     }
     // }
+}
+
+fn class_variable_declaration<'source>(input: &mut &'source str) -> PResult<ClassField<'source>> {
+    let name = identifier.parse_next(input)?;
+
+    alt((preceded('=', parse_expr), object.map(Expression::Value)))
+        .map(|value| ClassField::VariableDeclaration { name, value })
+        .parse_next(input)
+}
+
+fn class_mapping_field<'source>(input: &mut &'source str) -> PResult<ClassField<'source>> {
+    Ok(ClassField::MappingField(mapping_field(input)?))
 }
 
 impl<'a> Display for ClassField<'a> {

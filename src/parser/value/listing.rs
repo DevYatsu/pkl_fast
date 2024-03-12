@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
-use winnow::{combinator::todo, PResult};
+use winnow::{combinator::alt, PResult, Parser};
 
-use crate::parser::{expression::Expression, types::PklType};
+use crate::parser::{expression::Expression, types::PklType, utils::var::local_variable};
 
-use super::PklValue;
+use super::{amending::utils::default_field, object::ObjectField, PklValue};
 #[derive(Debug, PartialEq, Clone)]
 pub enum ListingField<'a> {
     Expression(Expression<'a>),
@@ -13,15 +13,27 @@ pub enum ListingField<'a> {
         _type: Option<PklType<'a>>,
         value: Expression<'a>,
     },
-    DefaultObject(Expression<'a>),
-    AmendingElement {
+    DefaultObject(Vec<ObjectField<'a>>),
+
+    /// A dynamic Expression is an expression defined in terms of another element
+    /// (see [late binding](https://pkl-lang.org/main/current/language-reference/index.html#late-binding-2)),
+    /// that is using `this` keyword.
+    DynamicExpression {
         index: Expression<'a>,
         value: PklValue<'a>,
     },
 }
 
-pub fn parse_listing_field<'source>(input: &mut &'source str) -> PResult<(ListingField<'source>)> {
-    todo(input)
+pub fn parse_listing_field<'source>(input: &mut &'source str) -> PResult<ListingField<'source>> {
+    alt((
+        local_variable.map(|(name, _type, value)| ListingField::LocalVariable {
+            name,
+            _type,
+            value,
+        }),
+        default_field.map(ListingField::DefaultObject),
+    ))
+    .parse_next(input)
 
     // match next_token {
     //     PklToken::Local => {
@@ -130,8 +142,22 @@ impl<'a> Display for ListingField<'a> {
                     write!(f, "local {name} = {value}")
                 }
             }
-            ListingField::DefaultObject(x) => write!(f, "default {x}"),
-            ListingField::AmendingElement { index, value } => write!(f, "(this[{index}]) {value}"),
+            ListingField::DefaultObject(fields) => {
+                write!(f, "default {{\n")?;
+                for field in fields {
+                    write!(f, "\t{field},\n");
+                }
+                write!(f, "}}")
+            }
+            ListingField::DynamicExpression { index, value } => {
+                write!(f, "(this[{index}]) {value}")
+            }
         }
+    }
+}
+
+impl<'a> From<Expression<'a>> for ListingField<'a> {
+    fn from(value: Expression<'a>) -> Self {
+        ListingField::Expression(value)
     }
 }

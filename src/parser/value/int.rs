@@ -7,6 +7,8 @@ use winnow::{
 
 use super::PklValue;
 
+/// Parsing a pkl integer, including 64-bit signed integer, written in decimal, hexadecimal, binary, or octal notations.
+/// They can potentially include underscores as separators.
 pub fn int<'source>(input: &mut &'source str) -> PResult<i64> {
     let is_negative = opt(one_of(['+', '-'])).parse_next(input)?.is_some();
 
