@@ -14,15 +14,16 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 
 ## Todo List
 
-- [x] Parsing basic values (e.g., int, float, boolean, datasize, duration)
+- [x] Parsing basic values (e.g., int, float, boolean)
+- [ ] Parsing duration, datasize types
 - [ ] Parsing all types of strings, e.g. multiline strings ([x]) and custom string delimiters (#""# with a changeable number of #) ([ ])
 - [x] Parsing objects declaration
-- [x] Add support for chaining amending object bodies ([see](https://pkl-lang.org/main/current/language-reference/index.html#amending-objects))
-- [x] Parsing `Map`, `Set`, `List`
-- [x] Parsing `Mapping`, `Listing`
+- [ ] Add support for chaining amending object bodies ([see](https://pkl-lang.org/main/current/language-reference/index.html#amending-objects))
+- [ ] Parsing `Map`, `Set`, `List`
+- [ ] Parsing `Mapping`, `Listing`
 
-- [x] Parsing simple type annotations (`Int`, `Float`, `UInt16`, `unknown`, `Any`)
-- [x] Parsing more complex type annotations (e.g., `Listing<Type>`, `Mapping<Type, OtherType>`) without type checking
+- [ ] Parsing simple type annotations (`Int`, `Float`, `UInt16`, `unknown`, `Any`)
+- [ ] Parsing more complex type annotations (e.g., `Listing<Type>`, `Mapping<Type, OtherType>`) without type checking
 - [ ] Adding type checking
 
 - [x] Parsing `import/import\*` statement (with optional `as`)
@@ -31,15 +32,15 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 - [x] Parsing `module` statement
 
 - [x] Parsing variable declaration statement
-- [x] Parsing `class` statement
+- [ ] Parsing `class` statement
 - [ ] Parsing `function` statement
 
 - [x] Parsing `@ModuleInfo`/`@Deprecated` annotation
-- [x] Parsing `typealias` annotation (partially done, need to support unions)
-- [x] Parsing If/Else/Let/For/When statement
+- [ ] Parsing `typealias` annotation (partially done, need to support unions)
+- [ ] Parsing If/Else/Let/For/When statement
 
-- [x] Parsing Arithmetic expressions
-- [x] Parsing Function call expressions
+- [ ] Parsing Arithmetic expressions
+- [ ] Parsing Function call expressions
 - [x] Parsing InterpolatedString expressions
 
 - [ ] Support expressions parsing on several lines
