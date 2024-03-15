@@ -1,6 +1,9 @@
-use winnow::{combinator::todo};
+use winnow::combinator::todo;
 
-use crate::{parser::types::PklType, prelude::{ParsingResult, PklValue}};
+use crate::{
+    parser::types::PklType,
+    prelude::{ParsingResult, PklValue},
+};
 
 #[derive(Debug, PartialEq, Clone)]
 /// A struct representing the type of a `ClassDeclaration`.

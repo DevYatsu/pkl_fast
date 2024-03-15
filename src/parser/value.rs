@@ -27,7 +27,7 @@ mod utils;
 pub use class::class_instance;
 pub use object::{object, object_values};
 use winnow::combinator::{alt, cut_err, opt};
-use winnow::{Parser};
+use winnow::Parser;
 
 #[derive(Debug, Clone, PartialEq)]
 /// An enum representing any Pkl value

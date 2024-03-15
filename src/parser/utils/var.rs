@@ -4,11 +4,14 @@ use winnow::{
     Parser,
 };
 
-use crate::{parser::{
-    expression::{parse_expr, Expression},
-    types::{parse_type, PklType},
-    value::object,
-}, prelude::ParsingResult};
+use crate::{
+    parser::{
+        expression::{parse_expr, Expression},
+        types::{parse_type, PklType},
+        value::object,
+    },
+    prelude::ParsingResult,
+};
 
 use super::{cut_multispace1, expected, id::identifier_not_keyword};
 

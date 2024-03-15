@@ -24,24 +24,21 @@ pub mod value;
 
 pub type ParsingResult<T> = PResult<T>;
 
-
 pub fn parse<'source>(source: &'source str) -> ParsingResult<Vec<statement::Statement<'source>>> {
     let mut parser = PklParser::new(source);
 
     match parser.parse() {
-        Ok(_) =>(),
-        Err(e) => {
-            match e  {
-                ErrMode::Cut(ctx) => {
-                    if let Some(c) = ctx.context().next() {
-                        if let StrContext::Expected(expected) = c {
-                            println!("{}", expected);
-                        }
+        Ok(_) => (),
+        Err(e) => match e {
+            ErrMode::Cut(ctx) => {
+                if let Some(c) = ctx.context().next() {
+                    if let StrContext::Expected(expected) = c {
+                        println!("{}", expected);
                     }
-                },
-                _ => ()
+                }
             }
-        }
+            _ => (),
+        },
     }
     Ok(parser.statements)
 }
@@ -102,13 +99,16 @@ impl<'source> PklParser<'source> {
         Ok(())
     }
 
-    fn _parse_basic_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {todo!()
+    fn _parse_basic_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
+        todo!()
         // self.parse_class_declaration(ClassType::None)
     }
-    fn _parse_open_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {todo!()
+    fn _parse_open_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
+        todo!()
         // self.parse_class_declaration(ClassType::Open)
     }
-    fn _parse_abstract_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {todo!()
+    fn _parse_abstract_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
+        todo!()
         // self.parse_class_declaration(ClassType::Abstract)
     }
 

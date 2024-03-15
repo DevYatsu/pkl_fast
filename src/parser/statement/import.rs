@@ -3,12 +3,15 @@ use std::path::Path;
 use winnow::{
     ascii::multispace1,
     combinator::{cut_err, opt, preceded},
-     Parser,
+    Parser,
 };
 
-use crate::{parser::utils::{
-    cut_multispace1, expected, id::cut_identifier, line_ending_or_end, string::string_literal,
-}, prelude::ParsingResult};
+use crate::{
+    parser::utils::{
+        cut_multispace1, expected, id::cut_identifier, line_ending_or_end, string::string_literal,
+    },
+    prelude::ParsingResult,
+};
 
 use super::Statement;
 

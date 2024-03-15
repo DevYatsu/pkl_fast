@@ -2,10 +2,16 @@ use miette::Diagnostic;
 use pkl_fast::parser::parse;
 use std::{env, fs, path::PathBuf, time::Instant};
 use thiserror::Error;
-fn main() -> miette::Result<()>  {
+fn main() -> miette::Result<()> {
     let args: Vec<String> = env::args().collect();
     let target_path = get_target_file(&args).unwrap();
-    let source_code = fs::read_to_string(&target_path).map_err(|_| ProgramError::InvalidFilePath {advice: format!("Ensure the existence of a file at the specified path: `{}`", target_path.display())})?;
+    let source_code =
+        fs::read_to_string(&target_path).map_err(|_| ProgramError::InvalidFilePath {
+            advice: format!(
+                "Ensure the existence of a file at the specified path: `{}`",
+                target_path.display()
+            ),
+        })?;
 
     let start = Instant::now();
 
@@ -40,9 +46,7 @@ pub enum ProgramError {
     NoFileArgument,
 
     #[error("Invalid file path")]
-    #[diagnostic(
-        code(program_error::file_path),
-    )]
+    #[diagnostic(code(program_error::file_path))]
     InvalidFilePath {
         #[help]
         advice: String,

@@ -8,7 +8,8 @@ use std::fmt;
 use super::{
     operator::Operator,
     types::PklType,
-    value::{parse_value, PklValue}, ParsingResult,
+    value::{parse_value, PklValue},
+    ParsingResult,
 };
 
 pub mod basic;

@@ -1,4 +1,7 @@
-use crate::{parser::utils::{cut_multispace1, var::variable}, prelude::ParsingResult};
+use crate::{
+    parser::utils::{cut_multispace1, var::variable},
+    prelude::ParsingResult,
+};
 use winnow::{
     combinator::{opt, terminated},
     Parser,

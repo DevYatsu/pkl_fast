@@ -1,5 +1,8 @@
 use super::Statement;
-use crate::{parser::utils::{expected, id::identifier, string::string_literal, ws}, prelude::ParsingResult};
+use crate::{
+    parser::utils::{expected, id::identifier, string::string_literal, ws},
+    prelude::ParsingResult,
+};
 use winnow::{
     ascii::multispace0,
     combinator::{cut_err, preceded, separated},

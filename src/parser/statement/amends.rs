@@ -1,4 +1,7 @@
-use crate::{parser::utils::{line_ending_or_end, string::string_literal}, prelude::ParsingResult};
+use crate::{
+    parser::utils::{line_ending_or_end, string::string_literal},
+    prelude::ParsingResult,
+};
 
 use super::Statement;
 use winnow::{ascii::multispace1, Parser};
