@@ -5,7 +5,7 @@ use winnow::{
     combinator::delimited,
     error::ParserError,
     error::{StrContext, StrContextValue},
-    PResult, Parser,
+    Parser,
 };
 
 use super::ParsingResult;

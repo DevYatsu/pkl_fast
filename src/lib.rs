@@ -47,7 +47,6 @@ pub mod parser;
 
 pub mod prelude {
     pub use crate::parser::{
-        errors::ParsingError, parse, statement::Statement, value::PklValue, ParsingResult,
-        PklParser,
+        parse, statement::Statement, value::PklValue, ParsingResult, PklParser,
     };
 }

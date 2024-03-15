@@ -123,7 +123,7 @@ pub fn parse_basic_expr<'source>(
 fn parse_opt_member_expr<'source>(
     parser: &mut PklParser<'source>,
     expr: Expression<'source>,
-) -> ParsingResult<(Expression<'source>)> {
+) -> ParsingResult<Expression<'source>> {
     todo!()
     // let next_token = retrieve_opt_next_token(parser)?;
 

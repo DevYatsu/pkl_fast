@@ -1,10 +1,9 @@
 use crate::parser::statement::comment::{doc_comment, line_comment, multiline_comment};
+use crate::parser::statement::Statement;
 use crate::parser::statement::{info_statement, module_statement, open_module_statement};
-use crate::parser::{errors::ParsingError, statement::Statement};
 
 use winnow::ascii::alphanumeric1;
 use winnow::combinator::{alt, fail, opt};
-use winnow::error::{ErrMode, StrContext};
 use winnow::stream::AsChar;
 use winnow::token::take_while;
 use winnow::{dispatch, PResult, Parser};
@@ -29,25 +28,25 @@ pub fn parse<'source>(source: &'source str) -> ParsingResult<Vec<statement::Stat
 
     match parser.parse() {
         Ok(_) => (),
-        Err(e) => match e {
-            ErrMode::Cut(ctx) => {
-                if let Some(c) = ctx.context().next() {
-                    if let StrContext::Expected(expected) = c {
-                        println!("{}", expected);
-                    }
-                }
+        Err(e) => {
+            if let Some(e) = e.into_inner() {
+                println!("{:?}", parser.input());
+                println!("{e}");
             }
-            _ => (),
-        },
+
+            // return eof error
+        }
     }
-    Ok(parser.statements)
+    
+    Ok(parser.statements())
 }
 
 #[derive(Debug, Clone)]
 /// PklParser is the main parser struct, possessing the `parse` method to parse the tokens in the lexer.
 pub struct PklParser<'source> {
-    pub statements: Vec<Statement<'source>>,
-    pub input: &'source str,
+    statements: Vec<Statement<'source>>,
+    input: &'source str,
+    source_input: &'source str
 }
 
 impl<'source> PklParser<'source> {
@@ -56,7 +55,21 @@ impl<'source> PklParser<'source> {
         Self {
             statements: vec![],
             input: source,
+            source_input: source,
         }
+    }
+
+    pub fn source_input(&self) -> &'source str {
+        self.source_input
+    }
+    pub fn input(&self) -> &'source str {
+        self.input
+    }
+    pub fn statements_ref(&self) -> &Vec<Statement<'source>> {
+        &self.statements
+    }
+    pub fn statements(self) -> Vec<Statement<'source>> {
+        self.statements
     }
 
     /// This function parses the tokens in the lexer.
