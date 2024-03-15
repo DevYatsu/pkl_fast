@@ -3,12 +3,12 @@ use std::path::Path;
 use winnow::{
     ascii::multispace1,
     combinator::{cut_err, opt, preceded},
-    PResult, Parser,
+     Parser,
 };
 
-use crate::parser::utils::{
+use crate::{parser::utils::{
     cut_multispace1, expected, id::cut_identifier, line_ending_or_end, string::string_literal,
-};
+}, prelude::ParsingResult};
 
 use super::Statement;
 
@@ -21,7 +21,7 @@ pub enum ImportClause<'a> {
 }
 
 /// Parse an `import` statement, assuming the `import` keyword has already been consumed.
-pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+pub fn import_statement<'source>(input: &mut &'source str) -> ParsingResult<Statement<'source>> {
     // import keyword already parsed
     let is_globbed = opt('*').parse_next(input)?.is_some();
     let value = preceded(cut_multispace1, import_clause).parse_next(input)?;
@@ -35,14 +35,14 @@ pub fn import_statement<'source>(input: &mut &'source str) -> PResult<Statement<
     })
 }
 
-fn parse_as<'source>(input: &mut &'source str) -> PResult<&'source str> {
+fn parse_as<'source>(input: &mut &'source str) -> ParsingResult<&'source str> {
     multispace1.parse_next(input)?;
     "as".parse_next(input)?;
     cut_multispace1.parse_next(input)?;
     cut_identifier.parse_next(input)
 }
 
-pub fn import_clause<'source>(input: &mut &'source str) -> PResult<ImportClause<'source>> {
+pub fn import_clause<'source>(input: &mut &'source str) -> ParsingResult<ImportClause<'source>> {
     let value = cut_err(string_literal)
         .context(expected("import clause"))
         .parse_next(input)?;

@@ -1,10 +1,10 @@
 use super::Statement;
-use crate::parser::utils::{expected, id::identifier, string::string_literal, ws};
+use crate::{parser::utils::{expected, id::identifier, string::string_literal, ws}, prelude::ParsingResult};
 use winnow::{
     ascii::multispace0,
     combinator::{cut_err, preceded, separated},
     token::take_while,
-    PResult, Parser,
+    Parser,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -15,7 +15,7 @@ pub struct InfoField<'a> {
 }
 
 /// Parsing informationnal annotation, for instance `@ModuleInfo`
-pub fn info_statement<'source>(input: &mut &'source str) -> PResult<Statement<'source>> {
+pub fn info_statement<'source>(input: &mut &'source str) -> ParsingResult<Statement<'source>> {
     // '@' already parsed
 
     //todo! prevent names with several dots one after another
@@ -31,7 +31,7 @@ pub fn info_statement<'source>(input: &mut &'source str) -> PResult<Statement<'s
     Ok(Statement::Info { name, infos })
 }
 
-fn info_field<'source>(input: &mut &'source str) -> PResult<InfoField<'source>> {
+fn info_field<'source>(input: &mut &'source str) -> ParsingResult<InfoField<'source>> {
     let name = identifier.parse_next(input)?;
 
     cut_err(ws('='))

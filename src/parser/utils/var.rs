@@ -1,21 +1,21 @@
 use winnow::{
     ascii::multispace0,
     combinator::{alt, cut_err, opt, preceded},
-    PResult, Parser,
+    Parser,
 };
 
-use crate::parser::{
+use crate::{parser::{
     expression::{parse_expr, Expression},
     types::{parse_type, PklType},
     value::object,
-};
+}, prelude::ParsingResult};
 
 use super::{cut_multispace1, expected, id::identifier_not_keyword};
 
 /// Parses a variable with format (name, Option<Type>, expression)
 pub fn variable<'source>(
     input: &mut &'source str,
-) -> PResult<(&'source str, Option<PklType<'source>>, Expression<'source>)> {
+) -> ParsingResult<(&'source str, Option<PklType<'source>>, Expression<'source>)> {
     let name = identifier_not_keyword.parse_next(input)?;
     multispace0.parse_next(input)?;
 
@@ -44,7 +44,7 @@ pub fn variable<'source>(
 /// Parses a local variable, returning a cut_err if a variable does not follow `local` keyword.
 pub fn local_variable<'source>(
     input: &mut &'source str,
-) -> PResult<(&'source str, Option<PklType<'source>>, Expression<'source>)> {
+) -> ParsingResult<(&'source str, Option<PklType<'source>>, Expression<'source>)> {
     "local".parse_next(input)?;
     cut_multispace1.parse_next(input)?;
 
@@ -53,7 +53,7 @@ pub fn local_variable<'source>(
         .parse_next(input)
 }
 
-fn parse_var_type<'source>(input: &mut &'source str) -> PResult<PklType<'source>> {
+fn parse_var_type<'source>(input: &mut &'source str) -> ParsingResult<PklType<'source>> {
     ':'.parse_next(input)?;
     multispace0(input)?;
 

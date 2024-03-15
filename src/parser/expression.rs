@@ -8,7 +8,7 @@ use std::fmt;
 use super::{
     operator::Operator,
     types::PklType,
-    value::{parse_value, PklValue},
+    value::{parse_value, PklValue}, ParsingResult,
 };
 
 pub mod basic;
@@ -65,7 +65,7 @@ pub enum Expression<'a> {
     Parenthesised(Box<Expression<'a>>),
 }
 
-pub fn parse_expr<'source>(input: &mut &'source str) -> PResult<Expression<'source>> {
+pub fn parse_expr<'source>(input: &mut &'source str) -> ParsingResult<Expression<'source>> {
     alt((parse_value.map(Expression::Value), todo)).parse_next(input)
 
     // let (expr, opt_token) = parse_basic_expr(parser, opt_token)?;

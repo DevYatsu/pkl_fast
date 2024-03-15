@@ -9,6 +9,7 @@ use self::object::ObjectField;
 use self::string::{multiline_string_value, string_value, StringFragment};
 use super::expression::Expression;
 use super::utils::expected;
+use super::ParsingResult;
 use std::fmt;
 
 mod amending;
@@ -26,7 +27,7 @@ mod utils;
 pub use class::class_instance;
 pub use object::{object, object_values};
 use winnow::combinator::{alt, cut_err, opt};
-use winnow::{PResult, Parser};
+use winnow::{Parser};
 
 #[derive(Debug, Clone, PartialEq)]
 /// An enum representing any Pkl value
@@ -79,7 +80,7 @@ pub enum PklValue<'a> {
     },
 }
 
-pub fn parse_value<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+pub fn parse_value<'source>(input: &mut &'source str) -> ParsingResult<PklValue<'source>> {
     alt((
         "true".map(|_| PklValue::Boolean(true)),
         "false".map(|_| PklValue::Boolean(false)),
@@ -96,7 +97,7 @@ pub fn parse_value<'source>(input: &mut &'source str) -> PResult<PklValue<'sourc
 /// We keep this function in case we decide to parse duration and datasize directly here
 ///
 /// But I believe it's better to parse them with other methods and properties indexing
-fn _float_or_derived<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+fn _float_or_derived<'source>(input: &mut &'source str) -> ParsingResult<PklValue<'source>> {
     let f = float.parse_next(input)?;
 
     let dot_exists = opt('.').parse_next(input)?.is_some();
@@ -125,7 +126,7 @@ fn _float_or_derived<'source>(input: &mut &'source str) -> PResult<PklValue<'sou
 /// We keep this function in case we decide to parse duration and datasize directly here
 ///
 /// But I believe it's better to parse them with other methods and properties indexing
-fn _int_or_derived<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
+fn _int_or_derived<'source>(input: &mut &'source str) -> ParsingResult<PklValue<'source>> {
     let i = int.parse_next(input)?;
 
     let dot_exists = opt('.').parse_next(input)?.is_some();

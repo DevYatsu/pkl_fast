@@ -2,7 +2,6 @@ use winnow::{
     combinator::todo,
     error::{AddContext, ContextError},
     stream::Stream,
-    PResult,
 };
 
 use self::errors::TypeError;
@@ -103,7 +102,7 @@ pub enum PklType<'a> {
     PotentiallyNull(Box<PklType<'a>>),
 }
 
-pub fn parse_type<'source>(input: &mut &'source str) -> PResult<PklType<'source>> {
+pub fn parse_type<'source>(input: &mut &'source str) -> ParsingResult<PklType<'source>> {
     todo(input)
     // let token = if opt_token.is_some() {
     //     opt_token.unwrap()
@@ -386,7 +385,7 @@ impl<'a> From<&'a str> for PklType<'a> {
 }
 
 impl<'a> PklType<'a> {
-    pub fn default_value(&self, input: &mut &'a str) -> PResult<PklValue<'a>> {
+    pub fn default_value(&self, input: &mut &'a str) -> ParsingResult<PklValue<'a>> {
         match self {
             PklType::String { matches, .. } => {
                 if let Some(value) = matches {

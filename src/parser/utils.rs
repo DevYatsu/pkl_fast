@@ -8,6 +8,8 @@ use winnow::{
     PResult, Parser,
 };
 
+use super::ParsingResult;
+
 pub mod id;
 pub mod string;
 pub mod var;
@@ -47,7 +49,7 @@ pub const GLOBAL_KEYWORDS: [&str; 30] = [
     "any",
 ];
 
-pub fn line_ending_or_end<'source>(input: &mut &'source str) -> PResult<&'source str> {
+pub fn line_ending_or_end<'source>(input: &mut &'source str) -> ParsingResult<&'source str> {
     space0.parse_next(input)?;
 
     if input.len() > 0 {
@@ -60,7 +62,7 @@ pub fn expected(what: &'static str) -> StrContext {
     StrContext::Expected(StrContextValue::Description(what))
 }
 
-pub fn cut_multispace1<'source>(input: &mut &'source str) -> PResult<&'source str> {
+pub fn cut_multispace1<'source>(input: &mut &'source str) -> ParsingResult<&'source str> {
     cut_err(multispace1)
         .context(expected("space"))
         .parse_next(input)

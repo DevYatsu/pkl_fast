@@ -1,7 +1,8 @@
-use super::PklType;
-use winnow::PResult;
+use crate::prelude::ParsingResult;
 
-pub fn parse_opt_union<'source>(input: &mut &'source str) -> PResult<PklType<'source>> {
+use super::PklType;
+
+pub fn parse_opt_union<'source>(input: &mut &'source str) -> ParsingResult<PklType<'source>> {
     todo!()
     // let token = if opt_token.is_some() {
     //     opt_token

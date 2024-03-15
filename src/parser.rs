@@ -4,7 +4,7 @@ use crate::parser::{errors::ParsingError, statement::Statement};
 
 use winnow::ascii::alphanumeric1;
 use winnow::combinator::{alt, fail, opt};
-use winnow::error::StrContext;
+use winnow::error::{ErrMode, StrContext};
 use winnow::stream::AsChar;
 use winnow::token::take_while;
 use winnow::{dispatch, PResult, Parser};
@@ -22,16 +22,17 @@ mod types;
 mod utils;
 pub mod value;
 
-pub type ParsingResult<T> = miette::Result<T, ParsingError>;
+pub type ParsingResult<T> = PResult<T>;
 
-pub fn parse<'source>(source: &'source str) -> PResult<Vec<statement::Statement<'source>>> {
+
+pub fn parse<'source>(source: &'source str) -> ParsingResult<Vec<statement::Statement<'source>>> {
     let mut parser = PklParser::new(source);
 
     match parser.parse() {
         Ok(_) =>(),
         Err(e) => {
             match e  {
-                winnow::error::ErrMode::Cut(ctx) => {
+                ErrMode::Cut(ctx) => {
                     if let Some(c) = ctx.context().next() {
                         if let StrContext::Expected(expected) = c {
                             println!("{}", expected);
@@ -64,7 +65,7 @@ impl<'source> PklParser<'source> {
     /// This function parses the tokens in the lexer.
     ///
     /// To access the parsed statements, use the `statements` field.
-    pub fn parse(&mut self) -> PResult<()> {
+    pub fn parse(&mut self) -> ParsingResult<()> {
         loop {
             opt(take_while(0.., |c: char| c.is_newline() || c.is_space()))
                 .parse_next(&mut self.input)?;
@@ -101,17 +102,17 @@ impl<'source> PklParser<'source> {
         Ok(())
     }
 
-    fn parse_basic_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
-        self.parse_class_declaration(ClassType::None)
+    fn _parse_basic_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {todo!()
+        // self.parse_class_declaration(ClassType::None)
     }
-    fn parse_open_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
-        self.parse_class_declaration(ClassType::Open)
+    fn _parse_open_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {todo!()
+        // self.parse_class_declaration(ClassType::Open)
     }
-    fn parse_abstract_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {
-        self.parse_class_declaration(ClassType::Abstract)
+    fn _parse_abstract_class_declaration(&mut self) -> ParsingResult<Statement<'source>> {todo!()
+        // self.parse_class_declaration(ClassType::Abstract)
     }
 
-    fn parse_class_declaration(&mut self, _type: ClassType) -> ParsingResult<Statement<'source>> {
+    fn _parse_class_declaration(&mut self, _type: ClassType) -> ParsingResult<Statement<'source>> {
         todo!()
         // let name = parse_identifier(self)?;
         // let token = retrieve_next_token(self)?;
@@ -173,7 +174,7 @@ impl<'source> PklParser<'source> {
     }
 
     // this function is defined here as it uses self.new_line_parsed
-    fn parse_var_statement(
+    fn _parse_var_statement(
         &mut self,
         name: &'source str,
         is_local: bool,
@@ -252,7 +253,7 @@ impl<'source> PklParser<'source> {
         //     is_local,
         // })
     }
-    fn parse_typealias(&mut self) -> ParsingResult<Statement<'source>> {
+    fn _parse_typealias(&mut self) -> ParsingResult<Statement<'source>> {
         // let token = retrieve_next_token(self)?;
         todo!()
         // let (alias, generics_params) = match token {
