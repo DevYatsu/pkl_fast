@@ -4,6 +4,7 @@ use crate::parser::{errors::ParsingError, statement::Statement};
 
 use winnow::ascii::alphanumeric1;
 use winnow::combinator::{alt, fail, opt};
+use winnow::error::StrContext;
 use winnow::stream::AsChar;
 use winnow::token::take_while;
 use winnow::{dispatch, PResult, Parser};
@@ -29,7 +30,16 @@ pub fn parse<'source>(source: &'source str) -> PResult<Vec<statement::Statement<
     match parser.parse() {
         Ok(_) =>(),
         Err(e) => {
-            println!("{:?}", source);
+            match e  {
+                winnow::error::ErrMode::Cut(ctx) => {
+                    if let Some(c) = ctx.context().next() {
+                        if let StrContext::Expected(expected) = c {
+                            println!("{}", expected);
+                        }
+                    }
+                },
+                _ => ()
+            }
         }
     }
     Ok(parser.statements)
