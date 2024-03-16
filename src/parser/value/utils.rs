@@ -14,9 +14,7 @@ where
     F: Fn(&mut &'source str) -> PResult<O>,
 {
     move |input: &mut &str| {
-        '{'
-            .context(expected("opening bracket"))
-            .parse_next(input)?;
+        '{'.context(expected("opening bracket")).parse_next(input)?;
         multispace0.parse_next(input)?;
 
         let values = separated(

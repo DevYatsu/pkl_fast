@@ -30,13 +30,8 @@ hey_string: Hey = "hey"
 typealias Foo = "foo"|"bar"|"baz"
 "#;
 
-    use pkl_fast::{
-        lexer::string::sanitize_code,
-        prelude::{lex, parse},
-    };
-    let (code, updated_code, str_vec) = sanitize_code(source);
-    let lexer = lex(&updated_code);
-    let statements = parse(code, lexer, str_vec);
+    use pkl_fast::prelude::parse;
+    let statements = parse("main.pkl", source);
 
     assert_eq!(statements.is_ok(), true)
 }

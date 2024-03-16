@@ -1,6 +1,8 @@
+use pkl_fast::prelude::parse;
+
 #[test]
 fn floats_var() {
-    const source: &str = "num1 = .23
+    const SOURCE: &str = "num1 = .23
 num2 = 1.23
 num3 = 1.23e2 
 num4 = 1.23e-2
@@ -8,20 +10,14 @@ notANumber = NaN
 positiveInfinity = Infinity
 negativeInfinity = -Infinity";
 
-    use pkl_fast::{
-        lexer::string::sanitize_code,
-        prelude::{lex, parse},
-    };
-    let (code, updated_code, str_vec) = sanitize_code(source);
-    let lexer = lex(&updated_code);
-    let statements = parse(code, lexer, str_vec);
+    let statements = parse("main.pkl", SOURCE);
 
     assert_eq!(statements.is_ok(), true);
 }
 
 #[test]
 fn ints_var() {
-    const source: &str = "num1 = 123
+    const SOURCE: &str = "num1 = 123
 num2 = 0x012AFF 
 num3 = 0b00010111 
 num4 = 0o755 
@@ -30,20 +26,14 @@ num2 = 0x0134_64DE
 num3 = 0b0001_0111 
 num4 = 0o0134_6475";
 
-    use pkl_fast::{
-        lexer::string::sanitize_code,
-        prelude::{lex, parse},
-    };
-    let (code, updated_code, str_vec) = sanitize_code(source);
-    let lexer = lex(&updated_code);
-    let statements = parse(code, lexer, str_vec);
+    let statements = parse("main.pkl", SOURCE);
 
     assert_eq!(statements.is_ok(), true);
 }
 
 #[test]
 fn duration_and_datasize() {
-    const source: &str = "duration1 = 5.ns  // nanoseconds (smallest unit)
+    const SOURCE: &str = "duration1 = 5.ns  // nanoseconds (smallest unit)
 duration2 = 5.us  // microseconds
 duration3 = 5.ms  // milliseconds
 duration4 = 5.s   // seconds
@@ -67,20 +57,14 @@ datasize6 = 5.pib // pebibytes (largest unit)
 datasize7 = 1.6666666666666667.mb
 ";
 
-    use pkl_fast::{
-        lexer::string::sanitize_code,
-        prelude::{lex, parse},
-    };
-    let (code, updated_code, str_vec) = sanitize_code(source);
-    let lexer = lex(&updated_code);
-    let statements = parse(code, lexer, str_vec);
+    let statements = parse("main.pkl", SOURCE);
 
     assert_eq!(statements.is_ok(), true);
 }
 
 #[test]
 fn str_var() {
-    let source = r#"ENV_VALUE="TEST_VALUE"
+    const SOURCE: &str = r#"ENV_VALUE="TEST_VALUE"
 s="str"
 greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n \(ENV_VALUE + s)"
 
@@ -96,13 +80,7 @@ the species will be remembered. \\
 
 "#;
 
-    use pkl_fast::{
-        lexer::string::sanitize_code,
-        prelude::{lex, parse},
-    };
-    let (code, updated_code, str_vec) = sanitize_code(source);
-    let lexer = lex(&updated_code);
-    let statements = parse(code, lexer, str_vec);
+    let statements = parse("main.pkl", SOURCE);
 
     assert_eq!(statements.is_ok(), true);
 }
