@@ -3,7 +3,7 @@
 @Deprecated { message = "Replace with" }  
 
 import* "testt"  
-import "test3.pkl" as x 
+import "test3.pkl" as new
 
 open module com.example.myapp
 module bird
@@ -29,7 +29,7 @@ num3 = 0b00010111
 
 x {}
 
-local {
+local var {
     x = 2
     d = 3
 

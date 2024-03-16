@@ -39,9 +39,15 @@ pub fn parse<'source>(
 
                 let err_as_str = e.to_string();
                 let error_type = err_as_str.trim_start_matches("expected ");
-                // all errors should start with "expected"
                 match error_type {
-                    "identifier" | "module name" => return Err(ParsingError::invalid_id(&parser)),
+                    "identifier" | "module name" | "identifier not keyword" => return Err(ParsingError::invalid_id(&parser)),
+                    "string literal" => return Err(ParsingError::expected_simple_string(&parser)),
+                    "unicode" => return Err(ParsingError::invalid_unicode(&parser)),
+                    "opening bracket" | "open bracket" => return Err(ParsingError::unexpected(&parser, "'{'")),
+                    "opening brace" | "open brace" => return Err(ParsingError::invalid_id(&parser)),
+                    "opening parenthesis" | "open parenthesis" => return Err(ParsingError::invalid_id(&parser)),
+                    "value"  => return Err(ParsingError::invalid_id(&parser)),
+                    "expr" => return Err(ParsingError::invalid_id(&parser)),
                     _ => return Err(ParsingError::eof(&parser, error_type)),
                 }
             }

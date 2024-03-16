@@ -14,7 +14,7 @@ pub mod id;
 pub mod string;
 pub mod var;
 
-pub const GLOBAL_KEYWORDS: [&str; 30] = [
+pub const GLOBAL_KEYWORDS: [&str; 32] = [
     "amends",
     "extends",
     "import",
@@ -31,6 +31,8 @@ pub const GLOBAL_KEYWORDS: [&str; 30] = [
     "default",
     "true",
     "false",
+    "new",
+    "as",
     // reserved for future use
     "protected",
     "override",

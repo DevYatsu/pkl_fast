@@ -1,7 +1,7 @@
 use winnow::{
     combinator::cut_err,
     token::{any, take_until},
-    PResult, Parser,
+    Parser,
 };
 
 use crate::prelude::ParsingResult;

@@ -44,3 +44,10 @@ pub fn get_next_element_length(parser: &PklParser) -> usize {
 
     length
 }
+
+pub fn get_next_element_until(parser: &PklParser, pattern: &str) -> usize {
+    let input = parser.input();
+    
+    input.find(pattern).map(|x| x + 1).unwrap_or_else(|| input.len() - 1)
+}
+

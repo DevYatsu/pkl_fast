@@ -26,6 +26,12 @@ pub fn cut_identifier<'source>(input: &mut &'source str) -> ParsingResult<&'sour
         .parse_next(input)
 }
 
+pub fn cut_identifier_not_keyword<'source>(input: &mut &'source str) -> ParsingResult<&'source str> {
+    cut_err(identifier_not_keyword)
+        .context(expected("identifier not keyword"))
+        .parse_next(input)
+}
+
 pub fn recognize_identifier<'source>(input: &mut &'source str) -> ParsingResult<&'source str> {
     alt((
         // an identifier conforming to Unicode’s UAX31-R1-1 syntax

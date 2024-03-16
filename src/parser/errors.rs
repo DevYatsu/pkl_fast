@@ -6,7 +6,7 @@ use std::{
 use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
 use thiserror::Error;
 
-use self::locating::{generate_source, get_error_location, get_next_element_length};
+use self::locating::{generate_source, get_error_location, get_next_element_length, get_next_element_until};
 
 use super::{types::errors::TypeError, PklParser};
 pub mod locating;
@@ -251,13 +251,13 @@ impl ParsingError {
             advice: format!("Add {expected_element}? Maybe you should..."),
         })
     }
-    // pub fn unexpected(parser: &PklParser, advice: String) -> Self {
-    //     ParsingError::UnexpectedToken(UnexpectedError {
-    //         src: generate_source("main.pkl", parser.source()),
-    //         at: get_error_location(&mut parser),
-    //         advice,
-    //     })
-    // }
+    pub fn unexpected(parser: &PklParser, expected: &str) -> Self {
+        ParsingError::UnexpectedToken(UnexpectedError {
+            src: generate_source("main.pkl", parser.source_input()),
+            at: get_error_location(parser, 1),
+            advice: format!("Add {expected}? Maybe you should..."),
+        })
+    }
     // pub fn invalid_string(parser: &PklParser) -> Self {
     //     ParsingError::InvalidString(InvalidStringError {
     //         src: generate_source("main.pkl", parser.source()),
@@ -293,10 +293,10 @@ impl ParsingError {
             at: get_error_location(parser, 2),
         })
     }
-    pub fn invalid_unicode(parser: &PklParser, length: usize) -> Self {
+    pub fn invalid_unicode(parser: &PklParser) -> Self {
         ParsingError::InvalidUnicodeEscape(UnicodeEscapeError {
             src: generate_source("main.pkl", parser.source_input()),
-            at: get_error_location(parser, length),
+            at: get_error_location(parser, get_next_element_until(parser, "}")),
         })
     }
     pub fn invalid_interpolated_expr(parser: &PklParser, length: usize) -> Self {
@@ -317,7 +317,7 @@ impl ParsingError {
     pub fn expected_simple_string(parser: &PklParser) -> Self {
         ParsingError::UnexpectedToken(UnexpectedError {
             src: generate_source(parser.file_path, parser.source_input()),
-            at: get_error_location(parser, get_next_element_length(parser)),
+            at: get_error_location(parser, get_next_element_until(parser, "\\")),
             advice: format!(
                 "Expected a simple `String` without characters escape or interpolation"
             ),

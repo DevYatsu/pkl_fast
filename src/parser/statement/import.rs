@@ -8,7 +8,7 @@ use winnow::{
 
 use crate::{
     parser::utils::{
-        cut_multispace1, expected, id::cut_identifier, line_ending_or_end, string::string_literal,
+        cut_multispace1, expected, id::{cut_identifier, cut_identifier_not_keyword}, line_ending_or_end, string::string_literal,
     },
     prelude::ParsingResult,
 };
@@ -42,12 +42,12 @@ fn parse_as<'source>(input: &mut &'source str) -> ParsingResult<&'source str> {
     multispace1.parse_next(input)?;
     "as".parse_next(input)?;
     cut_multispace1.parse_next(input)?;
-    cut_identifier.parse_next(input)
+    cut_identifier_not_keyword.parse_next(input)
 }
 
 pub fn import_clause<'source>(input: &mut &'source str) -> ParsingResult<ImportClause<'source>> {
     let value = cut_err(string_literal)
-        .context(expected("import clause"))
+        
         .parse_next(input)?;
 
     let result = match value {

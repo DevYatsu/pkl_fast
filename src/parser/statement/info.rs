@@ -5,8 +5,8 @@ use crate::{
 };
 use winnow::{
     ascii::multispace0,
-    combinator::{cut_err, preceded, separated},
-    token::take_while,
+    combinator::{cut_err, preceded, repeat, separated},
+    token::{one_of, take_while},
     Parser,
 };
 
@@ -22,6 +22,10 @@ pub fn info_statement<'source>(input: &mut &'source str) -> ParsingResult<Statem
     // '@' already parsed
 
     //todo! prevent names with several dots one after another
+        // repeat(1.., (
+        //     take_while(1.., ('A'..='Z', 'a'..='z')),
+        //     ".",
+        // )).map(|()| ()).recognize().parse_next(input);
     let name = take_while(1.., ('a'..='z', 'A'..='Z', '.')).parse_next(input)?;
 
     cut_err(ws('{'))
