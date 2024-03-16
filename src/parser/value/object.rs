@@ -45,22 +45,13 @@ pub enum ObjectField<'a> {
 
 /// Function called to parse an object, starting with `{` and ending with `}`.
 pub fn object<'source>(input: &mut &'source str) -> PResult<PklValue<'source>> {
-    let values = object_values.parse_next(input)?;
-
-    if opt(preceded(multispace0, '{')).parse_next(input)?.is_some() {
-        let chained_body = object_values.map(|v| Some(v)).parse_next(input)?;
-
-        return Ok(PklValue::Object {
-            values,
-            amended_by: None,
-            chained_body,
-        });
-    }
+    let values = cut_err(object_values).parse_next(input)?;
+    let chained_body = preceded(multispace0, opt(object_values)).parse_next(input)?;
 
     Ok(PklValue::Object {
         values,
         amended_by: None,
-        chained_body: None,
+        chained_body,
     })
 }
 

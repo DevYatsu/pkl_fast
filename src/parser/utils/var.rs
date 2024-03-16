@@ -27,7 +27,6 @@ pub fn variable<'source>(
     multispace0.parse_next(input)?;
 
     if let Some(_type) = opt(parse_var_type).parse_next(input)? {
-        println!("{:?}", _type);
         if let Some(_) = opt(delimited(multispace0, '=', multispace0)).parse_next(input)? {
             let expr = parse_expr.parse_next(input)?;
 

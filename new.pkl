@@ -48,6 +48,12 @@ _envValue: "TEST_VALUE"
 s="str"
 greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n"
 
+obj {
+    hey = "str"
+} {
+    hello = "world"
+}
+
 // name = "Dodo"
 // greeting = "Hi, \(name)!" 
 // str = "\(x + 2) plus \(x * 2) is \(0x80) \t " 
