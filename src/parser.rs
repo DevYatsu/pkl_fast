@@ -77,7 +77,7 @@ pub fn parse<'source>(
                         return Err(ParsingError::unexpected(&parser, "')'"))
                     }
                     "expr" => return Err(ParsingError::expected_expression(&parser)),
-                    _ => return Err(ParsingError::eof(&parser, error_type)),
+                    _ => return Err(ParsingError::unexpected(&parser, error_type)),
                 }
             }
 
