@@ -22,7 +22,7 @@ pub enum MappingField<'a> {
     LocalVariable {
         name: &'a str,
         _type: Option<PklType<'a>>,
-        value: Expression<'a>,
+        value: Option<Expression<'a>>,
     },
     DefaultObject(Vec<ObjectField<'a>>),
     AmendingElement {
@@ -144,9 +144,18 @@ impl<'a> Display for MappingField<'a> {
         match self {
             MappingField::LocalVariable { name, value, _type } => {
                 if _type.is_some() {
-                    write!(f, "local {name}: {} = {value}", _type.clone().unwrap())
+                    if value.is_some() {
+                        write!(
+                            f,
+                            "local {name}: {} = {}",
+                            _type.as_ref().unwrap(),
+                            value.as_ref().unwrap()
+                        )
+                    } else {
+                        write!(f, "local {name}: {}", _type.as_ref().unwrap())
+                    }
                 } else {
-                    write!(f, "local {name} = {value}")
+                    write!(f, "local {name} = {}", value.as_ref().unwrap())
                 }
             }
             MappingField::DefaultObject(fields) => {

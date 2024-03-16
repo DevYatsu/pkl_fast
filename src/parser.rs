@@ -40,20 +40,42 @@ pub fn parse<'source>(
                 let err_as_str = e.to_string();
                 let error_type = err_as_str.trim_start_matches("expected ");
                 match error_type {
-                    "identifier" | "module name" | "identifier not keyword" => return Err(ParsingError::invalid_id(&parser)),
-                    "variable" => return Err(ParsingError::unexpected(&parser, "a valid variable declaration")),
+                    "identifier" | "module name" | "identifier not keyword" => {
+                        return Err(ParsingError::invalid_id(&parser))
+                    }
+                    "variable" => {
+                        return Err(ParsingError::unexpected(
+                            &parser,
+                            "a valid variable declaration",
+                        ))
+                    }
                     "type" => return Err(ParsingError::unexpected(&parser, "a valid type")),
+                    "type generics end bracket" => {
+                        return Err(ParsingError::unexpected(&parser, "'>'"))
+                    }
                     "space" => return Err(ParsingError::unexpected(&parser, "a space")),
                     "in" => return Err(ParsingError::unexpected(&parser, "'in'")),
                     "exponential integer" => (),
                     "string literal" => return Err(ParsingError::expected_simple_string(&parser)),
                     "unicode" => return Err(ParsingError::invalid_unicode(&parser)),
-                    "opening bracket" | "open bracket" => return Err(ParsingError::unexpected(&parser, "'{'")),
-                    "opening brace" | "open brace" => return Err(ParsingError::unexpected(&parser, "'['")),
-                    "opening parenthesis" | "open parenthesis" => return Err(ParsingError::unexpected(&parser, "'('")),
-                    "closing bracket" | "close bracket" => return Err(ParsingError::unexpected(&parser, "'}'")),
-                    "closing brace" | "close brace" => return Err(ParsingError::unexpected(&parser, "']'")),
-                    "closing parenthesis" | "close parenthesis" => return Err(ParsingError::unexpected(&parser, "')'")),
+                    "opening bracket" | "open bracket" => {
+                        return Err(ParsingError::unexpected(&parser, "'{'"))
+                    }
+                    "opening brace" | "open brace" => {
+                        return Err(ParsingError::unexpected(&parser, "'['"))
+                    }
+                    "opening parenthesis" | "open parenthesis" => {
+                        return Err(ParsingError::unexpected(&parser, "'('"))
+                    }
+                    "closing bracket" | "close bracket" => {
+                        return Err(ParsingError::unexpected(&parser, "'}'"))
+                    }
+                    "closing brace" | "close brace" => {
+                        return Err(ParsingError::unexpected(&parser, "']'"))
+                    }
+                    "closing parenthesis" | "close parenthesis" => {
+                        return Err(ParsingError::unexpected(&parser, "')'"))
+                    }
                     "expr" => return Err(ParsingError::expected_expression(&parser)),
                     _ => return Err(ParsingError::eof(&parser, error_type)),
                 }

@@ -47,13 +47,15 @@ pub fn get_next_element_length(parser: &PklParser) -> usize {
 
 pub fn get_next_element_until_inclusive(parser: &PklParser, pattern: &str) -> usize {
     let input = parser.input();
-    
-    input.find(pattern).map(|x| x + 1).unwrap_or_else(|| input.len() - 1)
-}
 
+    input
+        .find(pattern)
+        .map(|x| x + 1)
+        .unwrap_or_else(|| input.len() - 1)
+}
 
 pub fn get_next_element_until_exclusive(parser: &PklParser, pattern: &str) -> usize {
     let input = parser.input();
-    
+
     input.find(pattern).unwrap_or_else(|| input.len() - 1)
 }

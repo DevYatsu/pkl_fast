@@ -8,7 +8,10 @@ use winnow::{
 
 use crate::{
     parser::utils::{
-        cut_multispace1, expected, id::{cut_identifier, cut_identifier_not_keyword}, line_ending_or_end, string::string_literal,
+        cut_multispace1, expected,
+        id::{cut_identifier, cut_identifier_not_keyword},
+        line_ending_or_end,
+        string::string_literal,
     },
     prelude::ParsingResult,
 };
@@ -46,9 +49,7 @@ fn parse_as<'source>(input: &mut &'source str) -> ParsingResult<&'source str> {
 }
 
 pub fn import_clause<'source>(input: &mut &'source str) -> ParsingResult<ImportClause<'source>> {
-    let value = cut_err(string_literal)
-        
-        .parse_next(input)?;
+    let value = cut_err(string_literal).parse_next(input)?;
 
     let result = match value {
         value if value.starts_with("https://") => ImportClause::Https(value),

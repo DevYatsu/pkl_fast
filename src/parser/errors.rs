@@ -6,7 +6,10 @@ use std::{
 use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
 use thiserror::Error;
 
-use self::locating::{generate_source, get_error_location, get_next_element_length, get_next_element_until_inclusive, get_next_element_until_exclusive};
+use self::locating::{
+    generate_source, get_error_location, get_next_element_length, get_next_element_until_exclusive,
+    get_next_element_until_inclusive,
+};
 
 use super::{types::errors::TypeError, PklParser};
 pub mod locating;

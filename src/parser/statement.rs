@@ -23,7 +23,7 @@ pub enum Statement<'a> {
     VariableDeclaration {
         name: &'a str,
         optional_type: Option<PklType<'a>>,
-        value: Expression<'a>,
+        value: Option<Expression<'a>>,
         is_local: bool,
     },
     ClassDeclaration {

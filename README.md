@@ -22,9 +22,9 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 - [ ] Parsing `Map`, `Set`, `List`
 - [ ] Parsing `Mapping`, `Listing`
 
-- [ ] Parsing simple type annotations (`Int`, `Float`, `UInt16`, `unknown`, `Any`)
-- [ ] Parsing more complex type annotations (e.g., `Listing<Type>`, `Mapping<Type, OtherType>`) without type checking
-- [ ] Adding type checking
+- [x] Parsing simple type annotations (`Int`, `Float`, `UInt16`, `unknown`, `Any`)
+- [x] Parsing more complex type annotations (e.g., `Listing<Type>`, `Mapping<Type, OtherType>`) without type checking
+- [ ] Adding type checking (in the interpretation step)
 
 - [x] Parsing `import/import\*` statement (with optional `as`)
 - [x] Parsing `amends` statement

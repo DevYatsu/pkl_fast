@@ -9,7 +9,7 @@ open module com.example.myapp
 module bird
 
 
-num1 = .23
+num1: Float = .23
 num2 = 1.23
 num3 = 1.23e2 
 num4 = 1.23e-2
@@ -44,9 +44,9 @@ i like it, to be honest
 here is a newline ->
 """
 
-_envValue="TEST_VALUE"
+_envValue: "TEST_VALUE"
 s="str"
-greeting = "Hi,\u{1F60AAAA} \t my friend! \u{1E0A} \n How are you? \n"
+greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n"
 
 // name = "Dodo"
 // greeting = "Hi, \(name)!" 
@@ -57,4 +57,3 @@ greeting = "Hi,\u{1F60AAAA} \t my friend! \u{1E0A} \n How are you? \n"
 // Although the \(bird) is ex\ntinct, \u{a2e3e}
 // the species will be remembered. \\
 // """
-

@@ -13,8 +13,7 @@ pub fn var_statement<'source>(input: &mut &'source str) -> ParsingResult<Stateme
     let is_local = is_local.parse_next(input)?;
 
     if is_local {
-        let (name, optional_type, value) = cut_err(variable)
-            .parse_next(input)?;
+        let (name, optional_type, value) = cut_err(variable).parse_next(input)?;
 
         return Ok(Statement::VariableDeclaration {
             name,
