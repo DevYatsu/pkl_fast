@@ -6,7 +6,7 @@ use std::{
 use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
 use thiserror::Error;
 
-use self::locating::{generate_source, get_error_location, get_next_element_length, get_next_element_until};
+use self::locating::{generate_source, get_error_location, get_next_element_length, get_next_element_until_inclusive, get_next_element_until_exclusive};
 
 use super::{types::errors::TypeError, PklParser};
 pub mod locating;
@@ -296,7 +296,7 @@ impl ParsingError {
     pub fn invalid_unicode(parser: &PklParser) -> Self {
         ParsingError::InvalidUnicodeEscape(UnicodeEscapeError {
             src: generate_source("main.pkl", parser.source_input()),
-            at: get_error_location(parser, get_next_element_until(parser, "}")),
+            at: get_error_location(parser, get_next_element_until_exclusive(parser, "}")),
         })
     }
     pub fn invalid_interpolated_expr(parser: &PklParser, length: usize) -> Self {
@@ -317,7 +317,7 @@ impl ParsingError {
     pub fn expected_simple_string(parser: &PklParser) -> Self {
         ParsingError::UnexpectedToken(UnexpectedError {
             src: generate_source(parser.file_path, parser.source_input()),
-            at: get_error_location(parser, get_next_element_until(parser, "\\")),
+            at: get_error_location(parser, get_next_element_until_inclusive(parser, "\\")),
             advice: format!(
                 "Expected a simple `String` without characters escape or interpolation"
             ),

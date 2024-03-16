@@ -98,11 +98,11 @@ fn escape_sequence<'source>(input: &mut &'source str) -> PResult<StringFragment<
         .map(StringFragment::Interpolated),
         (
             'u',
-            delimited(
+            cut_err(delimited(
                 cut_err('{').context(expected("opening bracket")),
                 unicode,
                 cut_err('}').context(expected("closing bracket")),
-            ),
+            )),
         )
             .map(|(_, value)| StringFragment::UnicodeEscape(value)),
         cut_err(one_of(['n', 't', '\\', 'r', '"']))
@@ -115,7 +115,7 @@ fn escape_sequence<'source>(input: &mut &'source str) -> PResult<StringFragment<
 fn unicode<'source>(input: &mut &'source str) -> PResult<&'source str> {
     cut_err(hex_digit1)
         .verify(|s: &str| s.len() <= 6)
-        .context(expected("valid hex"))
+        .context(expected("unicode"))
         .parse_next(input)
 }
 

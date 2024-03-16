@@ -44,9 +44,9 @@ i like it, to be honest
 here is a newline ->
 """
 
-// ENV_VALUE="TEST_VALUE"
-// s="str"
-// greeting = "Hi,\u{1F60A} \t my friend! \u{1E0A} \n How are you? \n \(ENV_VALUE + s)"
+_envValue="TEST_VALUE"
+s="str"
+greeting = "Hi,\u{1F60AAAA} \t my friend! \u{1E0A} \n How are you? \n"
 
 // name = "Dodo"
 // greeting = "Hi, \(name)!" 
