@@ -27,9 +27,9 @@ num3 = 0b0001_0111
 num2 = 0x012AFF 
 num3 = 0b00010111 
 
-x {} {}
+x {}
 
-local test {
+local {
     x = 2
     d = 3
 

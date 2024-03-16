@@ -24,8 +24,11 @@ pub mod value;
 
 pub type ParsingResult<T> = PResult<T>;
 
-pub fn parse<'source>(file_name: &'source str, source: &'source str) -> Result<Vec<statement::Statement<'source>>, ParsingError> {
-    let mut parser = PklParser::new(file_name , source);
+pub fn parse<'source>(
+    file_name: &'source str,
+    source: &'source str,
+) -> Result<Vec<statement::Statement<'source>>, ParsingError> {
+    let mut parser = PklParser::new(file_name, source);
 
     match parser.parse() {
         Ok(_) => (),
@@ -35,19 +38,19 @@ pub fn parse<'source>(file_name: &'source str, source: &'source str) -> Result<V
                 println!("{e}");
 
                 let err_as_str = e.to_string();
-
-                if err_as_str.starts_with("expected") {
-                    return Err(ParsingError::eof(parser, err_as_str.trim_start_matches("expected ")))
+                let error_type = err_as_str.trim_start_matches("expected ");
+                // all errors should start with "expected"
+                match error_type {
+                    "identifier" | "module name" => return Err(ParsingError::invalid_id(&parser)),
+                    _ => return Err(ParsingError::eof(&parser, error_type)),
                 }
-                
-                return Err(ParsingError::eof(parser, err_as_str.as_str()))
             }
 
-            return Err(ParsingError::eof(parser, e.to_string().as_str()))
             // return eof error
+            return Err(ParsingError::eof(&parser, e.to_string().as_str()));
         }
     }
-    
+
     Ok(parser.statements())
 }
 
@@ -57,14 +60,14 @@ pub struct PklParser<'source> {
     file_path: &'source str,
     statements: Vec<Statement<'source>>,
     input: &'source str,
-    source_input: &'source str
+    source_input: &'source str,
 }
 
 impl<'source> PklParser<'source> {
     /// The function to initialize an instance of PklParser.
     pub fn new(name: &'source str, source: &'source str) -> Self {
         Self {
-            file_path: name, 
+            file_path: name,
             statements: vec![],
             input: source,
             source_input: source,

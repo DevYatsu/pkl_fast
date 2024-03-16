@@ -6,7 +6,7 @@ use std::{
 use miette::{diagnostic, Diagnostic, NamedSource, SourceSpan};
 use thiserror::Error;
 
-use self::locating::{generate_source, get_error_location};
+use self::locating::{generate_source, get_error_location, get_next_element_length};
 
 use super::{types::errors::TypeError, PklParser};
 pub mod locating;
@@ -244,98 +244,94 @@ pub struct InterpolatedExprError {
 }
 
 impl ParsingError {
-    pub fn eof(parser: PklParser, expected_element: &str) -> Self {
+    pub fn eof(parser: &PklParser, expected_element: &str) -> Self {
         ParsingError::UnexpectedEndOfInput(UnexpectedEndOfInputError {
             src: generate_source(parser.file_path, parser.source_input()),
-            at: get_error_location(&parser),
+            at: get_error_location(parser, 1),
             advice: format!("Add {expected_element}? Maybe you should..."),
         })
     }
-    // pub fn unexpected(parser: &mut PklParser<'_>, advice: String) -> Self {
+    // pub fn unexpected(parser: &PklParser, advice: String) -> Self {
     //     ParsingError::UnexpectedToken(UnexpectedError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: get_error_location(&mut parser.lexer),
+    //         src: generate_source("main.pkl", parser.source()),
+    //         at: get_error_location(&mut parser),
     //         advice,
     //     })
     // }
-    // pub fn invalid_string(parser: &mut PklParser<'_>) -> Self {
+    // pub fn invalid_string(parser: &PklParser) -> Self {
     //     ParsingError::InvalidString(InvalidStringError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: get_error_location(&mut parser.lexer),
+    //         src: generate_source("main.pkl", parser.source()),
+    //         at: get_error_location(&mut parser),
     //     })
     // }
-    // pub fn invalid_id(parser: &mut PklParser<'_>) -> Self {
-    //     ParsingError::InvalidIdentifier(InvalidIdentifierError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: get_error_location(&mut parser.lexer),
-    //     })
-    // }
-    // pub fn lexing(parser: &mut PklParser<'_>, e: LexingError) -> Self {
+
+    pub fn invalid_id(parser: &PklParser) -> Self {
+        ParsingError::InvalidIdentifier(InvalidIdentifierError {
+            src: generate_source(parser.file_path, parser.source_input()),
+            at: get_error_location(parser, get_next_element_length(parser)),
+        })
+    }
+    // pub fn lexing(parser: &PklParser, e: LexingError) -> Self {
     //     parse_lexing_error(parser, e)
     // }
-    // pub fn invalid_as_statement(parser: &mut PklParser<'_>) -> Self {
-    //     ParsingError::AsStatementUnsupported(InvalidAsStatement {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: get_error_location(&mut parser.lexer),
-    //     })
-    // }
-    // pub fn no_default_value(parser: &mut PklParser<'_>, type_name: &str) -> Self {
-    //     ParsingError::NoDefaultValue(NoDefaultValueError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: get_error_location(&mut parser.lexer),
-    //         advice: format!("Type `{type_name}` does not possess a default value"),
-    //     })
-    // }
-    // pub fn invalid_char_escape(parser: &mut PklParser<'_>, index: usize) -> Self {
-    //     ParsingError::InvalidEscapedChar(EscapedCharError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: set_error_location(&mut parser.lexer, index, 2),
-    //     })
-    // }
-    // pub fn invalid_unicode(parser: &mut PklParser<'_>, index: usize, length: usize) -> Self {
-    //     ParsingError::InvalidUnicodeEscape(UnicodeEscapeError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: set_error_location(&mut parser.lexer, index, length),
-    //     })
-    // }
-    // pub fn invalid_interpolated_expr(
-    //     parser: &mut PklParser<'_>,
-    //     index: usize,
-    //     length: usize,
-    // ) -> Self {
-    //     let offset: SourceOffset = parser.lexer.span().start.into();
-    //     ParsingError::InvalidInterpolatedExpr(InterpolatedExprError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: SourceSpan::new((offset.offset() + index).into(), length),
-    //     })
-    // }
+    pub fn invalid_as_statement(parser: &PklParser) -> Self {
+        ParsingError::AsStatementUnsupported(InvalidAsStatement {
+            src: generate_source(parser.file_path, parser.source_input()),
+            at: get_error_location(parser, get_next_element_length(parser)),
+        })
+    }
+    pub fn no_default_value(parser: &PklParser, type_name: &str) -> Self {
+        ParsingError::NoDefaultValue(NoDefaultValueError {
+            src: generate_source(parser.file_path, parser.source_input()),
+            at: get_error_location(parser, get_next_element_length(parser)),
+            advice: format!("Type `{type_name}` does not possess a default value"),
+        })
+    }
+    pub fn invalid_char_escape(parser: &PklParser) -> Self {
+        ParsingError::InvalidEscapedChar(EscapedCharError {
+            src: generate_source("main.pkl", parser.source_input()),
+            at: get_error_location(parser, 2),
+        })
+    }
+    pub fn invalid_unicode(parser: &PklParser, length: usize) -> Self {
+        ParsingError::InvalidUnicodeEscape(UnicodeEscapeError {
+            src: generate_source("main.pkl", parser.source_input()),
+            at: get_error_location(parser, length),
+        })
+    }
+    pub fn invalid_interpolated_expr(parser: &PklParser, length: usize) -> Self {
+        ParsingError::InvalidInterpolatedExpr(InterpolatedExprError {
+            src: generate_source("main.pkl", parser.source_input()),
+            at: get_error_location(parser, length),
+        })
+    }
 
-    // fn unexpected_token(parser: &mut PklParser<'_>, expected: &str) -> Self {
-    //     ParsingError::UnexpectedToken(UnexpectedError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: get_error_location(&mut parser.lexer),
-    //         advice: format!("Expected `{expected}`"),
-    //     })
-    // }
+    fn unexpected_token(parser: &PklParser, expected: &str) -> Self {
+        ParsingError::UnexpectedToken(UnexpectedError {
+            src: generate_source(parser.file_path, parser.source_input()),
+            at: get_error_location(parser, get_next_element_length(parser)),
+            advice: format!("Expected `{expected}`"),
+        })
+    }
 
-    // pub fn expected_simple_string(parser: &mut PklParser<'_>) -> Self {
-    //     ParsingError::UnexpectedToken(UnexpectedError {
-    //         src: generate_source("main.pkl", parser.lexer.source()),
-    //         at: get_error_location(&mut parser.lexer),
-    //         advice: format!(
-    //             "Expected a simple `String` without characters escape or interpolation"
-    //         ),
-    //     })
-    // }
-    // pub fn expected_string(parser: &mut PklParser<'_>) -> Self {
-    //     Self::unexpected_token(parser, "String")
-    // }
-    // pub fn expected_identifier(parser: &mut PklParser<'_>) -> Self {
-    //     Self::unexpected_token(parser, "Identifier")
-    // }
-    // pub fn expected_expression(parser: &mut PklParser<'_>) -> Self {
-    //     Self::unexpected_token(parser, "Expression")
-    // }
+    pub fn expected_simple_string(parser: &PklParser) -> Self {
+        ParsingError::UnexpectedToken(UnexpectedError {
+            src: generate_source(parser.file_path, parser.source_input()),
+            at: get_error_location(parser, get_next_element_length(parser)),
+            advice: format!(
+                "Expected a simple `String` without characters escape or interpolation"
+            ),
+        })
+    }
+    pub fn expected_string(parser: &PklParser) -> Self {
+        Self::unexpected_token(parser, "String")
+    }
+    pub fn expected_identifier(parser: &PklParser) -> Self {
+        Self::unexpected_token(parser, "Identifier")
+    }
+    pub fn expected_expression(parser: &PklParser) -> Self {
+        Self::unexpected_token(parser, "Expression")
+    }
 
     // pub fn get_at(&self) -> SourceSpan {
     //     match self {
