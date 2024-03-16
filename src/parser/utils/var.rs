@@ -36,7 +36,7 @@ pub fn variable<'source>(
     // there is no type if we are here
 
     let expr = alt((
-        preceded(('=', multispace0), parse_expr),
+        preceded(('=', multispace0), cut_err(parse_expr).context(expected("expr"))),
         object.map(Expression::Value),
     ))
     .parse_next(input)?;
@@ -52,7 +52,6 @@ pub fn local_variable<'source>(
     cut_multispace1.parse_next(input)?;
 
     cut_err(variable)
-        .context(expected("variable"))
         .parse_next(input)
 }
 
