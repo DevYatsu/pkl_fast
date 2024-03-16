@@ -1,3 +1,4 @@
+use crate::parser::errors::ParsingError;
 use crate::parser::statement::comment::{doc_comment, line_comment, multiline_comment};
 use crate::parser::statement::Statement;
 use crate::parser::statement::{info_statement, module_statement, open_module_statement};
@@ -23,17 +24,26 @@ pub mod value;
 
 pub type ParsingResult<T> = PResult<T>;
 
-pub fn parse<'source>(source: &'source str) -> ParsingResult<Vec<statement::Statement<'source>>> {
-    let mut parser = PklParser::new(source);
+pub fn parse<'source>(file_name: &'source str, source: &'source str) -> Result<Vec<statement::Statement<'source>>, ParsingError> {
+    let mut parser = PklParser::new(file_name , source);
 
     match parser.parse() {
         Ok(_) => (),
         Err(e) => {
-            if let Some(e) = e.into_inner() {
-                println!("{:?}", parser.input());
+            if let Some(e) = e.clone().into_inner() {
+                println!("{:?}", &parser.source_input()[parser.input().len()..]);
                 println!("{e}");
+
+                let err_as_str = e.to_string();
+
+                if err_as_str.starts_with("expected") {
+                    return Err(ParsingError::eof(parser, err_as_str.trim_start_matches("expected ")))
+                }
+                
+                return Err(ParsingError::eof(parser, err_as_str.as_str()))
             }
 
+            return Err(ParsingError::eof(parser, e.to_string().as_str()))
             // return eof error
         }
     }
@@ -44,6 +54,7 @@ pub fn parse<'source>(source: &'source str) -> ParsingResult<Vec<statement::Stat
 #[derive(Debug, Clone)]
 /// PklParser is the main parser struct, possessing the `parse` method to parse the tokens in the lexer.
 pub struct PklParser<'source> {
+    file_path: &'source str,
     statements: Vec<Statement<'source>>,
     input: &'source str,
     source_input: &'source str
@@ -51,8 +62,9 @@ pub struct PklParser<'source> {
 
 impl<'source> PklParser<'source> {
     /// The function to initialize an instance of PklParser.
-    pub fn new(source: &'source str) -> Self {
+    pub fn new(name: &'source str, source: &'source str) -> Self {
         Self {
+            file_path: name, 
             statements: vec![],
             input: source,
             source_input: source,

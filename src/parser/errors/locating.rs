@@ -1,8 +1,9 @@
 use miette::{NamedSource, SourceSpan};
 
-pub fn get_error_location<'source>() -> SourceSpan {
-    todo!()
-    // SourceSpan::new(lexer.span().start.into(), lexer.span().len())
+use crate::prelude::PklParser;
+
+pub fn get_error_location<'source>(parser: &PklParser) -> SourceSpan {
+    SourceSpan::new((parser.source_input().len() - parser.input().len()).into(), 5)
 }
 
 pub fn generate_source(file_name: &str, source: &str) -> NamedSource<String> {

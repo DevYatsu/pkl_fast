@@ -15,9 +15,9 @@ fn main() -> miette::Result<()> {
 
     let start = Instant::now();
 
-    let _file_name = target_path.file_name().unwrap();
+    let file_name = target_path.file_name().unwrap();
 
-    let _statements = parse(&source_code);
+    let _statements = parse(file_name.to_str().unwrap(), &source_code)?;
 
     for s in _statements {
         println!("{:?}", s)
