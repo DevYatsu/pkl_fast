@@ -18,7 +18,7 @@ _pkl_fast_ is a Rust library aiming to become an efficient tool for working with
 - [ ] Parsing duration, datasize types
 - [ ] Parsing all types of strings, e.g. multiline strings ([x]) and custom string delimiters (#""# with a changeable number of #) ([ ])
 - [x] Parsing objects declaration
-- [ ] Add support for chaining amending object bodies ([see](https://pkl-lang.org/main/current/language-reference/index.html#amending-objects))
+- [x] Add support for chaining amending object bodies ([see](https://pkl-lang.org/main/current/language-reference/index.html#amending-objects))
 - [ ] Parsing `Map`, `Set`, `List`
 - [ ] Parsing `Mapping`, `Listing`
 
