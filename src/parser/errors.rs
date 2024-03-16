@@ -106,7 +106,7 @@ pub struct InvalidStringError {
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
     code(pkl_fast::error::expected_identifier),
-    help("valid identifier = alphanumeric word (except first letter not numeric)")
+    help("valid identifier = alphanumeric word (which is not a keyword)")
 )]
 #[error("Expected a valid identifier")]
 pub struct InvalidIdentifierError {

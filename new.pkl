@@ -3,7 +3,7 @@
 @Deprecated { message = "Replace with" }  
 
 import* "testt"  
-import "test3.pkl" as new
+import "test3.pkl" as test3
 
 open module com.example.myapp
 module bird
