@@ -14,10 +14,7 @@ use self::{
         ClassType,
     },
     types::parse_type,
-    utils::{
-        expect_statement_end, expect_token, list_while_not_token2, parse_identifier,
-        retrieve_opt_next_token,
-    },
+    utils::{expect_statement_end, expect_token, parse_identifier, retrieve_opt_next_token},
     value::parse_object,
 };
 
@@ -118,14 +115,8 @@ impl<'source> PklParser<'source> {
 
                     stmt
                 }
-                Ok(PklToken::ModuleInfo) => {
-                    let stmt = self.parse_module_info()?;
-                    expect_statement_end(&mut self.lexer)?;
-
-                    stmt
-                }
-                Ok(PklToken::DeprecatedInstruction) => {
-                    let stmt = self.parse_deprecated()?;
+                Ok(PklToken::Info(x)) => {
+                    let stmt = self.parse_info(x)?;
                     expect_statement_end(&mut self.lexer)?;
 
                     stmt
@@ -326,16 +317,16 @@ impl<'source> PklParser<'source> {
 
         let (alias, generics_params) = match token {
             PklToken::Identifier(v) => (v, None),
-            PklToken::GenericTypeAnnotationStart(name) => {
-                let types = list_while_not_token2(
-                    lexer,
-                    PklToken::Comma,
-                    PklToken::RightAngleBracket(">"),
-                    &parse_type,
-                )?;
+            // PklToken::GenericTypeAnnotationStart(name) => {
+            //     let types = list_while_not_token2(
+            //         lexer,
+            //         PklToken::Comma,
+            //         PklToken::RightAngleBracket(">"),
+            //         &parse_type,
+            //     )?;
 
-                (name, Some(types))
-            }
+            //     (name, Some(types))
+            // }
             _ => return Err(ParsingError::expected_identifier(lexer)),
         };
 
@@ -359,11 +350,7 @@ impl<'source> PklParser<'source> {
         })
     }
 
-    fn parse_module_info(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_module_info(&mut self.lexer)
-    }
-
-    fn parse_deprecated(&mut self) -> ParsingResult<Statement<'source>> {
-        statement::parse_deprecated(&mut self.lexer)
+    fn parse_info(&mut self, name: &'source str) -> ParsingResult<Statement<'source>> {
+        statement::parse_info(&mut self.lexer, name)
     }
 }

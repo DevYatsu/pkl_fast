@@ -17,14 +17,15 @@ pub mod string;
 
 pub use class::parse_class_instance;
 pub use object::parse_object;
+use rug::{Float, Integer};
 
 #[derive(Debug, Clone, PartialEq)]
 /// An enum representing any Pkl value
 pub enum PklValue<'a> {
     String(Vec<StringFragment<'a>>),
     Boolean(bool),
-    Int(i64),
-    Float(f64),
+    Int(Integer),
+    Float(Float),
     Object {
         value: HashMap<&'a str, Expression<'a>>,
         amended_by: Option<&'a str>,

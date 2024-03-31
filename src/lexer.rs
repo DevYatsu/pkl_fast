@@ -1,5 +1,6 @@
-use logos::Logos;
+use logos::{skip, Logos};
 use miette::Diagnostic;
+use rug::{integer::ParseIntegerError, Float, Integer};
 use std::num::{ParseFloatError, ParseIntError};
 use thiserror::Error;
 
@@ -8,8 +9,11 @@ PklToken enum possesses a `lexer` method that lexes an input into tokens constit
 */
 #[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(error = LexingError)]
-#[logos(skip r"[\f\ ]+")]
+
 pub enum PklToken<'source> {
+    #[regex(r"[\f\ ]+", skip)]
+    Whitespace,
+
     #[token("\n")]
     NewLine,
     // if necessary add Tab
@@ -29,11 +33,10 @@ pub enum PklToken<'source> {
 
     #[token("module")]
     Module,
-    #[token("@ModuleInfo")]
-    ModuleInfo,
 
-    #[token("@Deprecated")]
-    DeprecatedInstruction,
+    /// Info such as @ModuleInfo or @Deprecated
+    #[regex(r"@[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| &lex.slice()[1..])]
+    Info(&'source str),
 
     #[token("import*")]
     GlobbedImport,
@@ -92,7 +95,7 @@ pub enum PklToken<'source> {
     /// - **, %,|>, ~/
     ///
     /// The '>' symbol is separated as it can also be used as a `GenericTypeAnnotation` closing tag.
-    #[regex(r#"==|<=|<|>=|!=|\?\?|\&\&|\&|\|\||/|\+|-|\*|\*\*|\|>|%|~/"#, |lex| lex.slice())]
+    #[regex(r#"==|<=|<|>=|!=|\?\?|\&\&|\&|\|\||/|\+|-|\*|\*\*|\|>|%|~/"#,  |lex| lex.slice(), priority =3)]
     Operator(&'source str),
 
     #[token("=")]
@@ -108,6 +111,13 @@ pub enum PklToken<'source> {
     Dot,
     #[token(";")]
     SemiColon,
+    #[token("?")]
+    QuestionMark,
+
+    #[token("!", priority = 0)]
+    ExclamationMark,
+    #[token("!!")]
+    DoubleExclamationMark,
 
     #[regex(r#"\([a-zA-Z_][a-zA-Z0-9_]*\)\s*\{"#, |lex| {let val = lex.slice(); &val[1..val.find(')').unwrap()]})]
     /// Token representing an object definition with the object amending another object, that is for example: ```(object_name) {```
@@ -116,31 +126,13 @@ pub enum PklToken<'source> {
     #[token("typealias")]
     TypeAlias,
 
-    /// This variant shall represent the start of a type with a given generic such as `Listing<` or `Map<`  
-    // **We assume a type starts with an UpperCase**
-    #[regex(
-        r"[A-Z][A-Za-z0-9]*<",
-     |lex| {let val = lex.slice(); &val[0..val.len()-1]})]
-    GenericTypeAnnotationStart(&'source str),
+    /// Closing tag for `GenericTypeAnnotation` or `GreaterThan` tag.
+    #[token("<")]
+    LeftAngleBracket,
 
     /// Closing tag for `GenericTypeAnnotation` or `GreaterThan` tag.
-    #[token(">", |lex| lex.slice())]
-    RightAngleBracket(&'source str),
-
-    /// It's a variant where followed by where a `GenericTypeAnnotation` is followed by a `(`.
-    /// It's supposed to represent a generic type with restrictions.
-    // **We assume a type starts with an UpperCase**
-    #[token(">(")]
-    GenericTypeAnnotationFunctionCall,
-
-    // We assume a type starts with an UpperCase
-    #[regex(r"[A-Z][a-zA-Z0-9_]*\?", |lex| {let val=lex.slice(); &val[..val.len()-1]})]
-    PotentiallyNullType(&'source str),
-
-    /// This variant represents a identifier followed by '!!', meaning that the variable cannot be null, otherwise throwing an error
-    // We assume a type starts with an UpperCase
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*!!", |lex| {let val=lex.slice(); &val[0..val.len()-2]})]
-    NonNullIdentifier(&'source str),
+    #[token(">")]
+    RightAngleBracket,
 
     /// This variant represents '!', the logical NOT operator
     #[token("!")]
@@ -182,20 +174,20 @@ pub enum PklToken<'source> {
         // Check if the value starts with a radix specifier
         let parsed_value = if clean_value.starts_with("0x") {
             // Parse hexadecimal value
-            i64::from_str_radix(&clean_value[2..], 16)
+            Integer::from_str_radix(&clean_value[2..], 16)
         } else if clean_value.starts_with("0b") {
             // Parse binary value
-            i64::from_str_radix(&clean_value[2..], 2)
+            Integer::from_str_radix(&clean_value[2..], 2)
         } else if clean_value.starts_with("0o") {
             // Parse octal value
-            i64::from_str_radix(&clean_value[2..], 8)
+            Integer::from_str_radix(&clean_value[2..], 8)
         } else {
             // Parse decimal value
-            clean_value.parse::<i64>()
+            clean_value.parse()
         };
         parsed_value
     }, priority = 3)]
-    Integer(i64),
+    Integer(rug::Integer),
 
     /// Float variant includes float number with optional decimal part and/or exponent
     /// Infinity, -Infinity and NaN are also valid floats
@@ -204,10 +196,15 @@ pub enum PklToken<'source> {
     /// - .5e-2,  2.12e9
     /// - Infinity, -Infinity
     /// - Nan
-    #[regex(r"(-?((\d*\.\d+((e|E)-?\d+)?)|(Infinity)))|NaN", |lex| lex.slice().parse(), priority = 4)]
-    Float(f64),
+    #[regex(r"(-?((\d*\.\d+((e|E)-?\d+)?)|(Infinity)))|NaN", |lex| {
+        let val = lex.slice();
+        let result = Float::parse(val);
 
-    #[regex(r#"`[a-zA-Z_][a-zA-Z0-9_]*`"#, |lex| lex.slice())]
+        result.map(|f| Float::with_val(20, f))
+    }, priority = 4)]
+    Float(rug::Float),
+
+    #[regex(r#"`[^`]*`"#, |lex| lex.slice())]
     IllegalIdentifier(&'source str),
 
     // we retrieve the string like this and we pass it through a lexing fn to obtain a Vec<StringFragment>
@@ -223,9 +220,9 @@ pub enum PklToken<'source> {
     // #[regex("[a-z][a-zA-Z]*")]
     // CamelCaseValue, // in pkl words written in camelCase are meant to be used as values
     /// Matches a simple identifier (ex: `foo`) as well as an object accessor (`foo.bar`).
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
+    #[regex(r"[a-zA-Z_$][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*", |lex| lex.slice())]
     Identifier(&'source str),
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let val = lex.slice(); &val[..val.len()-1]})]
+    #[regex(r"[a-zA-Z_$][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\(", |lex| {let val = lex.slice(); &val[..val.len()-1]})]
     FunctionCall(&'source str),
 
     #[regex("//.*")]
@@ -260,8 +257,20 @@ impl From<ParseIntError> for LexingError {
     }
 }
 
+impl From<ParseIntegerError> for LexingError {
+    fn from(value: ParseIntegerError) -> Self {
+        LexingError::InvalidInteger
+    }
+}
+
 impl From<ParseFloatError> for LexingError {
     fn from(_err: ParseFloatError) -> Self {
+        LexingError::InvalidFloat
+    }
+}
+
+impl From<rug::float::ParseFloatError> for LexingError {
+    fn from(_err: rug::float::ParseFloatError) -> Self {
         LexingError::InvalidFloat
     }
 }
@@ -278,8 +287,7 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::OpenParenthesis => write!(f, "'('"),
             PklToken::CloseParenthesis => write!(f, "')'"),
             PklToken::Module => write!(f, "'module'"),
-            PklToken::ModuleInfo => write!(f, "@ModuleInfo"),
-            PklToken::DeprecatedInstruction => write!(f, "@Deprecated"),
+            PklToken::Info(value) => write!(f, "@{value}"),
             PklToken::GlobbedImport => write!(f, "import*"),
             PklToken::Import => write!(f, "import"),
             PklToken::Extends => write!(f, "extends"),
@@ -303,7 +311,7 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::When => write!(f, "when"),
             PklToken::Is => write!(f, "is"),
             PklToken::Operator(op) => write!(f, "'{}'", op),
-            PklToken::RightAngleBracket(x) => write!(f, "{}", x),
+            PklToken::RightAngleBracket => write!(f, ">"),
             PklToken::EqualSign => write!(f, "'='"),
             PklToken::Colon => write!(f, "':'"),
             PklToken::Comma => write!(f, "','"),
@@ -312,12 +320,6 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::SemiColon => write!(f, "';'"),
             PklToken::AmendedObjectBracket(s) => write!(f, "({{}} {} {{)", s),
             PklToken::TypeAlias => write!(f, "typealias"),
-            PklToken::GenericTypeAnnotationStart(name) => {
-                write!(f, "{name}<")
-            }
-            PklToken::GenericTypeAnnotationFunctionCall => write!(f, ">("),
-            PklToken::PotentiallyNullType(s) => write!(f, "{}?", s),
-            PklToken::NonNullIdentifier(s) => write!(f, "{}!!", s),
             PklToken::LogicalNotOperator => write!(f, "'!'"),
             PklToken::DefaultUnionType(s) => write!(f, "*{}", s),
             PklToken::Null => write!(f, "null"),
@@ -335,6 +337,11 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::DocComment => write!(f, "///"),
             PklToken::BlockComment => write!(f, "/* ... */"),
             PklToken::UnionSerarator => write!(f, "|"),
+            PklToken::Whitespace => write!(f, " "),
+            PklToken::QuestionMark => write!(f, "?"),
+            PklToken::ExclamationMark => write!(f, "!"),
+            PklToken::DoubleExclamationMark => write!(f, "!!"),
+            PklToken::LeftAngleBracket => write!(f, "<"),
         }
     }
 }

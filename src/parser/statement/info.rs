@@ -15,25 +15,19 @@ pub struct InfoField<'a> {
     pub value: PklValue<'a>,
 }
 
-/// Parsing @ModuleInfo annotation
-pub fn parse_module_info<'source>(
+/// Parsing @ModuleInfo and @Deprecated kind annotation
+pub fn parse_info<'source>(
     lexer: &mut PklLexer<'source>,
+    name: &'source str,
 ) -> ParsingResult<Statement<'source>> {
-    let infos = parse_info(lexer)?;
+    let infos = parse_info_content(lexer)?;
 
-    Ok(Statement::ModuleInfo { infos })
+    Ok(Statement::Info { name, infos })
 }
 
-/// Parsing @Deprecated annotation
-pub fn parse_deprecated<'source>(
+fn parse_info_content<'source>(
     lexer: &mut PklLexer<'source>,
-) -> ParsingResult<Statement<'source>> {
-    let infos = parse_info(lexer)?;
-
-    Ok(Statement::DeprecatedInfo { infos })
-}
-
-fn parse_info<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Vec<InfoField<'source>>> {
+) -> ParsingResult<Vec<InfoField<'source>>> {
     expect_token(lexer, PklToken::OpenBracket)?;
 
     let predicate = |lexer: &mut PklLexer<'source>| -> ParsingResult<InfoField<'source>> {

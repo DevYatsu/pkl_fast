@@ -38,12 +38,9 @@ pub enum Statement<'a> {
         generics_params: Option<Vec<PklType<'a>>>,
         equivalent_type: PklType<'a>,
     },
-    /// ModuleInfo variant represents the annotation @ModuleInfo { package: "version" }
-    /// The documentation does not contain any precise information on this annotation, so I write the enum variant so that there can be several infos add in one @ModuleInfo, that is ModuleInfo contains a Vec<ModuleField>
-    ModuleInfo {
-        infos: Vec<InfoField<'a>>,
-    },
-    DeprecatedInfo {
+
+    Info {
+        name: &'a str,
         infos: Vec<InfoField<'a>>,
     },
 }
@@ -55,8 +52,7 @@ pub use class::parse_class_declaration;
 pub use class::ClassArgument;
 pub use extends::parse_extends;
 pub use import::ImportClause;
-pub use info::parse_deprecated;
-pub use info::parse_module_info;
+pub use info::parse_info;
 pub use module::parse_module;
 
 pub use self::class::ClassType;

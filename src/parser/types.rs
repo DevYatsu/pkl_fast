@@ -3,7 +3,7 @@ use self::{errors::TypeError, union::parse_opt_union};
 use super::{
     errors::ParsingError,
     expression::Expression,
-    utils::{list_while_not_tokens, retrieve_next_token},
+    utils::retrieve_next_token,
     value::{string::StringFragment, PklValue},
     ParsingResult, PklLexer,
 };
@@ -114,81 +114,81 @@ fn parse_basic_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Pkl
 
             t
         }
-        PklToken::GenericTypeAnnotationStart(str_type) => {
-            let (types, end_token) = list_while_not_tokens(
-                lexer,
-                PklToken::Comma,
-                &[
-                    PklToken::RightAngleBracket(">"),
-                    PklToken::GenericTypeAnnotationFunctionCall,
-                ],
-                &parse_type,
-            )?;
+        // PklToken::GenericTypeAnnotationStart(str_type) => {
+        //     let (types, end_token) = list_while_not_tokens(
+        //         lexer,
+        //         PklToken::Comma,
+        //         &[
+        //             PklToken::RightAngleBracket(">"),
+        //             PklToken::GenericTypeAnnotationFunctionCall,
+        //         ],
+        //         &parse_type,
+        //     )?;
 
-            match end_token {
-                PklToken::RightAngleBracket(_) => {
-                    PklType::generate_from_generics(lexer, str_type, types)?
-                }
-                PklToken::GenericTypeAnnotationFunctionCall => {
-                    let (expr, next_token) = parse_expr(lexer)?;
+        //     match end_token {
+        //         PklToken::RightAngleBracket(_) => {
+        //             PklType::generate_from_generics(lexer, str_type, types)?
+        //         }
+        //         PklToken::GenericTypeAnnotationFunctionCall => {
+        //             let (expr, next_token) = parse_expr(lexer)?;
 
-                    match next_token {
-                        Some(PklToken::CloseParenthesis) => (),
-                        None => return Err(ParsingError::eof(lexer)),
-                        _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
-                    }
+        //             match next_token {
+        //                 Some(PklToken::CloseParenthesis) => (),
+        //                 None => return Err(ParsingError::eof(lexer)),
+        //                 _ => return Err(ParsingError::unexpected(lexer, "')'".to_owned())),
+        //             }
 
-                    let mut base_type: PklType<'_> = str_type.into();
+        //             let mut base_type: PklType<'_> = str_type.into();
 
-                    // allowed types should be checked in generate_from_2_generic and generate_from_1_generic
-                    match base_type {
-                        PklType::Collection {
-                            ref mut restriction,
-                            ..
-                        }
-                        | PklType::Listing {
-                            ref mut restriction,
-                            ..
-                        }
-                        | PklType::List {
-                            ref mut restriction,
-                            ..
-                        }
-                        | PklType::Pair {
-                            ref mut restriction,
-                            ..
-                        }
-                        | PklType::Map {
-                            ref mut restriction,
-                            ..
-                        }
-                        | PklType::Mapping {
-                            ref mut restriction,
-                            ..
-                        }
-                        | PklType::Set {
-                            ref mut restriction,
-                            ..
-                        } => {
-                            *restriction = Some(expr);
-                            base_type
-                        }
-                        _ => {
-                            return Err(TypeError::no_restrictions_type(
-                                lexer,
-                                format!(
-                                    "Remove the constraints annotation, try writing `{}`",
-                                    base_type
-                                ),
-                            )
-                            .into())
-                        }
-                    }
-                }
+        //             // allowed types should be checked in generate_from_2_generic and generate_from_1_generic
+        //             match base_type {
+        //                 PklType::Collection {
+        //                     ref mut restriction,
+        //                     ..
+        //                 }
+        //                 | PklType::Listing {
+        //                     ref mut restriction,
+        //                     ..
+        //                 }
+        //                 | PklType::List {
+        //                     ref mut restriction,
+        //                     ..
+        //                 }
+        //                 | PklType::Pair {
+        //                     ref mut restriction,
+        //                     ..
+        //                 }
+        //                 | PklType::Map {
+        //                     ref mut restriction,
+        //                     ..
+        //                 }
+        //                 | PklType::Mapping {
+        //                     ref mut restriction,
+        //                     ..
+        //                 }
+        //                 | PklType::Set {
+        //                     ref mut restriction,
+        //                     ..
+        //                 } => {
+        //                     *restriction = Some(expr);
+        //                     base_type
+        //                 }
+        //                 _ => {
+        //                     return Err(TypeError::no_restrictions_type(
+        //                         lexer,
+        //                         format!(
+        //                             "Remove the constraints annotation, try writing `{}`",
+        //                             base_type
+        //                         ),
+        //                     )
+        //                     .into())
+        //                 }
+        //             }
+        //         }
 
-                _ => unreachable!(),
-            }
-        }
+        //         _ => unreachable!(),
+        //     }
+        // }
         PklToken::FunctionCall(name) => {
             let mut base_type: PklType = name.into();
 
@@ -270,7 +270,7 @@ fn parse_basic_type<'source>(lexer: &mut PklLexer<'source>) -> ParsingResult<Pkl
             matches: Some(value),
             restriction: None,
         },
-        PklToken::PotentiallyNullType(value) => PklType::PotentiallyNull(Box::new(value.into())),
+        // PklToken::PotentiallyNullType(value) => PklType::PotentiallyNull(Box::new(value.into())),
         PklToken::DefaultUnionType(value) => PklType::UnionDefault(Box::new(value.into())),
         _ => {
             return Err(ParsingError::unexpected(

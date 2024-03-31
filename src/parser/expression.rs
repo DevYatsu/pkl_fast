@@ -57,9 +57,9 @@ pub fn parse_basic_expr<'source>(
             Expression::Parenthesised(expr.into())
         }
         PklToken::Identifier(ident) => Expression::Identifier(ident),
-        PklToken::NonNullIdentifier(name) => {
-            Expression::NonNull(Expression::Identifier(name).into())
-        }
+        // PklToken::NonNullIdentifier(name) => {
+        //     Expression::NonNull(Expression::Identifier(name).into())
+        // }
         PklToken::FunctionCall(func_name) => {
             let args = parse_fn_call_arguments(lexer)?;
 
