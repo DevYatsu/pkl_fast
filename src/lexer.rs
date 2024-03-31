@@ -233,6 +233,13 @@ pub enum PklToken<'source> {
     BlockComment,
 }
 
+impl std::hash::Hash for PklToken<'_> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+    }
+}
+impl Eq for PklToken<'_> {}
+
 #[derive(Default, Debug, Clone, PartialEq, Error, Diagnostic)]
 #[diagnostic(code(pkl_fast::lexing_error), help("try removing a character"))]
 #[error("Lexing Error: Unexpected Token")]
@@ -258,7 +265,7 @@ impl From<ParseIntError> for LexingError {
 }
 
 impl From<ParseIntegerError> for LexingError {
-    fn from(value: ParseIntegerError) -> Self {
+    fn from(_value: ParseIntegerError) -> Self {
         LexingError::InvalidInteger
     }
 }
@@ -279,14 +286,14 @@ impl<'source> std::fmt::Display for PklToken<'source> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // THIS SHOULD ONLY BE USED IN ORDER TO PRINT ERRORS
         match self {
-            PklToken::NewLine => write!(f, "line end"),
-            PklToken::OpenBracket => write!(f, "'{{'"),
-            PklToken::CloseBracket => write!(f, "'}}'"),
-            PklToken::OpenBrace => write!(f, "'['"),
-            PklToken::CloseBrace => write!(f, "']'"),
-            PklToken::OpenParenthesis => write!(f, "'('"),
-            PklToken::CloseParenthesis => write!(f, "')'"),
-            PklToken::Module => write!(f, "'module'"),
+            PklToken::NewLine => write!(f, "<newline>"),
+            PklToken::OpenBracket => write!(f, "{{"),
+            PklToken::CloseBracket => write!(f, "}}"),
+            PklToken::OpenBrace => write!(f, "["),
+            PklToken::CloseBrace => write!(f, "]"),
+            PklToken::OpenParenthesis => write!(f, "("),
+            PklToken::CloseParenthesis => write!(f, ")"),
+            PklToken::Module => write!(f, "module"),
             PklToken::Info(value) => write!(f, "@{value}"),
             PklToken::GlobbedImport => write!(f, "import*"),
             PklToken::Import => write!(f, "import"),
@@ -310,17 +317,17 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::In => write!(f, "in"),
             PklToken::When => write!(f, "when"),
             PklToken::Is => write!(f, "is"),
-            PklToken::Operator(op) => write!(f, "'{}'", op),
+            PklToken::Operator(op) => write!(f, "{}", op),
             PklToken::RightAngleBracket => write!(f, ">"),
-            PklToken::EqualSign => write!(f, "'='"),
-            PklToken::Colon => write!(f, "':'"),
-            PklToken::Comma => write!(f, "','"),
-            PklToken::SpreadSyntax => write!(f, "'...'"),
-            PklToken::Dot => write!(f, "'.'"),
-            PklToken::SemiColon => write!(f, "';'"),
+            PklToken::EqualSign => write!(f, "="),
+            PklToken::Colon => write!(f, ":"),
+            PklToken::Comma => write!(f, ","),
+            PklToken::SpreadSyntax => write!(f, "..."),
+            PklToken::Dot => write!(f, "."),
+            PklToken::SemiColon => write!(f, ";"),
             PklToken::AmendedObjectBracket(s) => write!(f, "({{}} {} {{)", s),
             PklToken::TypeAlias => write!(f, "typealias"),
-            PklToken::LogicalNotOperator => write!(f, "'!'"),
+            PklToken::LogicalNotOperator => write!(f, "!"),
             PklToken::DefaultUnionType(s) => write!(f, "*{}", s),
             PklToken::Null => write!(f, "null"),
             PklToken::Boolean(b) => write!(f, "{}", if *b { "true" } else { "false" }),
@@ -333,11 +340,11 @@ impl<'source> std::fmt::Display for PklToken<'source> {
             PklToken::MultipleLinesString(s) => write!(f, "\"\"\"{}\"\"\"", s),
             PklToken::Identifier(s) => write!(f, "{}", s),
             PklToken::FunctionCall(s) => write!(f, "{}(", s),
-            PklToken::LineComment => write!(f, "//"),
-            PklToken::DocComment => write!(f, "///"),
-            PklToken::BlockComment => write!(f, "/* ... */"),
+            PklToken::LineComment => write!(f, "<line comment>"),
+            PklToken::DocComment => write!(f, "<doc comment>"),
+            PklToken::BlockComment => write!(f, "<block comment>"),
             PklToken::UnionSerarator => write!(f, "|"),
-            PklToken::Whitespace => write!(f, " "),
+            PklToken::Whitespace => write!(f, "<whitespace>"),
             PklToken::QuestionMark => write!(f, "?"),
             PklToken::ExclamationMark => write!(f, "!"),
             PklToken::DoubleExclamationMark => write!(f, "!!"),

@@ -5,7 +5,10 @@ use crate::parser::{
 };
 
 use crate::lexer::PklToken;
-use logos::Lexer;
+use chumsky::{
+    prelude::*, Span,
+};
+use logos::{Lexer};
 
 use self::{
     expression::{parse_expr, Expression},
@@ -49,6 +52,21 @@ pub struct PklParser<'source> {
     pub statements: Vec<Statement<'source>>,
     lexer: PklLexer<'source>,
     new_line_parsed: bool,
+}
+
+fn parser<'a>() -> impl Parser<PklToken<'a>, Statement<'a>, Error = Simple<PklToken<'a>>>
+{
+    recursive(|sexpr| {
+        
+
+        // let list = sexpr
+        //     .repeated()
+        //     .collect()
+        //     .map(SExpr::List)
+        //     .delimited_by(just(Token::LParen), just(Token::RParen));
+
+        todo!()
+    })
 }
 
 impl<'source> PklParser<'source> {
