@@ -1,0 +1,21 @@
+[package]
+name = "new-pkl"
+version = "0.1.1"
+edition = "2021"
+license = "MIT"
+authors = ["Yatsu <dev.yatsu@gmail.com>"]
+description = "Fastest PKL-parsing crate out there!"
+repository = "https://github.com/DevYatsu/new-pkl"
+documentation = "https://docs.rs/new-pkl"
+readme = "README.md"
+keywords = ["pkl", "parser", "rust", "lexer", "ast"]
+categories = ["parsing"]
+
+[dependencies]
+logos = "0.14.0"
+hashbrown = { version = "0.14.5", optional = true }
+base64 = "0.22.1"
+
+
+[features]
+hashbrown_support = ["hashbrown"]
