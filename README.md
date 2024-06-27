@@ -14,7 +14,7 @@ Fastest pkl-parsing crate out there!
 
 ## Installation
 
-When in your rust project, simply run: `cargo add pkl_fast`
+When in your rust project, simply run: `cargo add new-pkl` (for the moment use new-pkl crate, new stable release coming to pkl_fast really soon)
 
 ## Usage
 
