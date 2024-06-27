@@ -132,12 +132,12 @@ pub fn match_string_methods_api<'a, 'b>(
             generate_method!(
                 "substringOrNull", &args;
                 0: Int, 1: Int;
-                |(start, exclusiveEnd): (i64, i64)| {
-                    if start < 0 || start as usize >= s.len() || exclusiveEnd < start || exclusiveEnd as usize >= s.len() {
+                |(start, exclusive_end): (i64, i64)| {
+                    if start < 0 || start as usize >= s.len() || exclusive_end < start || exclusive_end as usize >= s.len() {
                         return Ok(().into())
                     }
 
-                    if let Some(s) = s.get(start as usize..exclusiveEnd as usize) {
+                    if let Some(s) = s.get(start as usize..exclusive_end as usize) {
                         return Ok(s.to_owned().into())
                     }
 
