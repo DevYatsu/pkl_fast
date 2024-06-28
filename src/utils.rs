@@ -182,10 +182,10 @@ macro_rules! generate_method {
         let number_of_args: usize = count_args!($($arg_index),+);
         let args: &Vec<PklValue<'_>> = $args;
 
-        if $args.len() != number_of_args {
+        if args.len() != number_of_args {
             return Err((
                 format!(
-                    "Boolean expects '{}' method to take exactly {} argument(s)",
+                    "Method '{}' expects exactly {} argument(s)",
                     name, number_of_args
                 ),
                 $range,
@@ -221,5 +221,22 @@ macro_rules! generate_method {
         );
 
         $action(args_tuple)
+    }};
+    ($name:expr,$args:expr; $action:expr; $range:expr) => {{
+        let name: &str = $name;
+        let number_of_args: usize = 0;
+        let args: &Vec<PklValue<'_>> = $args;
+
+        if args.len() != number_of_args {
+            return Err((
+                format!(
+                    "Method '{}' expects 0 argument",
+                    name
+                ),
+                $range,
+            ));
+        }
+
+        $action
     }};
 }

@@ -54,7 +54,7 @@ pub fn match_string_props_api<'a, 'b>(
             let s = std::str::from_utf8(&buf)
                 .map_err(|e| (format!("Invalid UTF-8 sequence: {}", e.to_string()), range))?;
 
-            return Ok(PklValue::String(s.to_owned()));
+            return Ok(PklValue::String(String::from(s)));
         }
         "chars" => {
             let chars = s
@@ -99,7 +99,7 @@ pub fn match_string_methods_api<'a, 'b>(
                 0: Int;
                 |index: i64| {
                     if let Some(s) = s.get(index as usize..(index+1) as usize) {
-                        return Ok(s.to_owned().into())
+                        return Ok(String::from(s).into())
                     }
 
                     Ok(().into())
@@ -120,7 +120,7 @@ pub fn match_string_methods_api<'a, 'b>(
                     }
 
                     if let Some(s) = s.get(start as usize..exclusive_end as usize) {
-                        return Ok(s.to_owned().into())
+                        return Ok(String::from(s).into())
                     }
 
                     Ok(().into())
@@ -138,7 +138,7 @@ pub fn match_string_methods_api<'a, 'b>(
                     }
 
                     if let Some(s) = s.get(start as usize..exclusive_end as usize) {
-                        return Ok(s.to_owned().into())
+                        return Ok(String::from(s).into())
                     }
 
                     Ok(().into())
@@ -213,6 +213,404 @@ pub fn match_string_methods_api<'a, 'b>(
                 0: String;
                 |pattern: String| {
                     Ok(s.find(&pattern).map(|x| x as i64).map(PklValue::Int).unwrap_or(PklValue::Null))
+                };
+                range
+            )
+        }
+        "lastIndexOf" => {
+            generate_method!(
+                "lastIndexOf", &args;
+                0: String;
+                |pattern: String| {
+                    let result = s.rfind(&pattern).ok_or((format!("Cannot use lastIndexOf to index pattern '{pattern}', it is not present in the string"), range))?;
+                    Ok((result as i64).into())
+                };
+                range
+            )
+        }
+        "lastIndexOfOrNull" => {
+            generate_method!(
+                "lastIndexOfOrNull", &args;
+                0: String;
+                |pattern: String| {
+                    Ok(s.rfind(&pattern).map(|x| x as i64).map(PklValue::Int).unwrap_or(PklValue::Null))
+                };
+                range
+            )
+        }
+        "take" => {
+            generate_method!(
+                "take", &args;
+                0: Int;
+                |n: i64| {
+                    if n.is_negative() {return Err(("Cannot use take method with a negative index".to_owned(), range))}
+                    Ok(s[..=(n as usize).min(s.len())].to_owned().into())
+                };
+                range
+            )
+        }
+        "takeWhile" => {
+            generate_method!(
+                "takeWhile", &args;
+                0: String;
+                |pattern: String| {
+                    Ok(s[..s.len() - s.trim_start_matches(&pattern).len()].to_owned().into())
+                };
+                range
+            )
+        }
+        "takeLast" => {
+            generate_method!(
+                "takeLast", &args;
+                0: Int;
+                |n: i64| {
+                    if n.is_negative() {return Err(("Cannot use takeLast method with a negative index".to_owned(), range))}
+                    if n as usize >= s.len() {return Ok(String::from(s).into())}
+                    Ok(s[s.len() - n as usize..].to_owned().into())
+                };
+                range
+            )
+        }
+        "takeLastWhile" => {
+            generate_method!(
+                "takeLastWhile", &args;
+                0: String;
+                |pattern: String| {
+                    // Argument function not yet supported
+                    return Err(("Function arguments are not yet supported!".to_owned(), range));
+                    // Ok(s[s.len() - s.trim_end_matches(&pattern).len()..].to_owned().into())
+                };
+                range
+            )
+        }
+        "drop" => {
+            generate_method!(
+                "drop", &args;
+                0: Int;
+                |n: i64| {
+                    if n.is_negative() {return Err(("Cannot use drop method with a negative index".to_owned(), range))}
+                    if n as usize >= s.len() {return Ok(String::new().into())}
+                    Ok(s[n as usize..].to_owned().into())
+                };
+                range
+            )
+        }
+        "dropWhile" => {
+            generate_method!(
+                "dropWhile", &args;
+                0: Int;
+                |n: i64| {
+                    // Argument function not yet supported
+                    return Err(("Function arguments are not yet supported!".to_owned(), range));
+
+                    // if n.is_negative() {return Err(("Cannot use dropWhile method with a negative index".to_owned(), range))}
+                    // if n as usize >= s.len() {return Ok(String::new().into())}
+                    // Ok(s[n as usize..].to_owned().into())
+                };
+                range
+            )
+        }
+        "dropLast" => {
+            generate_method!(
+                "dropLast", &args;
+                0: Int;
+                |n: i64| {
+                    if n.is_negative() {return Err(("Cannot use dropLast method with a negative index".to_owned(), range))}
+                    if n as usize >= s.len() {return Ok(String::new().into())}
+                    Ok(s[..s.len() - n as usize].to_owned().into())
+                };
+                range
+            )
+        }
+        "dropLastWhile" => {
+            generate_method!(
+                "dropLastWhile", &args;
+                0: Int;
+                |n: i64| {
+                    // Argument function not yet supported
+                    return Err(("Function arguments are not yet supported!".to_owned(), range));
+
+                    // if n.is_negative() {return Err(("Cannot use dropWhile method with a negative index".to_owned(), range))}
+                    // if n as usize >= s.len() {return Ok(String::new().into())}
+                    // Ok(s[n as usize..].to_owned().into())
+                };
+                range
+            )
+        }
+        "replaceFirst" => {
+            generate_method!(
+                "replaceFirst", &args;
+                0: String, 1: String;
+                |(pattern, replacement): (String, String)| {
+                    Ok(s.replacen(&pattern, &replacement, 1).into())
+                };
+                range
+            )
+        }
+        "replaceLast" => {
+            generate_method!(
+                "replaceLast", &args;
+                0: String, 1: String;
+                |(pattern, replacement): (String, String)| {
+                    // fck this implementation is maybe wrong
+                    if let Some(i) = s.rfind(&pattern) {
+                        Ok((String::new() + &s[0..i] + &replacement + &s[i+pattern.len()..s.len()]).into())
+                    }else {
+                        Ok(String::from(s).into())
+                    }
+                };
+                range
+            )
+        }
+        "replaceAll" => {
+            generate_method!(
+                "replaceAll", &args;
+                0: String, 1: String;
+                |(pattern, replacement): (String, String)| {
+                    Ok(s.replace(&pattern, &replacement).into())
+                };
+                range
+            )
+        }
+        "replaceFirstMapped" => {
+            generate_method!(
+                "replaceFirstMapped", &args;
+                0: String;
+                |pattern: String| {
+                    // Argument function not yet supported
+                    return Err(("Function arguments are not yet supported!".to_owned(), range));
+                };
+                range
+            )
+        }
+        "replaceLastMapped" => {
+            generate_method!(
+                "replaceLastMapped", &args;
+                0: String;
+                |pattern: String| {
+                    // Argument function not yet supported
+                    return Err(("Function arguments are not yet supported!".to_owned(), range));
+                };
+                range
+            )
+        }
+        "replaceAllMapped" => {
+            generate_method!(
+                "replaceAllMapped", &args;
+                0: String;
+                |pattern: String| {
+                    // Argument function not yet supported
+                    return Err(("Function arguments are not yet supported!".to_owned(), range));
+                };
+                range
+            )
+        }
+        "replaceRange" => {
+            generate_method!(
+                "replaceRange", &args;
+                0: Int, 1: Int, 2:String;
+                |(start, exclusive_end, replacement): (i64,i64, String)| {
+                    if start.is_negative() {return Err(("Cannot use replaceRange method with a negative index (start)".to_owned(), range))}
+                    if exclusive_end.is_negative() {return Err(("Cannot use replaceRange method with a negative index (exclusiveEnd)".to_owned(), range))}
+
+                    if start as usize >= s.len() || exclusive_end as  usize > s.len() || start > exclusive_end {
+                        return Ok(String::from(s).into()); // Invalid range, return the original string
+                    }
+                    let mut result = String::new();
+                    result.push_str(&s[0..start as usize]);
+                    result.push_str(&replacement);
+                    result.push_str(&s[exclusive_end as usize..]);
+
+                    Ok(result.into())
+                };
+                range
+            )
+        }
+        "toUpperCase" => {
+            generate_method!(
+                "toUpperCase", &args;
+                Ok(s.to_uppercase().into());
+                range
+            )
+        }
+        "toLowerCase" => {
+            generate_method!(
+                "toLowerCase", &args;
+                Ok(s.to_lowercase().into());
+                range
+            )
+        }
+        "reverse" => {
+            generate_method!(
+                "reverse", &args;
+                Ok(s.chars().rev().collect::<String>().into());
+                range
+            )
+        }
+        "trim" => {
+            generate_method!(
+                "trim", &args;
+                Ok(s.trim().to_owned().into());
+                range
+            )
+        }
+        "trimStart" => {
+            generate_method!(
+                "trimStart", &args;
+                Ok(s.trim_start().to_owned().into());
+                range
+            )
+        }
+        "trimEnd" => {
+            generate_method!(
+                "trimEnd", &args;
+                Ok(s.trim_end().to_owned().into());
+                range
+            )
+        }
+        "padStart" => {
+            generate_method!(
+                "padStart", &args;
+                0: Int, 1: String;
+                |(width, character): (i64, String)| {
+                    if character.len() != 1 {return Err(("padStart expects a Char (String(length = 1)), found String".to_owned(), range))}
+                    if s.len() as i64 >= width {return Ok(String::from(s).into())}
+                    let mut string = String::with_capacity(width as usize);
+                    while (string.len() as i64) + (s.len() as i64) < width {
+                        string.push_str(&character);
+                    }
+                    string.push_str(&s);
+                    Ok(string.into())
+                };
+                range
+            )
+        }
+        "padEnd" => {
+            generate_method!(
+                "padEnd", &args;
+                0: Int, 1: String;
+                |(width, character): (i64, String)| {
+                    if character.len() != 1 {return Err(("padEnd expects a Char (String(length = 1)), found String".to_owned(), range))}
+                    if s.len() as i64 >= width {return Ok(String::from(s).into())}
+                    let mut string = String::with_capacity(width as usize);
+                    string.push_str(&s);
+                    while (string.len() as i64) < width {
+                        string.push_str(&character);
+                    }
+                    Ok(string.into())
+                };
+                range
+            )
+        }
+        "split" => {
+            generate_method!(
+                "split", &args;
+                0: String;
+                |pattern: String| {
+                    let split_strings: Vec<String> = s.split(&pattern).map(String::from).collect();
+                    let pkl_values: Vec<PklValue<'_>> = split_strings.into_iter().map(PklValue::String).collect();
+                    Ok(PklValue::List(pkl_values))                };
+                range
+            )
+        }
+        "capitalize" => {
+            generate_method!(
+                "capitalize", &args;
+                {
+                    let mut chars = s.chars();
+                    let new_s = match chars.next() {
+                        None => String::new(),
+                        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                    };
+                    Ok(new_s.into())
+                };
+                range
+            )
+        }
+        "decapitalize" => {
+            generate_method!(
+                "decapitalize", &args;
+                {
+                    let mut chars = s.chars();
+                    let new_s = match chars.next() {
+                        None => String::new(),
+                        Some(first) => first.to_lowercase().collect::<String>() + chars.as_str(),
+                    };
+                    Ok(new_s.into())
+                };
+                range
+            )
+        }
+        "toInt" => {
+            generate_method!(
+                "toInt", &args;
+                {
+                    match s.parse::<i64>() {
+                        Ok(result) => Ok(PklValue::Int(result)),
+                        Err(e) => Err((format!("Failed to convert string to Int: {}", e.to_string()), range))
+                    }
+                };
+                range
+            )
+        }
+        "toIntOrNull" => {
+            generate_method!(
+                "toIntOrNull", &args;
+                {
+                    match s.parse::<i64>() {
+                        Ok(result) => Ok(PklValue::Int(result)),
+                        Err(_) => Ok(PklValue::Null)
+                    }
+                };
+                range
+            )
+        }
+        "toFloat" => {
+            generate_method!(
+                "toFloat", &args;
+                {
+                    match s.parse::<f64>() {
+                        Ok(result) => Ok(PklValue::Float(result)),
+                        Err(e) => Err((format!("Failed to convert string to Float: {}", e.to_string()), range))
+                    }
+                };
+                range
+            )
+        }
+        "toFloatOrNull" => {
+            generate_method!(
+                "toFloatOrNull", &args;
+                {
+                    match s.parse::<f64>() {
+                        Ok(result) => Ok(PklValue::Float(result)),
+                        Err(_) => Ok(PklValue::Null)
+                    }
+                };
+                range
+            )
+        }
+        "toBoolean" => {
+            generate_method!(
+                "toBoolean", &args;
+                {
+                    match s {
+                        "true" => Ok(true.into()),
+                        "false" => Ok(false.into()),
+                        x => Err((format!("Failed to convert string to Boolean: '{x}' is neither equal to true nor false"), range))
+                    }
+                };
+                range
+            )
+        }
+        "toBooleanOrNull" => {
+            generate_method!(
+                "toBooleanOrNull", &args;
+                {
+                    match s {
+                        "true" => Ok(true.into()),
+                        "false" => Ok(false.into()),
+                        x => Ok(PklValue::Null)
+                    }
                 };
                 range
             )
