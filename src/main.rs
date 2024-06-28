@@ -11,6 +11,10 @@ octal = 0o1_237
 hex = 0x129_EF2444443
 binary = 0b1_010_10100011111101010101
 
+num = \"122222222\".toInt()
+$string_bool = \"false\".toBoolean()
+title = \"myTitle\".capitalize()
+
 multiline = \"\"\"
 Although the Dodo is extinct,
 the species will be remembered.
