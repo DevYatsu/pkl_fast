@@ -6,11 +6,22 @@ Fastest pkl-parsing crate out there!
 
 - Parse Pkl string into a structured representation (hashmap) in rust
 - Parse Pkl string into an AST
-- Support for strings, integers (decimal, octal, hex, binary), floats, boolean and multiline strings
-- Support for nested objects, amends declaration, amends expression and chained amends declaration
-- Support for classical identifiers, $identifiers, _identifiers and illegal identifiers
-- Support for class instance
-- Support for Duration and Datasize
+- Support for strings, integers (decimal, octal, hex, binary), floats, boolean, objects (amends syntax as well), class instances
+- Boolean API supported
+- String API (mostly) supported
+- Int properties supported, soon methods too
+
+## Currently Not Supported
+
+- Multiline String containing <<">> not preceded by a backlash, String interpolation and Strings with custom delimiters
+- Int + Float + Lists methods API, only properties are supported
+- Listings, Mappings, Maps
+- functions -> thus also functions and methods taking functions as parameters
+- Import syntax supported but not yet functional
+- Globbed imports + dynamic imports + amends expresions
+- type annotations
+- Classes declarations
+- If expressions
 
 ## Installation
 
