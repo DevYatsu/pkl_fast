@@ -14,7 +14,7 @@ Fastest pkl-parsing crate out there!
 ## Currently Not Supported
 
 - Multiline String containing <<">> not preceded by a backlash, String interpolation and Strings with custom delimiters
-- Int + Float + Lists methods API, only properties are supported
+- Int + Lists methods API, only properties are supported
 - Listings, Mappings, Maps
 - functions -> thus also functions and methods taking functions as parameters
 - Import syntax supported but not yet functional

@@ -7,7 +7,7 @@ use crate::{
 use bool_api::match_bool_methods_api;
 use data_size::{match_data_size_props_api, Byte};
 use duration::{match_duration_props_api, Duration};
-use float_api::match_float_props_api;
+use float_api::{match_float_methods_api, match_float_props_api};
 use int_api::match_int_props_api;
 use list_api::match_list_props_api;
 use std::{fs, ops::Range};
@@ -432,7 +432,7 @@ impl<'a> PklTable<'a> {
                             // todo! implement methods api for each one
                             PklValue::Int(int) => return match_int_props_api(int, fn_name, range),
                             PklValue::Float(float) => {
-                                return match_float_props_api(float, fn_name, range)
+                                return match_float_methods_api(float, fn_name, args, range)
                             }
                             PklValue::Object(hashmap) => {
                                 if let Some(data) = hashmap.get(&fn_name) {

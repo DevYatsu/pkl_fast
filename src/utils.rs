@@ -132,38 +132,6 @@ macro_rules! parse_string {
     }};
 }
 
-// macro_rules! generate_method {
-//     ($name:expr;$args:expr; $($arg_index:literal : $arg_type:ident),+; $action:block $range:expr) => {{
-//         let name: &str = $name;
-//         let number_of_args: usize = count_args!($($arg_index),+);
-//         let args: &Vec<PklValue<'_>> = $args;
-
-//         if $args.len() != number_of_args {
-//             return Err((
-//                 format!(
-//                     "Boolean expects '{}' method to take exactly {} argument(s)",
-//                     name, number_of_args
-//                 ),
-//                 $range,
-//             ));
-//         }
-
-//         $(
-//             if args[$arg_index].get_type() != stringify!($arg_type) {
-//                 return Err((
-//                     format!(
-//                         "{} method expects argument at index {} to be of type {}, but found {}",
-//                         name, $arg_index, stringify!($arg_type), args[$arg_index].get_type()
-//                     ),
-//                     $range,
-//                 ));
-//             }
-//         )+
-
-//         $action
-//     }};
-// }
-
 // Helper macro to count arguments
 #[macro_export]
 macro_rules! count_args {
@@ -193,7 +161,17 @@ macro_rules! generate_method {
         }
 
         $(
-            if args[$arg_index].get_type() != stringify!($arg_type) {
+            if stringify!($arg_type) == "Number" {
+                if args[$arg_index].get_type() != "Float" && args[$arg_index].get_type() != "Int" {
+                    return Err((
+                        format!(
+                            "{} method expects argument at index {} to be of type Number, but found {}",
+                            name, $arg_index, args[$arg_index].get_type()
+                        ),
+                        $range,
+                    ));
+                }
+            } else if args[$arg_index].get_type() != stringify!($arg_type) {
                 return Err((
                     format!(
                         "{} method expects argument at index {} to be of type {}, but found {}",
@@ -206,16 +184,15 @@ macro_rules! generate_method {
 
         let args_tuple = (
             $(
-                if let PklValue::$arg_type(value) = &args[$arg_index] {
-                    value.to_owned()
-                } else {
-                    return Err((
+                match &args[$arg_index] {
+                    PklValue::$arg_type(value) => value.to_owned(),
+                    _ => return Err((
                         format!(
                             "{} method expects argument at index {} to be of type {}, but found {}",
                             name, $arg_index, stringify!($arg_type), args[$arg_index].get_type()
                         ),
                         $range,
-                    ));
+                    )),
                 }
             ),+
         );
@@ -239,4 +216,51 @@ macro_rules! generate_method {
 
         $action
     }};
+
+    ($name:expr, $args:expr; Numbers: $args_number:expr; $action:expr; $range:expr) => {{
+        // Case only useful when the method takes several Number arguments
+
+        let name: &str = $name;
+        let number_of_args: usize = $args_number;
+        let args: &Vec<PklValue<'_>> = $args;
+        if args.len() != number_of_args {
+            return Err((
+                format!(
+                    "Method '{}' expects exactly {} argument(s)",
+                    name, number_of_args
+                ),
+                $range,
+            ));
+        }
+
+
+
+        let mut args_tuple: [f64; $args_number] = [0.0; $args_number];
+
+        for arg_number in 0..=number_of_args {
+            if args[arg_number].get_type() != "Float" && args[arg_number].get_type() != "Int" {
+                return Err((
+                    format!(
+                        "{} method expects argument at index {} to be of type Number, but found {}",
+                        name, arg_number, args[arg_number].get_type()
+                    ),
+                    $range,
+                ));
+            }
+
+            args_tuple[arg_number] = match &args[arg_number] {
+                PklValue::Float(value) => *value,
+                PklValue::Int(value) => *value as f64,
+                _ => return Err((
+                    format!(
+                        "{} method expects argument at index {} to be of type Number, but found {}",
+                        name, arg_number, args[arg_number].get_type()
+                    ),
+                    $range,
+                )),
+            };
+        }
+        $action(args_tuple)
+    }};
+
 }

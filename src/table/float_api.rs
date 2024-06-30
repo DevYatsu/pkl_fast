@@ -2,7 +2,7 @@ use super::{
     data_size,
     duration::{self, Duration},
 };
-use crate::{values::Byte, PklResult, PklValue};
+use crate::{generate_method, values::Byte, PklResult, PklValue};
 use std::ops::Range;
 
 /// Based on v0.26.0
@@ -54,6 +54,126 @@ pub fn match_float_props_api<'a, 'b>(
         _ => {
             return Err((
                 format!("Float does not possess {} property", property),
+                range,
+            ))
+        }
+    }
+}
+
+/// Based on v0.26.0
+pub fn match_float_methods_api<'a, 'b>(
+    float: f64,
+    fn_name: &'a str,
+    args: Vec<PklValue<'b>>,
+    range: Range<usize>,
+) -> PklResult<PklValue<'b>> {
+    match fn_name {
+        "toString" => {
+            generate_method!(
+                "toString", &args;
+                Ok(float.to_string().into());
+                range
+            )
+        }
+        "round" => {
+            generate_method!(
+                "round", &args;
+                Ok(float.round_ties_even().into());
+                range
+            )
+        }
+        "truncate" => {
+            generate_method!(
+                "truncate", &args;
+                Ok(float.trunc().into());
+                range
+            )
+        }
+        "toInt" => {
+            generate_method!(
+                "toInt", &args;
+                {
+                    let value = float.trunc();
+                    if value.is_infinite() {
+                        return Err(("Cannot convert Float to Int, float represents infinity".to_owned(), range))
+                    } if value.is_nan() {
+                        return Err(("Cannot convert Float to Int, float is NaN".to_owned(), range))
+                    }
+                   if value > i64::MAX as f64 {
+                       return Err(("Cannot convert Float to Int, float is too large".to_owned(), range))
+                   }if value < i64::MIN as f64 {
+                       return Err(("Cannot convert Float to Int, float is too large".to_owned(), range))
+                   }
+                   Ok((value as i64).into())}
+                ;
+                range
+            )
+        }
+        "toFixed" => {
+            generate_method!(
+                "toFixed", &args;
+                0: Int;
+                |fraction_digits: i64|
+                    {
+                        if fraction_digits < 0 || fraction_digits > 20 {
+                            return Err((format!("fractionDigits must be in range 0..20, here it is '{}'", fraction_digits), range))
+                        }
+                        Ok(format!("{:.1$}", float, fraction_digits as usize).into())
+                    }
+                ;
+                range
+            )
+        }
+        "toDuration" => {
+            generate_method!(
+                "toDuration", &args;
+                0: String;
+                |duration_unit: String|
+                    {
+                        if let Some(unit) = duration::Unit::from_str(&duration_unit) {
+                            return Ok(Duration::from_float_and_unit(float, unit).into())
+                        }
+
+                        return Err((format!("Cannot convert {} to Duration, durationUnit '{}' is not valid", float, duration_unit), range))
+                    }
+                ;
+                range
+            )
+        }
+        "toDataSize" => {
+            generate_method!(
+                "toDataSize", &args;
+                0: String;
+                |datasize_unit: String|
+                    {
+                        if let Some(unit) = data_size::Unit::from_str(&datasize_unit) {
+                            return Ok(Byte::from_float_and_unit(float, unit).into())
+                        }
+
+                        return Err((format!("Cannot convert {} to DataSize, datasizeUnit '{}' is not valid", float, datasize_unit), range))
+                    }
+                ;
+                range
+            )
+        }
+        "isBetween" => {
+            generate_method!(
+                "isBetween", &args;
+                Numbers: 2;
+                |[start, inclusive_end]: [f64; 2]|
+                    {
+                        Ok((float >= start && float <= inclusive_end).into())
+                    }
+                ;
+                range
+            )
+        }
+        _ => {
+            return Err((
+                format!(
+                    "String does not possess {} method (or method not yet implemented)",
+                    fn_name
+                ),
                 range,
             ))
         }
