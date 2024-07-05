@@ -57,12 +57,21 @@ impl Unit {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Duration<'a> {
     duration: StdDuration,
     initial_value: Box<PklValue<'a>>,
     unit: Unit,
     is_negative: bool,
+}
+
+impl<'a> PartialEq for Duration<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.duration == other.duration && self.is_negative == other.is_negative
+    }
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
 }
 
 impl<'a> Duration<'a> {

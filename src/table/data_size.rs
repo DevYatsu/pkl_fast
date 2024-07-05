@@ -80,11 +80,20 @@ impl Unit {
 }
 
 /// Represents data sizes in bytes.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Byte<'a> {
     bytes: i64,
     initial_value: Box<PklValue<'a>>,
     unit: Unit,
+}
+
+impl<'a> PartialEq for Byte<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.bytes == other.bytes
+    }
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
 }
 
 impl<'a> Byte<'a> {

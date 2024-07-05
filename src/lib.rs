@@ -1,6 +1,6 @@
+use hashbrown::HashMap;
 use lexer::PklToken;
 use parser::{parse_pkl, PklStatement};
-use std::collections::HashMap;
 use table::{ast_to_table, PklTable};
 
 mod lexer;

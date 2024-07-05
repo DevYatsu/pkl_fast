@@ -8,15 +8,11 @@ use bool_api::match_bool_methods_api;
 use data_size::{match_data_size_props_api, Byte};
 use duration::{match_duration_props_api, Duration};
 use float_api::{match_float_methods_api, match_float_props_api};
+use hashbrown::HashMap;
 use int_api::{match_int_methods_api, match_int_props_api};
 use list_api::match_list_props_api;
 use std::{fs, ops::Range};
 use string_api::{match_string_methods_api, match_string_props_api};
-
-#[cfg(feature = "hashbrown_support")]
-use hashbrown::Hashmap as HashMap;
-#[cfg(not(feature = "hashbrown_support"))]
-use std::collections::HashMap;
 
 mod bool_api;
 pub mod data_size;

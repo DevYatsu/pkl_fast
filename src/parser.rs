@@ -1,11 +1,7 @@
 use crate::{lexer::PklToken, parse_identifier, parse_string};
-use std::ops::{Deref, DerefMut, Range};
-
-#[cfg(feature = "hashbrown_support")]
-use hashbrown::Hashmap as HashMap;
+use hashbrown::HashMap;
 use logos::{Lexer, Span};
-#[cfg(not(feature = "hashbrown_support"))]
-use std::collections::HashMap;
+use std::ops::{Deref, DerefMut, Range};
 
 /// Represents a parsing error in the PKL format.
 ///
