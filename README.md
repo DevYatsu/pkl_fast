@@ -9,12 +9,12 @@ Fastest pkl-parsing crate out there!
 - Support for strings, integers (decimal, octal, hex, binary), floats, boolean, objects (amends syntax as well), class instances
 - Boolean API supported
 - String API (mostly) supported
-- Int properties supported, soon methods too
+- Int/Float properties and methods supported
 
 ## Currently Not Supported
 
 - Multiline String containing <<">> not preceded by a backlash, String interpolation and Strings with custom delimiters
-- Int + Lists methods API, only properties are supported
+- Lists methods API, only properties are supported
 - Listings, Mappings, Maps
 - functions -> thus also functions and methods taking functions as parameters
 - Import syntax supported but not yet functional

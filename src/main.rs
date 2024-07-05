@@ -1,4 +1,4 @@
-use new_pkl::{Pkl, PklResult};
+use new_pkl::Pkl;
 use std::time::Instant;
 
 fn main() -> Result<(), (String, String)> {

@@ -8,7 +8,7 @@ use bool_api::match_bool_methods_api;
 use data_size::{match_data_size_props_api, Byte};
 use duration::{match_duration_props_api, Duration};
 use float_api::{match_float_methods_api, match_float_props_api};
-use int_api::match_int_props_api;
+use int_api::{match_int_methods_api, match_int_props_api};
 use list_api::match_list_props_api;
 use std::{fs, ops::Range};
 use string_api::{match_string_methods_api, match_string_props_api};
@@ -429,8 +429,9 @@ impl<'a> PklTable<'a> {
                             PklValue::Bool(bool) => {
                                 return match_bool_methods_api(bool, fn_name, args, range)
                             }
-                            // todo! implement methods api for each one
-                            PklValue::Int(int) => return match_int_props_api(int, fn_name, range),
+                            PklValue::Int(int) => {
+                                return match_int_methods_api(int, fn_name, args, range)
+                            }
                             PklValue::Float(float) => {
                                 return match_float_methods_api(float, fn_name, args, range)
                             }
