@@ -9,7 +9,7 @@ Fastest pkl-parsing crate out there!
 - Support for strings, integers (decimal, octal, hex, binary), floats, boolean, objects (amends syntax as well), class instances
 - Boolean API supported
 - String API (mostly) supported
-- Int/Float properties and methods supported
+- Int/Float/Duration/DataSize properties and methods supported
 
 ## Currently Not Supported
 

@@ -5,8 +5,8 @@ use crate::{
     Pkl,
 };
 use bool_api::match_bool_methods_api;
-use data_size::{match_data_size_props_api, Byte};
-use duration::{match_duration_props_api, Duration};
+use data_size::{match_data_size_methods_api, match_data_size_props_api, Byte};
+use duration::{match_duration_methods_api, match_duration_props_api, Duration};
 use float_api::{match_float_methods_api, match_float_props_api};
 use hashbrown::HashMap;
 use int_api::{match_int_methods_api, match_int_props_api};
@@ -432,6 +432,7 @@ impl<'a> PklTable<'a> {
                                 return match_float_methods_api(float, fn_name, args, range)
                             }
                             PklValue::Object(hashmap) => {
+                                // need to allow functions as fields of objects
                                 if let Some(data) = hashmap.get(&fn_name) {
                                     return Ok(data.to_owned());
                                 } else {
@@ -442,7 +443,8 @@ impl<'a> PklTable<'a> {
                                 }
                             }
                             PklValue::String(s) => {
-                                return match_string_methods_api(&s, fn_name, args, range)
+                                // we should directly use s not &s
+                                return match_string_methods_api(&s, fn_name, args, range);
                             }
                             PklValue::ClassInstance(_class_name, hashmap) => {
                                 if let Some(data) = hashmap.get(&fn_name) {
@@ -455,10 +457,10 @@ impl<'a> PklTable<'a> {
                                 }
                             }
                             PklValue::DataSize(byte) => {
-                                return match_data_size_props_api(byte, fn_name, range)
+                                return match_data_size_methods_api(byte, fn_name, args, range)
                             }
                             PklValue::Duration(duration) => {
-                                return match_duration_props_api(duration, fn_name, range)
+                                return match_duration_methods_api(duration, fn_name, args, range)
                             }
                             PklValue::List(list) => {
                                 return match_list_props_api(list, fn_name, range)

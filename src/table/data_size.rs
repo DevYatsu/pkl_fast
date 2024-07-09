@@ -2,7 +2,7 @@
 //     "b", "kb", "mb", "gb", "tb", "pb", "kib", "mib", "gib", "tib", "pib",
 // ];
 
-use crate::{PklResult, PklValue};
+use crate::{generate_method, PklResult, PklValue};
 use std::fmt;
 use std::ops::Range;
 
@@ -35,6 +35,71 @@ pub fn match_data_size_props_api<'a, 'b>(
         _ => {
             return Err((
                 format!("DataSize does not possess {} property", property),
+                range,
+            ))
+        }
+    }
+}
+
+/// Based on v0.26.0
+pub fn match_data_size_methods_api<'a, 'b>(
+    byte: Byte<'b>,
+    property: &'a str,
+    args: Vec<PklValue<'a>>,
+    range: Range<usize>,
+) -> PklResult<PklValue<'b>> {
+    match property {
+        "isBetween" => {
+            generate_method!(
+                "isBetween", &args;
+                0: DataSize, 1: DataSize;
+                |(start, inclusive_end): (Byte, Byte)| {
+                    Ok((byte >= start && byte <= inclusive_end).into())
+                };
+                range
+            )
+        }
+        "toUnit" => {
+            generate_method!(
+                "toUnit", &args;
+                0: String;
+                |unit: String| {
+                    if let Some(unit) = Unit::from_str(&unit) {
+                        let mut x = byte;
+                        x.to_unit(unit);
+                        return Ok((x).into())
+                    }
+
+                    Err((format!("'{unit}' is not a valid DataSize Unit"), range))
+                };
+                range
+            )
+        }
+        "toBinaryUnit" => {
+            generate_method!(
+                "toBinaryUnit", &args;
+                {
+                    let mut x = byte;
+                    x.to_binary_unit();
+                    return Ok((x).into())
+                };
+                range
+            )
+        }
+        "toDecimalUnit" => {
+            generate_method!(
+                "toDecimalUnit", &args;
+                {
+                    let mut x = byte;
+                    x.to_decimal_unit();
+                    return Ok((x).into())
+                };
+                range
+            )
+        }
+        _ => {
+            return Err((
+                format!("Duration does not possess {} method", property),
                 range,
             ))
         }
@@ -82,9 +147,41 @@ impl Unit {
 /// Represents data sizes in bytes.
 #[derive(Debug, Clone)]
 pub struct Byte<'a> {
-    bytes: i64,
+    pub bytes: i64,
+    pub is_negative: bool,
+    pub unit: Unit,
     initial_value: Box<PklValue<'a>>,
-    unit: Unit,
+    initial_unit: Unit,
+}
+
+impl<'a> PartialOrd for Byte<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.is_negative && !other.is_negative {
+            return Some(std::cmp::Ordering::Less);
+        }
+        if !self.is_negative && other.is_negative {
+            return Some(std::cmp::Ordering::Greater);
+        }
+
+        if self.is_negative && other.is_negative {
+            if self.bytes > other.bytes {
+                Some(std::cmp::Ordering::Less)
+            } else if self.bytes < other.bytes {
+                Some(std::cmp::Ordering::Greater)
+            } else {
+                Some(std::cmp::Ordering::Equal)
+            }
+        } else {
+            // both positive
+            if self.bytes > other.bytes {
+                Some(std::cmp::Ordering::Greater)
+            } else if self.bytes < other.bytes {
+                Some(std::cmp::Ordering::Less)
+            } else {
+                Some(std::cmp::Ordering::Equal)
+            }
+        }
+    }
 }
 
 impl<'a> PartialEq for Byte<'a> {
@@ -106,11 +203,14 @@ impl<'a> Byte<'a> {
     /// # Returns
     /// Returns a new `Byte` representing the size in bytes.
     pub fn from_float_and_unit(value: f64, unit: Unit) -> Self {
+        let is_negative = value.is_sign_negative();
         let bytes = calculate_bytes(value, unit);
         Byte {
             bytes,
             initial_value: Box::new(PklValue::Float(value)),
             unit,
+            initial_unit: unit,
+            is_negative,
         }
     }
 
@@ -123,12 +223,42 @@ impl<'a> Byte<'a> {
     /// # Returns
     /// Returns a new `Byte` representing the size in bytes.
     pub fn from_int_and_unit(value: i64, unit: Unit) -> Self {
+        let is_negative = value.is_negative();
         let bytes = calculate_bytes(value as f64, unit);
         Byte {
             bytes,
             initial_value: Box::new(PklValue::Int(value)),
             unit,
+            initial_unit: unit,
+            is_negative,
         }
+    }
+
+    pub fn to_unit(&mut self, unit: Unit) -> &mut Self {
+        self.unit = unit;
+        self
+    }
+    pub fn to_binary_unit(&mut self) -> &mut Self {
+        match self.unit {
+            Unit::KB => self.unit = Unit::KiB,
+            Unit::MB => self.unit = Unit::MiB,
+            Unit::GB => self.unit = Unit::GiB,
+            Unit::TB => self.unit = Unit::TiB,
+            Unit::PB => self.unit = Unit::PiB,
+            _ => (),
+        }
+        self
+    }
+    pub fn to_decimal_unit(&mut self) -> &mut Self {
+        match self.unit {
+            Unit::KiB => self.unit = Unit::KB,
+            Unit::MiB => self.unit = Unit::MB,
+            Unit::GiB => self.unit = Unit::GB,
+            Unit::TiB => self.unit = Unit::TB,
+            Unit::PiB => self.unit = Unit::PB,
+            _ => (),
+        }
+        self
     }
 }
 

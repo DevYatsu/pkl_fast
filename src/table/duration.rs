@@ -1,4 +1,4 @@
-use crate::{PklResult, PklValue};
+use crate::{generate_method, PklResult, PklValue};
 use std::fmt;
 use std::{ops::Range, time::Duration as StdDuration};
 
@@ -21,7 +21,50 @@ pub fn match_duration_props_api<'a, 'b>(
         "isoString" => return Ok(PklValue::String(duration.to_iso_string())),
         _ => {
             return Err((
-                format!("DataSize does not possess {} property", property),
+                format!("Duration does not possess {} property", property),
+                range,
+            ))
+        }
+    }
+}
+
+/// Based on v0.26.0
+pub fn match_duration_methods_api<'a, 'b>(
+    duration: Duration<'b>,
+    property: &'a str,
+    args: Vec<PklValue<'a>>,
+    range: Range<usize>,
+) -> PklResult<PklValue<'b>> {
+    match property {
+        "isBetween" => {
+            generate_method!(
+                "isBetween", &args;
+                0: Duration, 1: Duration;
+                |(start, inclusive_end): (Duration, Duration)| {
+                    Ok((duration >= start && duration <= inclusive_end).into())
+                };
+                range
+            )
+        }
+        "toUnit" => {
+            generate_method!(
+                "toUnit", &args;
+                0: String;
+                |unit: String| {
+                    if let Some(unit) = Unit::from_str(&unit) {
+                        let mut x = duration;
+                        x.to_unit(unit);
+                        return Ok((x).into())
+                    }
+
+                    Err((format!("'{unit}' is not a valid Duration Unit"), range))
+                };
+                range
+            )
+        }
+        _ => {
+            return Err((
+                format!("Duration does not possess {} method", property),
                 range,
             ))
         }
@@ -59,10 +102,41 @@ impl Unit {
 
 #[derive(Debug, Clone)]
 pub struct Duration<'a> {
-    duration: StdDuration,
+    pub duration: StdDuration,
+    pub unit: Unit,
+    pub is_negative: bool,
     initial_value: Box<PklValue<'a>>,
-    unit: Unit,
-    is_negative: bool,
+    initial_unit: Unit,
+}
+
+impl<'a> PartialOrd for Duration<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.is_negative && !other.is_negative {
+            return Some(std::cmp::Ordering::Less);
+        }
+        if !self.is_negative && other.is_negative {
+            return Some(std::cmp::Ordering::Greater);
+        }
+
+        if self.is_negative && other.is_negative {
+            if self.duration > other.duration {
+                Some(std::cmp::Ordering::Less)
+            } else if self.duration < other.duration {
+                Some(std::cmp::Ordering::Greater)
+            } else {
+                Some(std::cmp::Ordering::Equal)
+            }
+        } else {
+            // both positive
+            if self.duration > other.duration {
+                Some(std::cmp::Ordering::Greater)
+            } else if self.duration < other.duration {
+                Some(std::cmp::Ordering::Less)
+            } else {
+                Some(std::cmp::Ordering::Equal)
+            }
+        }
+    }
 }
 
 impl<'a> PartialEq for Duration<'a> {
@@ -93,6 +167,7 @@ impl<'a> Duration<'a> {
         Self {
             duration,
             unit,
+            initial_unit: unit,
             initial_value,
             is_negative,
         }
@@ -157,9 +232,15 @@ impl<'a> Duration<'a> {
         Self {
             duration,
             unit,
+            initial_unit: unit,
             initial_value,
             is_negative,
         }
+    }
+
+    pub fn to_unit(&mut self, unit: Unit) -> &mut Self {
+        self.unit = unit;
+        self
     }
 }
 

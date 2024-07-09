@@ -70,6 +70,8 @@ list_with_values = List(pigeon, int, duration, two, list, List(), pigeon.lifespa
 
 STRING = \"test\".repeat(5)
 is_start = STRING.startsWith(\"testtest\")
+
+s = 5.min.toUnit(\"s\")
 ";
 
     let src = src.repeat(1);
