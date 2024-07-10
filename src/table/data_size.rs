@@ -99,7 +99,7 @@ pub fn match_data_size_methods_api<'a, 'b>(
         }
         _ => {
             return Err((
-                format!("Duration does not possess {} method", property),
+                format!("DataSize does not possess {} method", property),
                 range,
             ))
         }
