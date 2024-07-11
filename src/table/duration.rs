@@ -106,6 +106,7 @@ pub struct Duration {
     pub unit: Unit,
     pub is_negative: bool,
     initial_value: Box<PklValue>,
+    #[allow(dead_code)]
     initial_unit: Unit,
 }
 

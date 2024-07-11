@@ -469,7 +469,7 @@ impl PklTable {
                     }
                 }
             }
-            PklExpr::FuncCall(FuncCall(Identifier(name, _), args, rng)) => {
+            PklExpr::FuncCall(FuncCall(Identifier(name, _), args, _rng)) => {
                 // all function calls
                 match name {
                     "List" => self.evaluate_list(args),
