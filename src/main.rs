@@ -3,7 +3,7 @@ use std::time::Instant;
 
 fn main() -> Result<(), (String, String)> {
     let src = "
-// import \"test.pkl\"
+import \"test.pkl\"
 
 `Hello` = \"hello\"
 test = 222_333.3e-4
