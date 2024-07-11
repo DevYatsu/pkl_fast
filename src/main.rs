@@ -2,7 +2,7 @@ use new_pkl::Pkl;
 use std::time::Instant;
 
 fn main() -> Result<(), (String, String)> {
-    let src = "import \"test.pkl\"
+    let src = "import \"test.pkl\" as test_import
 
 `Hello` = \"hello\"
 test = 222_333.3e-4
@@ -87,7 +87,7 @@ s = 5.min.toUnit(\"s\")
         src.len()
     );
 
-    // println!("{:?}", pkl);
+    println!("{:?}", pkl);
 
     Ok(())
 }

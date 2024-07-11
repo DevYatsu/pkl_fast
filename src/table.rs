@@ -330,7 +330,12 @@ impl PklTable {
         self.variables.get(&name.into())
     }
 
-    pub fn import(&mut self, name: &str, rng: Range<usize>) -> PklResult<()> {
+    pub fn import(
+        &mut self,
+        name: &str,
+        local_name: Option<&str>,
+        rng: Range<usize>,
+    ) -> PklResult<()> {
         match name {
             name if name.starts_with("package://") => {
                 return Err(("Package imports not yet supported!".to_owned(), rng))
@@ -351,6 +356,11 @@ impl PklTable {
                 let mut pkl = Pkl::new();
                 pkl.parse(&file_content)?;
                 let hash = pkl.table.variables;
+
+                if let Some(local) = local_name {
+                    self.insert(local, hash.into());
+                    return Ok(());
+                }
 
                 self.variables.extend(hash);
             }
@@ -594,7 +604,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 in_body = true;
                 table.insert(name, table.evaluate(expr)?);
             }
-            PklStatement::Import(value, _local_name, rng) => {
+            PklStatement::Import(value, local_name, rng) => {
                 if in_body {
                     return Err((
                         "Import statements must be before document body".to_owned(),
@@ -602,7 +612,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                     ));
                 }
 
-                table.import(value, rng)?;
+                table.import(value, local_name, rng)?;
             }
         }
     }
