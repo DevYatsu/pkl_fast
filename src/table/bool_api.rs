@@ -2,12 +2,12 @@ use crate::{generate_method, PklResult, PklValue};
 use std::ops::Range;
 
 /// Based on v0.26.0
-pub fn match_bool_methods_api<'a, 'b>(
+pub fn match_bool_methods_api(
     bool_value: bool,
-    fn_name: &'a str,
-    args: Vec<PklValue<'b>>,
+    fn_name: &str,
+    args: Vec<PklValue>,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match fn_name {
         "xor" => {
             // if args.len() != 1 {

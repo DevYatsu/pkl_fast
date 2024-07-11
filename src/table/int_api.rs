@@ -6,11 +6,7 @@ use crate::{generate_method, values::Byte, PklResult, PklValue};
 use std::ops::Range;
 
 /// Based on v0.26.0
-pub fn match_int_props_api<'a, 'b>(
-    int: i64,
-    property: &'a str,
-    range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+pub fn match_int_props_api(int: i64, property: &str, range: Range<usize>) -> PklResult<PklValue> {
     if let Some(unit) = duration::Unit::from_str(property) {
         return Ok(PklValue::Duration(Duration::from_int_and_unit(int, unit)));
     }
@@ -47,12 +43,12 @@ pub fn match_int_props_api<'a, 'b>(
 }
 
 /// Based on v0.26.0
-pub fn match_int_methods_api<'a, 'b>(
+pub fn match_int_methods_api(
     int: i64,
-    fn_name: &'a str,
-    args: Vec<PklValue<'b>>,
+    fn_name: &str,
+    args: Vec<PklValue>,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match fn_name {
         "toString" => {
             generate_method!(

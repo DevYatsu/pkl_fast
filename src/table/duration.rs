@@ -5,11 +5,11 @@ use std::{ops::Range, time::Duration as StdDuration};
 // pub const DURATION_UNITS: [&str; 7] = ["ns", "us", "ms", "s", "min", "h", "d"];
 
 /// Based on v0.26.0
-pub fn match_duration_props_api<'a, 'b>(
-    duration: Duration<'b>,
-    property: &'a str,
+pub fn match_duration_props_api(
+    duration: Duration,
+    property: &str,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match property {
         "value" => {
             return Ok(*duration.initial_value);
@@ -29,12 +29,12 @@ pub fn match_duration_props_api<'a, 'b>(
 }
 
 /// Based on v0.26.0
-pub fn match_duration_methods_api<'a, 'b>(
-    duration: Duration<'b>,
-    property: &'a str,
-    args: Vec<PklValue<'a>>,
+pub fn match_duration_methods_api(
+    duration: Duration,
+    property: &str,
+    args: Vec<PklValue>,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match property {
         "isBetween" => {
             generate_method!(
@@ -101,15 +101,15 @@ impl Unit {
 }
 
 #[derive(Debug, Clone)]
-pub struct Duration<'a> {
+pub struct Duration {
     pub duration: StdDuration,
     pub unit: Unit,
     pub is_negative: bool,
-    initial_value: Box<PklValue<'a>>,
+    initial_value: Box<PklValue>,
     initial_unit: Unit,
 }
 
-impl<'a> PartialOrd for Duration<'a> {
+impl PartialOrd for Duration {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.is_negative && !other.is_negative {
             return Some(std::cmp::Ordering::Less);
@@ -139,7 +139,7 @@ impl<'a> PartialOrd for Duration<'a> {
     }
 }
 
-impl<'a> PartialEq for Duration<'a> {
+impl PartialEq for Duration {
     fn eq(&self, other: &Self) -> bool {
         self.duration == other.duration && self.is_negative == other.is_negative
     }
@@ -148,7 +148,7 @@ impl<'a> PartialEq for Duration<'a> {
     }
 }
 
-impl<'a> Duration<'a> {
+impl Duration {
     pub fn from_float_and_unit(value: f64, unit: Unit) -> Self {
         let initial_value = Box::new(PklValue::Float(value));
         let is_negative = value.is_sign_negative();

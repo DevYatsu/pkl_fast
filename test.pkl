@@ -1,1 +1,8 @@
-x = 2
+import "x.pkl"
+
+w = 2
+
+
+www {
+    test = 2.2e4
+}

@@ -543,7 +543,7 @@ fn parse_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<ExprHash<'
 
                 let value = parse_const_expr(lexer)?;
                 expect_new_entry = matches!(value, PklExpr::Value(AstPklValue::Object((_, _))));
-                hashmap.insert(id, value);
+                hashmap.insert(id.into(), value);
             }
             Ok(PklToken::NewLine) | Ok(PklToken::Comma) => {
                 expect_new_entry = true;

@@ -2,11 +2,11 @@ use crate::{PklResult, PklValue};
 use std::ops::Range;
 
 /// Based on v0.26.0
-pub fn match_list_props_api<'a, 'b>(
-    mut list: Vec<PklValue<'b>>,
-    property: &'a str,
+pub fn match_list_props_api(
+    mut list: Vec<PklValue>,
+    property: &str,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match property {
         "length" => {
             return Ok(PklValue::Int(list.len() as i64));

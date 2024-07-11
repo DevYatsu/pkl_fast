@@ -37,7 +37,7 @@ mod string_api;
 /// * `Object` - Represents a nested object, which is a hashmap of key-value pairs.
 /// * `ClassInstance` - Represents an instance of a class, which includes the class name and its properties.
 #[derive(Debug, PartialEq, Clone)]
-pub enum PklValue<'a> {
+pub enum PklValue {
     Null,
 
     /// A boolean value.
@@ -56,22 +56,22 @@ pub enum PklValue<'a> {
     String(String),
 
     /// A List
-    List(Vec<PklValue<'a>>),
+    List(Vec<PklValue>),
 
     /// A nested object represented as a hashmap of key-value pairs.
-    Object(HashMap<&'a str, PklValue<'a>>),
+    Object(HashMap<String, PklValue>),
 
     /// An instance of a class, including the class name and its properties.
-    ClassInstance(&'a str, HashMap<&'a str, PklValue<'a>>),
+    ClassInstance(String, HashMap<String, PklValue>),
 
     /// A duration
-    Duration(Duration<'a>),
+    Duration(Duration),
 
     // A datasize
-    DataSize(Byte<'a>),
+    DataSize(Byte),
 }
 
-impl<'a> PklValue<'a> {
+impl PklValue {
     pub fn get_type(&self) -> &str {
         match self {
             PklValue::Null => return "Null",
@@ -155,7 +155,7 @@ impl<'a> PklValue<'a> {
         }
     }
 
-    pub fn as_list(&self) -> Option<&Vec<PklValue<'a>>> {
+    pub fn as_list(&self) -> Option<&Vec<PklValue>> {
         if let PklValue::List(ref l) = self {
             Some(l)
         } else {
@@ -163,7 +163,7 @@ impl<'a> PklValue<'a> {
         }
     }
 
-    pub fn as_object(&self) -> Option<&HashMap<&'a str, PklValue<'a>>> {
+    pub fn as_object(&self) -> Option<&HashMap<String, PklValue>> {
         if let PklValue::Object(ref o) = self {
             Some(o)
         } else {
@@ -171,7 +171,7 @@ impl<'a> PklValue<'a> {
         }
     }
 
-    pub fn as_datasize(&self) -> Option<&Byte<'a>> {
+    pub fn as_datasize(&self) -> Option<&Byte> {
         if let PklValue::DataSize(ref d) = self {
             Some(d)
         } else {
@@ -179,7 +179,7 @@ impl<'a> PklValue<'a> {
         }
     }
 
-    pub fn as_duration(&self) -> Option<&Duration<'a>> {
+    pub fn as_duration(&self) -> Option<&Duration> {
         if let PklValue::Duration(ref d) = self {
             Some(d)
         } else {
@@ -188,77 +188,87 @@ impl<'a> PklValue<'a> {
     }
 }
 
-impl From<bool> for PklValue<'_> {
+impl From<bool> for PklValue {
     fn from(value: bool) -> Self {
         PklValue::Bool(value)
     }
 }
 
-impl From<f64> for PklValue<'_> {
+impl From<f64> for PklValue {
     fn from(value: f64) -> Self {
         PklValue::Float(value)
     }
 }
 
-impl From<i64> for PklValue<'_> {
+impl From<i64> for PklValue {
     fn from(value: i64) -> Self {
         PklValue::Int(value)
     }
 }
 
-impl From<String> for PklValue<'_> {
+impl From<String> for PklValue {
     fn from(value: String) -> Self {
         PklValue::String(value)
     }
 }
 
-impl<'a> From<Vec<PklValue<'a>>> for PklValue<'a> {
-    fn from(value: Vec<PklValue<'a>>) -> Self {
+impl From<Vec<PklValue>> for PklValue {
+    fn from(value: Vec<PklValue>) -> Self {
         PklValue::List(value)
     }
 }
 
-impl<'a> From<HashMap<&'a str, PklValue<'a>>> for PklValue<'a> {
-    fn from(value: HashMap<&'a str, PklValue<'a>>) -> Self {
+impl From<HashMap<String, PklValue>> for PklValue {
+    fn from(value: HashMap<String, PklValue>) -> Self {
         PklValue::Object(value)
     }
 }
 
-impl<'a> From<(String, HashMap<&'a str, PklValue<'a>>)> for PklValue<'a> {
-    fn from(value: (String, HashMap<&'a str, PklValue<'a>>)) -> Self {
-        PklValue::ClassInstance(Box::leak(value.0.into_boxed_str()), value.1)
+impl From<(String, HashMap<String, PklValue>)> for PklValue {
+    fn from(value: (String, HashMap<String, PklValue>)) -> Self {
+        PklValue::ClassInstance(value.0.into(), value.1)
     }
 }
 
-impl<'a> From<Duration<'a>> for PklValue<'a> {
-    fn from(value: Duration<'a>) -> Self {
+impl From<Duration> for PklValue {
+    fn from(value: Duration) -> Self {
         PklValue::Duration(value)
     }
 }
 
-impl<'a> From<Byte<'a>> for PklValue<'a> {
-    fn from(value: Byte<'a>) -> Self {
+impl From<Byte> for PklValue {
+    fn from(value: Byte) -> Self {
         PklValue::DataSize(value)
     }
 }
 
-impl<'a> From<()> for PklValue<'a> {
+impl From<()> for PklValue {
     fn from(_: ()) -> Self {
         PklValue::Null
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct PklTable<'a> {
-    pub variables: HashMap<&'a str, PklValue<'a>>,
-    imports: Vec<String>,
+#[derive(Debug, Clone)]
+pub struct PklTable {
+    pub variables: HashMap<String, PklValue>,
 }
 
-impl<'a> PklTable<'a> {
+impl PartialEq for PklTable {
+    fn eq(&self, other: &Self) -> bool {
+        if self.variables.len() != other.variables.len() {
+            return false;
+        }
+
+        self.variables
+            .iter()
+            .all(|(key, value)| other.variables.get(key).map_or(false, |v| *value == *v))
+    }
+}
+
+impl PklTable {
     pub fn new() -> Self {
         Self {
             variables: HashMap::new(),
-            imports: vec![],
         }
     }
 
@@ -272,8 +282,8 @@ impl<'a> PklTable<'a> {
     /// # Returns
     ///
     /// An `Option` containing the previous value associated with the name, if any.
-    pub fn insert(&mut self, name: &'a str, value: PklValue<'a>) -> Option<PklValue<'a>> {
-        self.variables.insert(name, value)
+    pub fn insert(&mut self, name: impl Into<String>, value: PklValue) -> Option<PklValue> {
+        self.variables.insert(name.into(), value)
     }
 
     /// Merges another `PklTable` into this table.
@@ -300,7 +310,7 @@ impl<'a> PklTable<'a> {
     /// assert_eq!(table1.get("var1"), Some(&PklValue::Int(1)));
     /// assert_eq!(table1.get("var2"), Some(&PklValue::Int(2)));
     /// ```
-    pub fn extends(&mut self, other_table: PklTable<'a>) {
+    pub fn extends(&mut self, other_table: PklTable) {
         for (name, value) in other_table.variables {
             self.insert(name, value);
         }
@@ -316,11 +326,11 @@ impl<'a> PklTable<'a> {
     ///
     /// An `Option` containing a reference to the `PklValue` associated with the name,
     /// or `None` if the variable is not found.
-    pub fn get(&self, name: &'a str) -> Option<&PklValue<'a>> {
-        self.variables.get(name)
+    pub fn get(&self, name: impl Into<String>) -> Option<&PklValue> {
+        self.variables.get(&name.into())
     }
 
-    pub fn import(&mut self, name: &'a str, rng: Range<usize>) -> PklResult<()> {
+    pub fn import(&mut self, name: &str, rng: Range<usize>) -> PklResult<()> {
         match name {
             name if name.starts_with("package://") => {
                 return Err(("Package imports not yet supported!".to_owned(), rng))
@@ -340,9 +350,9 @@ impl<'a> PklTable<'a> {
 
                 let mut pkl = Pkl::new();
                 pkl.parse(&file_content)?;
-                let hash = pkl.table.variables.to_owned();
+                let hash = pkl.table.variables;
 
-                println!("{:?}", hash);
+                self.variables.extend(hash);
             }
         };
 
@@ -358,10 +368,9 @@ impl<'a> PklTable<'a> {
     /// # Returns
     ///
     /// A `PklResult` containing the evaluated value or an error message with the range.
-    pub fn evaluate(&self, expr: PklExpr<'a>) -> PklResult<PklValue<'a>> {
+    pub fn evaluate(&self, expr: PklExpr) -> PklResult<PklValue> {
         match expr {
             PklExpr::Identifier(Identifier(id, range)) => self
-                .variables
                 .get(id)
                 .cloned()
                 .ok_or_else(|| (format!("unknown variable `{}`", id), range)),
@@ -377,7 +386,7 @@ impl<'a> PklTable<'a> {
                                 return match_float_props_api(float, property, range)
                             }
                             PklValue::Object(hashmap) => {
-                                if let Some(data) = hashmap.get(&property) {
+                                if let Some(data) = hashmap.get(property) {
                                     return Ok(data.to_owned());
                                 } else {
                                     return Err((
@@ -390,7 +399,7 @@ impl<'a> PklTable<'a> {
                                 return match_string_props_api(&s, property, range)
                             }
                             PklValue::ClassInstance(_class_name, hashmap) => {
-                                if let Some(data) = hashmap.get(&property) {
+                                if let Some(data) = hashmap.get(property) {
                                     return Ok(data.to_owned());
                                 } else {
                                     return Err((
@@ -433,7 +442,7 @@ impl<'a> PklTable<'a> {
                             }
                             PklValue::Object(hashmap) => {
                                 // need to allow functions as fields of objects
-                                if let Some(data) = hashmap.get(&fn_name) {
+                                if let Some(data) = hashmap.get(fn_name) {
                                     return Ok(data.to_owned());
                                 } else {
                                     return Err((
@@ -447,7 +456,7 @@ impl<'a> PklTable<'a> {
                                 return match_string_methods_api(&s, fn_name, args, range);
                             }
                             PklValue::ClassInstance(_class_name, hashmap) => {
-                                if let Some(data) = hashmap.get(&fn_name) {
+                                if let Some(data) = hashmap.get(fn_name) {
                                     return Ok(data.to_owned());
                                 } else {
                                     return Err((
@@ -495,7 +504,7 @@ impl<'a> PklTable<'a> {
     /// # Returns
     ///
     /// A `PklResult` containing the evaluated value or an error message with the range.
-    fn evaluate_value(&self, value: AstPklValue<'a>) -> PklResult<PklValue<'a>> {
+    fn evaluate_value(&self, value: AstPklValue) -> PklResult<PklValue> {
         let result = match value {
             AstPklValue::Bool(b, _) => PklValue::Bool(b),
             AstPklValue::Float(f, _) => PklValue::Float(f),
@@ -514,19 +523,19 @@ impl<'a> PklTable<'a> {
         Ok(result)
     }
 
-    fn evaluate_object(&self, o: ExprHash<'a>) -> PklResult<PklValue<'a>> {
+    fn evaluate_object(&self, o: ExprHash) -> PklResult<PklValue> {
         let new_hash: Result<HashMap<_, _>, _> =
             o.0.into_iter()
                 .map(|(name, expr)| {
                     let evaluated_expr = self.evaluate(expr)?;
-                    Ok((name, evaluated_expr))
+                    Ok((name.into(), evaluated_expr))
                 })
                 .collect();
 
         new_hash.map(PklValue::Object)
     }
 
-    fn evaluate_fn_args(&self, values: Vec<PklExpr<'a>>) -> PklResult<Vec<PklValue<'a>>> {
+    fn evaluate_fn_args(&self, values: Vec<PklExpr>) -> PklResult<Vec<PklValue>> {
         let new_hash: Result<Vec<_>, _> = values
             .into_iter()
             .map(|expr| {
@@ -538,30 +547,30 @@ impl<'a> PklTable<'a> {
         new_hash
     }
 
-    fn evaluate_list(&self, values: Vec<PklExpr<'a>>) -> PklResult<PklValue<'a>> {
+    fn evaluate_list(&self, values: Vec<PklExpr>) -> PklResult<PklValue> {
         let new_hash = self.evaluate_fn_args(values);
 
         new_hash.map(PklValue::List)
     }
 
-    fn evaluate_class_instance(&self, a: &'a str, b: ExprHash<'a>) -> PklResult<PklValue<'a>> {
+    fn evaluate_class_instance(&self, a: &str, b: ExprHash) -> PklResult<PklValue> {
         let new_hash: Result<HashMap<_, _>, _> =
             b.0.into_iter()
                 .map(|(name, expr)| {
                     let evaluated_expr = self.evaluate(expr)?;
-                    Ok((name, evaluated_expr))
+                    Ok((name.into(), evaluated_expr))
                 })
                 .collect();
 
-        new_hash.map(|h| PklValue::ClassInstance(a, h))
+        new_hash.map(|h| PklValue::ClassInstance(a.into(), h))
     }
 
     fn evaluate_amending_object(
         &self,
-        a: &'a str,
-        b: ExprHash<'a>,
+        a: &str,
+        b: ExprHash,
         rng: Range<usize>,
-    ) -> PklResult<PklValue<'a>> {
+    ) -> PklResult<PklValue> {
         let other_object = match self.get(a) {
             Some(PklValue::Object(hash)) => hash,
             _ => return Err((format!("Unknown object `{}`", a), rng)),
@@ -569,17 +578,13 @@ impl<'a> PklTable<'a> {
 
         let mut new_hash = other_object.clone();
         for (name, expr) in b.0 {
-            new_hash.insert(name, self.evaluate(expr)?);
+            new_hash.insert(name.into(), self.evaluate(expr)?);
         }
 
         Ok(PklValue::Object(new_hash))
     }
 
-    fn evaluate_amended_object(
-        &self,
-        a: Box<AstPklValue<'a>>,
-        b: ExprHash<'a>,
-    ) -> PklResult<PklValue<'a>> {
+    fn evaluate_amended_object(&self, a: Box<AstPklValue>, b: ExprHash) -> PklResult<PklValue> {
         let first_object = match self.evaluate_value(*a)? {
             PklValue::Object(o) => o,
             _ => unreachable!("should not be reached due to the parser work"),
@@ -587,14 +592,14 @@ impl<'a> PklTable<'a> {
 
         let mut new_hash = first_object;
         for (name, expr) in b.0 {
-            new_hash.insert(name, self.evaluate(expr)?);
+            new_hash.insert(name.into(), self.evaluate(expr)?);
         }
 
         Ok(PklValue::Object(new_hash))
     }
 }
 
-pub fn ast_to_table<'a>(ast: Vec<PklStatement<'a>>) -> PklResult<PklTable<'a>> {
+pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
     let mut table = PklTable::new();
 
     let mut in_body = false;
@@ -606,14 +611,13 @@ pub fn ast_to_table<'a>(ast: Vec<PklStatement<'a>>) -> PklResult<PklTable<'a>> {
                 table.insert(name, table.evaluate(expr)?);
             }
             PklStatement::Import(value, local_name, rng) => {
-                if in_body {
-                    return Err((
-                        "Import statements must be before document body".to_owned(),
-                        rng,
-                    ));
-                }
+                // if in_body {
+                //     return Err((
+                //         "Import statements must be before document body".to_owned(),
+                //         rng,
+                //     ));
+                // }
 
-                // it does not import for the moment, issue with lifetimes
                 table.import(value, rng)?;
             }
         }

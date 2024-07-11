@@ -7,11 +7,11 @@ use std::fmt;
 use std::ops::Range;
 
 /// Based on v0.26.0
-pub fn match_data_size_props_api<'a, 'b>(
-    byte: Byte<'b>,
-    property: &'a str,
+pub fn match_data_size_props_api(
+    byte: Byte,
+    property: &str,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match property {
         "value" => {
             return Ok(*byte.initial_value);
@@ -42,12 +42,12 @@ pub fn match_data_size_props_api<'a, 'b>(
 }
 
 /// Based on v0.26.0
-pub fn match_data_size_methods_api<'a, 'b>(
-    byte: Byte<'b>,
-    property: &'a str,
-    args: Vec<PklValue<'a>>,
+pub fn match_data_size_methods_api(
+    byte: Byte,
+    property: &str,
+    args: Vec<PklValue>,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match property {
         "isBetween" => {
             generate_method!(
@@ -146,15 +146,15 @@ impl Unit {
 
 /// Represents data sizes in bytes.
 #[derive(Debug, Clone)]
-pub struct Byte<'a> {
+pub struct Byte {
     pub bytes: i64,
     pub is_negative: bool,
     pub unit: Unit,
-    initial_value: Box<PklValue<'a>>,
+    initial_value: Box<PklValue>,
     initial_unit: Unit,
 }
 
-impl<'a> PartialOrd for Byte<'a> {
+impl PartialOrd for Byte {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.is_negative && !other.is_negative {
             return Some(std::cmp::Ordering::Less);
@@ -184,7 +184,7 @@ impl<'a> PartialOrd for Byte<'a> {
     }
 }
 
-impl<'a> PartialEq for Byte<'a> {
+impl PartialEq for Byte {
     fn eq(&self, other: &Self) -> bool {
         self.bytes == other.bytes
     }
@@ -193,7 +193,7 @@ impl<'a> PartialEq for Byte<'a> {
     }
 }
 
-impl<'a> Byte<'a> {
+impl Byte {
     /// Creates a new `Byte` from a floating point value and a unit.
     ///
     /// # Arguments

@@ -148,7 +148,7 @@ macro_rules! generate_method {
 
         let name: &str = $name;
         let number_of_args: usize = count_args!($($arg_index),+);
-        let args: &Vec<PklValue<'_>> = $args;
+        let args: &Vec<PklValue> = $args;
 
         if args.len() != number_of_args {
             return Err((
@@ -202,7 +202,7 @@ macro_rules! generate_method {
     ($name:expr,$args:expr; $action:expr; $range:expr) => {{
         let name: &str = $name;
         let number_of_args: usize = 0;
-        let args: &Vec<PklValue<'_>> = $args;
+        let args: &Vec<PklValue> = $args;
 
         if args.len() != number_of_args {
             return Err((
@@ -222,7 +222,7 @@ macro_rules! generate_method {
 
         let name: &str = $name;
         let number_of_args: usize = $args_number;
-        let args: &Vec<PklValue<'_>> = $args;
+        let args: &Vec<PklValue> = $args;
         if args.len() != number_of_args {
             return Err((
                 format!(

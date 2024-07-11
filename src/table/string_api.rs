@@ -4,11 +4,7 @@ use base64::prelude::*;
 use std::ops::Range;
 
 /// Based on v0.26.0
-pub fn match_string_props_api<'a, 'b>(
-    s: &'a str,
-    property: &'a str,
-    range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+pub fn match_string_props_api(s: &str, property: &str, range: Range<usize>) -> PklResult<PklValue> {
     match property {
         "length" => return Ok(PklValue::Int(s.len() as i64)),
         "lastIndex" => {
@@ -86,12 +82,12 @@ pub fn match_string_props_api<'a, 'b>(
 }
 
 /// Based on v0.26.0
-pub fn match_string_methods_api<'a, 'b>(
-    s: &'a str,
-    fn_name: &'a str,
-    args: Vec<PklValue<'b>>,
+pub fn match_string_methods_api(
+    s: &str,
+    fn_name: &str,
+    args: Vec<PklValue>,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match fn_name {
         "getOrNull" => {
             generate_method!(
@@ -508,7 +504,7 @@ pub fn match_string_methods_api<'a, 'b>(
                 0: String;
                 |pattern: String| {
                     let split_strings: Vec<String> = s.split(&pattern).map(String::from).collect();
-                    let pkl_values: Vec<PklValue<'_>> = split_strings.into_iter().map(PklValue::String).collect();
+                    let pkl_values: Vec<PklValue> = split_strings.into_iter().map(PklValue::String).collect();
                     Ok(PklValue::List(pkl_values))                };
                 range
             )
@@ -609,7 +605,7 @@ pub fn match_string_methods_api<'a, 'b>(
                     match s {
                         "true" => Ok(true.into()),
                         "false" => Ok(false.into()),
-                        x => Ok(PklValue::Null)
+                        _ => Ok(PklValue::Null)
                     }
                 };
                 range

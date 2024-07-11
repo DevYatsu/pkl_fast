@@ -6,11 +6,11 @@ use crate::{generate_method, values::Byte, PklResult, PklValue};
 use std::ops::Range;
 
 /// Based on v0.26.0
-pub fn match_float_props_api<'a, 'b>(
+pub fn match_float_props_api(
     float: f64,
-    property: &'a str,
+    property: &str,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     if let Some(unit) = duration::Unit::from_str(property) {
         return Ok(PklValue::Duration(Duration::from_float_and_unit(
             float, unit,
@@ -61,12 +61,12 @@ pub fn match_float_props_api<'a, 'b>(
 }
 
 /// Based on v0.26.0
-pub fn match_float_methods_api<'a, 'b>(
+pub fn match_float_methods_api(
     float: f64,
-    fn_name: &'a str,
-    args: Vec<PklValue<'b>>,
+    fn_name: &str,
+    args: Vec<PklValue>,
     range: Range<usize>,
-) -> PklResult<PklValue<'b>> {
+) -> PklResult<PklValue> {
     match fn_name {
         "toString" => {
             generate_method!(
