@@ -91,23 +91,24 @@ pub fn match_float_methods_api(
         }
         "toInt" => {
             generate_method!(
-                "toInt", &args;
-                {
-                    let value = float.trunc();
-                    if value.is_infinite() {
-                        return Err(("Cannot convert Float to Int, float represents infinity".to_owned(), range))
-                    } if value.is_nan() {
-                        return Err(("Cannot convert Float to Int, float is NaN".to_owned(), range))
-                    }
-                   if value > i64::MAX as f64 {
-                       return Err(("Cannot convert Float to Int, float is too large".to_owned(), range))
-                   }if value < i64::MIN as f64 {
-                       return Err(("Cannot convert Float to Int, float is too large".to_owned(), range))
-                   }
-                   Ok((value as i64).into())}
-                ;
-                range
-            )
+                            "toInt", &args;
+                            {
+                                let value = float.trunc();
+                                if value.is_infinite() {
+                                    return Err(("Cannot convert Float to Int, float represents infinity".to_owned(), range))
+                                }else if value.is_nan() {
+                                    return Err(("Cannot convert Float to Int, float is NaN".to_owned(), range))
+                                }
+            else
+                               if value > i64::MAX as f64 {
+                                   return Err(("Cannot convert Float to Int, float is too large".to_owned(), range))
+                               }else if value < i64::MIN as f64 {
+                                   return Err(("Cannot convert Float to Int, float is too large".to_owned(), range))
+                               }
+                               Ok((value as i64).into())}
+                            ;
+                            range
+                        )
         }
         "toFixed" => {
             generate_method!(

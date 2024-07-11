@@ -192,16 +192,10 @@ impl<'a> PklStatement<'a> {
         }
     }
     pub fn is_import(&self) -> bool {
-        match self {
-            PklStatement::Import(_, _, _) => true,
-            _ => false,
-        }
+        matches!(self, &PklStatement::Import(_, _, _))
     }
     pub fn is_constant(&self) -> bool {
-        match self {
-            PklStatement::Constant(_, _, _) => true,
-            _ => false,
-        }
+        matches!(self, &PklStatement::Constant(_, _, _))
     }
 }
 
@@ -232,10 +226,6 @@ impl<'a> AstPklValue<'a> {
             | AstPklValue::Null(rng) => rng.clone(),
         }
     }
-}
-
-fn parse_basic_id<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Identifier<'a>> {
-    parse_identifier!(lexer)
 }
 
 fn parse_member_expr_member<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<ExprMember<'a>> {
@@ -339,7 +329,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
 
                     *value = PklExpr::MemberExpression(
                         Box::new(value.clone()),
-                        expr_member.into(),
+                        expr_member,
                         expr_start..expr_end,
                     );
                 } else {
@@ -457,7 +447,7 @@ fn parse_fn_call<'a>(
 
                         *last = PklExpr::MemberExpression(
                             Box::new(last.clone()),
-                            expr_member.into(),
+                            expr_member,
                             expr_start..expr_end,
                         );
                     } else {
@@ -543,7 +533,7 @@ fn parse_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<ExprHash<'
 
                 let value = parse_const_expr(lexer)?;
                 expect_new_entry = matches!(value, PklExpr::Value(AstPklValue::Object((_, _))));
-                hashmap.insert(id.into(), value);
+                hashmap.insert(id, value);
             }
             Ok(PklToken::NewLine) | Ok(PklToken::Comma) => {
                 expect_new_entry = true;

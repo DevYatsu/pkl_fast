@@ -183,6 +183,12 @@ impl Pkl {
     }
 }
 
+impl Default for Pkl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub mod values {
     pub use crate::table::data_size::{Byte, Unit as DataSizeUnit};
     pub use crate::table::duration::Unit as DurationUnit;

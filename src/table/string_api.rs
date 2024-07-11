@@ -40,15 +40,12 @@ pub fn match_string_props_api(s: &str, property: &str, range: Range<usize>) -> P
         }
         "base64" => return Ok(PklValue::String(BASE64_STANDARD.encode(s))),
         "base64Decoded" => {
-            let buf: Vec<u8> = BASE64_STANDARD.decode(s).map_err(|e| {
-                (
-                    format!("Failed to decode base64: {}", e.to_string()),
-                    range.to_owned(),
-                )
-            })?;
+            let buf: Vec<u8> = BASE64_STANDARD
+                .decode(s)
+                .map_err(|e| (format!("Failed to decode base64: {}", e), range.to_owned()))?;
 
             let s = std::str::from_utf8(&buf)
-                .map_err(|e| (format!("Invalid UTF-8 sequence: {}", e.to_string()), range))?;
+                .map_err(|e| (format!("Invalid UTF-8 sequence: {}", e), range))?;
 
             return Ok(PklValue::String(String::from(s)));
         }
@@ -271,7 +268,7 @@ pub fn match_string_methods_api(
             generate_method!(
                 "takeLastWhile", &args;
                 0: String;
-                |pattern: String| {
+                |_pattern: String| {
                     // Argument function not yet supported
                     return Err(("Function arguments are not yet supported!".to_owned(), range));
                     // Ok(s[s.len() - s.trim_end_matches(&pattern).len()..].to_owned().into())
@@ -295,7 +292,7 @@ pub fn match_string_methods_api(
             generate_method!(
                 "dropWhile", &args;
                 0: Int;
-                |n: i64| {
+                |_n: i64| {
                     // Argument function not yet supported
                     return Err(("Function arguments are not yet supported!".to_owned(), range));
 
@@ -322,7 +319,7 @@ pub fn match_string_methods_api(
             generate_method!(
                 "dropLastWhile", &args;
                 0: Int;
-                |n: i64| {
+                |_n: i64| {
                     // Argument function not yet supported
                     return Err(("Function arguments are not yet supported!".to_owned(), range));
 
@@ -372,7 +369,7 @@ pub fn match_string_methods_api(
             generate_method!(
                 "replaceFirstMapped", &args;
                 0: String;
-                |pattern: String| {
+                |_pattern: String| {
                     // Argument function not yet supported
                     return Err(("Function arguments are not yet supported!".to_owned(), range));
                 };
@@ -383,7 +380,7 @@ pub fn match_string_methods_api(
             generate_method!(
                 "replaceLastMapped", &args;
                 0: String;
-                |pattern: String| {
+                |_pattern: String| {
                     // Argument function not yet supported
                     return Err(("Function arguments are not yet supported!".to_owned(), range));
                 };
@@ -394,9 +391,9 @@ pub fn match_string_methods_api(
             generate_method!(
                 "replaceAllMapped", &args;
                 0: String;
-                |pattern: String| {
+                |_pattern: String| {
                     // Argument function not yet supported
-                    return Err(("Function arguments are not yet supported!".to_owned(), range));
+                     Err(("Function arguments are not yet supported!".to_owned(), range))
                 };
                 range
             )
@@ -475,7 +472,7 @@ pub fn match_string_methods_api(
                     while (string.len() as i64) + (s.len() as i64) < width {
                         string.push_str(&character);
                     }
-                    string.push_str(&s);
+                    string.push_str(s);
                     Ok(string.into())
                 };
                 range
@@ -489,7 +486,7 @@ pub fn match_string_methods_api(
                     if character.len() != 1 {return Err(("padEnd expects a Char (String(length = 1)), found String".to_owned(), range))}
                     if s.len() as i64 >= width {return Ok(String::from(s).into())}
                     let mut string = String::with_capacity(width as usize);
-                    string.push_str(&s);
+                    string.push_str(s);
                     while (string.len() as i64) < width {
                         string.push_str(&character);
                     }
@@ -543,7 +540,7 @@ pub fn match_string_methods_api(
                 {
                     match s.parse::<i64>() {
                         Ok(result) => Ok(PklValue::Int(result)),
-                        Err(e) => Err((format!("Failed to convert string to Int: {}", e.to_string()), range))
+                        Err(e) => Err((format!("Failed to convert string to Int: {}", e), range))
                     }
                 };
                 range
@@ -567,7 +564,7 @@ pub fn match_string_methods_api(
                 {
                     match s.parse::<f64>() {
                         Ok(result) => Ok(PklValue::Float(result)),
-                        Err(e) => Err((format!("Failed to convert string to Float: {}", e.to_string()), range))
+                        Err(e) => Err((format!("Failed to convert string to Float: {}", e), range))
                     }
                 };
                 range

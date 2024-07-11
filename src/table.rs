@@ -74,16 +74,16 @@ pub enum PklValue {
 impl PklValue {
     pub fn get_type(&self) -> &str {
         match self {
-            PklValue::Null => return "Null",
-            PklValue::Bool(_) => return "Bool",
-            PklValue::Float(_) => return "Float",
-            PklValue::Int(_) => return "Int",
-            PklValue::String(_) => return "String",
-            PklValue::List(_) => return "List",
-            PklValue::Object(_) => return "Object",
-            PklValue::ClassInstance(_, _) => return "ClassInstance",
-            PklValue::Duration(_) => return "Duration",
-            PklValue::DataSize(_) => return "DataSize",
+            PklValue::Null => "Null",
+            PklValue::Bool(_) => "Bool",
+            PklValue::Float(_) => "Float",
+            PklValue::Int(_) => "Int",
+            PklValue::String(_) => "String",
+            PklValue::List(_) => "List",
+            PklValue::Object(_) => "Object",
+            PklValue::ClassInstance(_, _) => "ClassInstance",
+            PklValue::Duration(_) => "Duration",
+            PklValue::DataSize(_) => "DataSize",
         }
     }
 
@@ -226,7 +226,7 @@ impl From<HashMap<String, PklValue>> for PklValue {
 
 impl From<(String, HashMap<String, PklValue>)> for PklValue {
     fn from(value: (String, HashMap<String, PklValue>)) -> Self {
-        PklValue::ClassInstance(value.0.into(), value.1)
+        PklValue::ClassInstance(value.0, value.1)
     }
 }
 
@@ -346,7 +346,7 @@ impl PklTable {
             }
             file_name => {
                 let file_content = fs::read_to_string(file_name)
-                    .map_err(|e| (format!("Error reading {file_name}: {}", e.to_string()), rng))?;
+                    .map_err(|e| (format!("Error reading {file_name}: {}", e), rng))?;
 
                 let mut pkl = Pkl::new();
                 pkl.parse(&file_content)?;
@@ -356,7 +356,7 @@ impl PklTable {
             }
         };
 
-        return Ok(());
+        Ok(())
     }
 
     /// Evaluates an expression in the current context.
@@ -379,108 +379,92 @@ impl PklTable {
                 let base = self.evaluate(*base_expr)?;
 
                 match indexor {
-                    ExprMember::Identifier(Identifier(property, _)) => {
-                        match base {
-                            PklValue::Int(int) => return match_int_props_api(int, property, range),
-                            PklValue::Float(float) => {
-                                return match_float_props_api(float, property, range)
-                            }
-                            PklValue::Object(hashmap) => {
-                                if let Some(data) = hashmap.get(property) {
-                                    return Ok(data.to_owned());
-                                } else {
-                                    return Err((
-                                        format!("Object does not possess a '{property}' field"),
-                                        range,
-                                    ));
-                                }
-                            }
-                            PklValue::String(s) => {
-                                return match_string_props_api(&s, property, range)
-                            }
-                            PklValue::ClassInstance(_class_name, hashmap) => {
-                                if let Some(data) = hashmap.get(property) {
-                                    return Ok(data.to_owned());
-                                } else {
-                                    return Err((
-                                        format!("Object does not possess a '{property}' field"),
-                                        range,
-                                    ));
-                                }
-                            }
-                            PklValue::DataSize(byte) => {
-                                return match_data_size_props_api(byte, property, range)
-                            }
-                            PklValue::Duration(duration) => {
-                                return match_duration_props_api(duration, property, range)
-                            }
-                            PklValue::List(list) => {
-                                return match_list_props_api(list, property, range)
-                            }
-
-                            _ => {
-                                return Err((
-                                    format!("Indexing of value '{:?}' not yet supported", base),
+                    ExprMember::Identifier(Identifier(property, _)) => match base {
+                        PklValue::Int(int) => match_int_props_api(int, property, range),
+                        PklValue::Float(float) => match_float_props_api(float, property, range),
+                        PklValue::Object(hashmap) => {
+                            if let Some(data) = hashmap.get(property) {
+                                Ok(data.to_owned())
+                            } else {
+                                Err((
+                                    format!("Object does not possess a '{property}' field"),
                                     range,
                                 ))
                             }
-                        };
-                    }
+                        }
+                        PklValue::String(s) => match_string_props_api(&s, property, range),
+                        PklValue::ClassInstance(_class_name, hashmap) => {
+                            if let Some(data) = hashmap.get(property) {
+                                Ok(data.to_owned())
+                            } else {
+                                Err((
+                                    format!("Object does not possess a '{property}' field"),
+                                    range,
+                                ))
+                            }
+                        }
+                        PklValue::DataSize(byte) => {
+                            match_data_size_props_api(byte, property, range)
+                        }
+                        PklValue::Duration(duration) => {
+                            match_duration_props_api(duration, property, range)
+                        }
+                        PklValue::List(list) => match_list_props_api(list, property, range),
+
+                        _ => Err((
+                            format!("Indexing of value '{:?}' not yet supported", base),
+                            range,
+                        )),
+                    },
                     ExprMember::FuncCall(FuncCall(Identifier(fn_name, _), values, _)) => {
                         // here are method calls
                         let args = self.evaluate_fn_args(values)?;
 
                         match base {
                             PklValue::Bool(bool) => {
-                                return match_bool_methods_api(bool, fn_name, args, range)
+                                match_bool_methods_api(bool, fn_name, args, range)
                             }
-                            PklValue::Int(int) => {
-                                return match_int_methods_api(int, fn_name, args, range)
-                            }
+                            PklValue::Int(int) => match_int_methods_api(int, fn_name, args, range),
                             PklValue::Float(float) => {
-                                return match_float_methods_api(float, fn_name, args, range)
+                                match_float_methods_api(float, fn_name, args, range)
                             }
                             PklValue::Object(hashmap) => {
                                 // need to allow functions as fields of objects
                                 if let Some(data) = hashmap.get(fn_name) {
-                                    return Ok(data.to_owned());
+                                    Ok(data.to_owned())
                                 } else {
-                                    return Err((
+                                    Err((
                                         format!("Object does not possess a '{fn_name}' field"),
                                         range,
-                                    ));
+                                    ))
                                 }
                             }
                             PklValue::String(s) => {
                                 // we should directly use s not &s
-                                return match_string_methods_api(&s, fn_name, args, range);
+                                match_string_methods_api(&s, fn_name, args, range)
                             }
                             PklValue::ClassInstance(_class_name, hashmap) => {
                                 if let Some(data) = hashmap.get(fn_name) {
-                                    return Ok(data.to_owned());
+                                    Ok(data.to_owned())
                                 } else {
-                                    return Err((
+                                    Err((
                                         format!("Object does not possess a '{fn_name}' field"),
                                         range,
-                                    ));
+                                    ))
                                 }
                             }
                             PklValue::DataSize(byte) => {
-                                return match_data_size_methods_api(byte, fn_name, args, range)
+                                match_data_size_methods_api(byte, fn_name, args, range)
                             }
                             PklValue::Duration(duration) => {
-                                return match_duration_methods_api(duration, fn_name, args, range)
+                                match_duration_methods_api(duration, fn_name, args, range)
                             }
-                            PklValue::List(list) => {
-                                return match_list_props_api(list, fn_name, range)
-                            }
+                            PklValue::List(list) => match_list_props_api(list, fn_name, range),
 
-                            _ => {
-                                return Err((
-                                    format!("Indexing of value '{:?}' not yet supported", base),
-                                    range,
-                                ))
-                            }
+                            _ => Err((
+                                format!("Indexing of value '{:?}' not yet supported", base),
+                                range,
+                            )),
                         }
                     }
                 }
@@ -488,7 +472,7 @@ impl PklTable {
             PklExpr::FuncCall(FuncCall(Identifier(name, _), args, rng)) => {
                 // all function calls
                 match name {
-                    "List" => return Ok(self.evaluate_list(args)?),
+                    "List" => self.evaluate_list(args),
                     _ => todo!(),
                 }
             }
@@ -516,7 +500,7 @@ impl PklTable {
             AstPklValue::List(values, _) => self.evaluate_list(values)?,
             AstPklValue::Object(o) => self.evaluate_object(o)?,
             AstPklValue::ClassInstance(a, b, _) => self.evaluate_class_instance(a, b)?,
-            AstPklValue::AmendedObject(a, b, _) => self.evaluate_amended_object(a, b)?,
+            AstPklValue::AmendedObject(a, b, _) => self.evaluate_amended_object(*a, b)?,
             AstPklValue::AmendingObject(a, b, rng) => self.evaluate_amending_object(a, b, rng)?,
         };
 
@@ -584,8 +568,8 @@ impl PklTable {
         Ok(PklValue::Object(new_hash))
     }
 
-    fn evaluate_amended_object(&self, a: Box<AstPklValue>, b: ExprHash) -> PklResult<PklValue> {
-        let first_object = match self.evaluate_value(*a)? {
+    fn evaluate_amended_object(&self, a: AstPklValue, b: ExprHash) -> PklResult<PklValue> {
+        let first_object = match self.evaluate_value(a)? {
             PklValue::Object(o) => o,
             _ => unreachable!("should not be reached due to the parser work"),
         };
@@ -610,13 +594,13 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 in_body = true;
                 table.insert(name, table.evaluate(expr)?);
             }
-            PklStatement::Import(value, local_name, rng) => {
-                // if in_body {
-                //     return Err((
-                //         "Import statements must be before document body".to_owned(),
-                //         rng,
-                //     ));
-                // }
+            PklStatement::Import(value, _local_name, rng) => {
+                if in_body {
+                    return Err((
+                        "Import statements must be before document body".to_owned(),
+                        rng,
+                    ));
+                }
 
                 table.import(value, rng)?;
             }

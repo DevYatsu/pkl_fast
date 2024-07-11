@@ -174,7 +174,7 @@ pub enum LexingError {
     ExpectedNewLineBeforeMultilineStringEnd,
     ExpectedNewLineAfterMultilineStringStart,
     #[default]
-    DefaultLexingError,
+    Default,
 }
 
 use std::{
@@ -210,7 +210,7 @@ impl fmt::Display for LexingError {
                 f,
                 "Expected a newline after the start of the multiline string"
             ),
-            LexingError::DefaultLexingError => write!(f, "An unspecified lexing error occurred"),
+            LexingError::Default => write!(f, "An unspecified lexing error occurred"),
         }
     }
 }

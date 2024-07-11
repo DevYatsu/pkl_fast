@@ -2,8 +2,7 @@ use new_pkl::Pkl;
 use std::time::Instant;
 
 fn main() -> Result<(), (String, String)> {
-    let src = "
-import \"test.pkl\"
+    let src = "import \"test.pkl\"
 
 `Hello` = \"hello\"
 test = 222_333.3e-4
@@ -75,7 +74,7 @@ is_start = STRING.startsWith(\"testtest\")
 s = 5.min.toUnit(\"s\")
 ";
 
-    let src = src.repeat(1000);
+    let src = src.repeat(1);
     let time = Instant::now();
 
     let mut pkl = Pkl::new();

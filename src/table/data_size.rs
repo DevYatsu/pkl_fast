@@ -151,6 +151,7 @@ pub struct Byte {
     pub is_negative: bool,
     pub unit: Unit,
     initial_value: Box<PklValue>,
+    #[allow(dead_code)]
     initial_unit: Unit,
 }
 
