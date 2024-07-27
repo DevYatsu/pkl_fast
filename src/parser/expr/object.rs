@@ -1,7 +1,7 @@
 use super::PklExpr;
 use crate::{
     lexer::PklToken,
-    parser::{statement::constant::parse_const_expr, value::AstPklValue, ExprHash},
+    parser::{statement::constant::parse_const_expr_without_type, value::AstPklValue, ExprHash},
     PklResult,
 };
 use hashbrown::HashMap;
@@ -23,7 +23,7 @@ pub fn parse_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<ExprHa
                     ));
                 }
 
-                let value = parse_const_expr(lexer)?;
+                let value = parse_const_expr_without_type(lexer)?;
                 expect_new_entry = matches!(value, PklExpr::Value(AstPklValue::Object((_, _))));
                 hashmap.insert(id, value);
             }

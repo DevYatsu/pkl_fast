@@ -2,21 +2,22 @@ use super::{value::AstPklValue, ExprHash, Identifier, PklResult};
 use crate::lexer::PklToken;
 use class::parse_class_instance;
 use fn_call::{parse_fn_call, FuncCall};
-use logos::Lexer;
+use logos::{Lexer, Span};
 use member_expr::ExprMember;
 use object::parse_amended_object;
-use std::ops::Range;
 
 pub mod class;
 pub mod fn_call;
 pub mod member_expr;
 pub mod object;
 
+pub mod long;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum PklExpr<'a> {
     Identifier(Identifier<'a>),
     Value(AstPklValue<'a>),
-    MemberExpression(Box<PklExpr<'a>>, ExprMember<'a>, Range<usize>),
+    MemberExpression(Box<PklExpr<'a>>, ExprMember<'a>, Span),
     FuncCall(FuncCall<'a>),
 }
 
@@ -29,7 +30,7 @@ impl<'a> PklExpr<'a> {
         }
     }
 
-    pub fn span(&self) -> Range<usize> {
+    pub fn span(&self) -> Span {
         match self {
             Self::Value(v) => v.span(),
             Self::Identifier(Identifier(_, span)) => span.to_owned(),
@@ -80,8 +81,8 @@ impl<'a> From<AstPklValue<'a>> for PklExpr<'a> {
         PklExpr::Value(value)
     }
 }
-impl<'a> From<(&'a str, Range<usize>)> for PklExpr<'a> {
-    fn from((value, indexes): (&'a str, Range<usize>)) -> Self {
+impl<'a> From<(&'a str, Span)> for PklExpr<'a> {
+    fn from((value, indexes): (&'a str, Span)) -> Self {
         PklExpr::Identifier(Identifier(value, indexes))
     }
 }

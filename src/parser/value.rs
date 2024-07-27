@@ -1,31 +1,32 @@
+use logos::Span;
+
 use super::{expr::PklExpr, ExprHash};
-use std::ops::Range;
 
 /// Represent any valid Pkl value.
 #[derive(Debug, PartialEq, Clone)]
 pub enum AstPklValue<'a> {
-    Null(Range<usize>),
+    Null(Span),
 
     /// true or false.
-    Bool(bool, Range<usize>),
+    Bool(bool, Span),
     /// Any floating point number.
-    Float(f64, Range<usize>),
+    Float(f64, Span),
     /// Any Integer.
-    Int(i64, Range<usize>),
+    Int(i64, Span),
 
     /// Any quoted string.
-    String(&'a str, Range<usize>),
+    String(&'a str, Span),
     /// Any multiline string.
-    MultiLineString(&'a str, Range<usize>),
+    MultiLineString(&'a str, Span),
 
     /// An object.
     Object(ExprHash<'a>),
 
     /// An object.
-    List(Vec<PklExpr<'a>>, Range<usize>),
+    List(Vec<PklExpr<'a>>, Span),
 
     /// A Class instance.
-    ClassInstance(&'a str, ExprHash<'a>, Range<usize>),
+    ClassInstance(&'a str, ExprHash<'a>, Span),
 
     /// ### An object amending another object:
     /// - First comes the name of the amended object,
@@ -38,7 +39,7 @@ pub enum AstPklValue<'a> {
     ///     prop = "attribute"
     /// }
     /// ```
-    AmendingObject(&'a str, ExprHash<'a>, Range<usize>),
+    AmendingObject(&'a str, ExprHash<'a>, Span),
 
     /// ### An amended object.
     /// Different from `AmendingObject`
@@ -51,11 +52,11 @@ pub enum AstPklValue<'a> {
     ///    other_prop = "other_attribute"
     /// }
     /// ```
-    AmendedObject(Box<AstPklValue<'a>>, ExprHash<'a>, Range<usize>),
+    AmendedObject(Box<AstPklValue<'a>>, ExprHash<'a>, Span),
 }
 
 impl<'a> AstPklValue<'a> {
-    pub fn span(&self) -> Range<usize> {
+    pub fn span(&self) -> Span {
         match self {
             AstPklValue::Int(_, rng)
             | AstPklValue::Bool(_, rng)

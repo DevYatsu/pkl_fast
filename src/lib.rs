@@ -6,7 +6,6 @@ use table::{ast_to_table, PklTable};
 mod lexer;
 mod parser;
 mod table;
-mod types;
 mod utils;
 
 pub use parser::PklResult;

@@ -34,6 +34,8 @@ pub enum PklToken<'a> {
     CloseParen,
     #[token(",")]
     Comma,
+    #[token(":")]
+    Colon,
     #[token("new")]
     New,
     #[token("import")]

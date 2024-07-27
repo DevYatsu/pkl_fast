@@ -4,14 +4,13 @@ use crate::{
     parser::{expr::class::parse_class_instance, value::AstPklValue, Identifier},
     PklResult,
 };
-use logos::Lexer;
-use std::ops::Range;
+use logos::{Lexer, Span};
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct FuncCall<'a>(pub Identifier<'a>, pub Vec<PklExpr<'a>>, pub Range<usize>);
+pub struct FuncCall<'a>(pub Identifier<'a>, pub Vec<PklExpr<'a>>, pub Span);
 
 impl<'a> FuncCall<'a> {
-    pub fn span(&self) -> Range<usize> {
+    pub fn span(&self) -> Span {
         self.2.to_owned()
     }
 }

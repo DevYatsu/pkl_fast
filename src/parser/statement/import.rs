@@ -1,14 +1,13 @@
 use crate::parse_string;
 use crate::parser::statement::PklStatement;
 use crate::{lexer::PklToken, PklResult};
-use logos::Lexer;
-use std::ops::Range;
+use logos::{Lexer, Span};
 
 /// Function called after 'import' keyword.
 pub fn parse_import<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklStatement<'a>> {
     let start = lexer.span().start;
 
-    fn parse_value<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<(&'a str, Range<usize>)> {
+    fn parse_value<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<(&'a str, Span)> {
         parse_string!(
             lexer,
             "unexpected token here, expected an import value (context: import)",

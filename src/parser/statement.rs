@@ -1,9 +1,8 @@
-use crate::types::PklType;
-
-use super::expr::PklExpr;
+use super::{expr::PklExpr, types::PklType};
 use class::{ClassField, ClassType};
 use hashbrown::HashMap;
-use std::ops::{Deref, DerefMut, Range};
+use logos::Span;
+use std::ops::{Deref, DerefMut};
 
 pub mod class;
 pub mod constant;
@@ -16,15 +15,16 @@ pub enum PklStatement<'a> {
     /// A constant/variable statement
     Constant {
         name: &'a str,
+        _type: Option<PklType<'a>>,
         value: PklExpr<'a>,
-        span: Range<usize>,
+        span: Span,
     },
 
     /// Am import statement
     Import {
         name: &'a str,
         local_name: Option<&'a str>,
-        span: Range<usize>,
+        span: Span,
     },
 
     /// A class declaration
@@ -33,7 +33,7 @@ pub enum PklStatement<'a> {
         _type: ClassType,
         extends: Option<&'a str>,
         fields: HashMap<ClassField<'a>, PklType<'a>>,
-        span: Range<usize>,
+        span: Span,
     },
 }
 /* ANCHOR_END: statements */
@@ -59,7 +59,7 @@ impl<'a> DerefMut for PklStatement<'a> {
     }
 }
 impl<'a> PklStatement<'a> {
-    pub fn span(&self) -> Range<usize> {
+    pub fn span(&self) -> Span {
         match self {
             PklStatement::Constant { span, .. } => span.clone(),
             PklStatement::Import { span, .. } => span.clone(),

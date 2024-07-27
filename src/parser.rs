@@ -8,6 +8,7 @@ use value::AstPklValue;
 
 pub mod expr;
 pub mod statement;
+mod types;
 pub mod value;
 
 /// Represents a parsing error in the PKL format.

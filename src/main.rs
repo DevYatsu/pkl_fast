@@ -4,16 +4,16 @@ use std::time::Instant;
 fn main() -> Result<(), (String, String)> {
     let src = "import \"test.pkl\" as test_import
 
-`Hello` = \"hello\"
-test = 222_333.3e-4
-b = true
+`Hello`: String( \"hello\".capitalize() ) = \"Hello\"
+test: Int = 222_333.3e-4
+b: Boolean = true
 octal = 0o1_237
 hex = 0x129_EF2444443
 binary = 0b1_010_10100011111101010101
 
 num = \"122222222\".toInt()
 $string_bool = \"false\".toBoolean()
-title = \"myTitle\".capitalize()
+title: String = \"myTitle\".capitalize()
 
 multiline = \"\"\"
 Although the Dodo is extinct,
@@ -81,13 +81,17 @@ s = 5.min.toUnit(\"s\")
     pkl.parse(&src)
         .map_err(|(s, rng)| (s, src[rng].to_owned()))?;
 
+    for stmt in pkl.generate_ast(&src).unwrap() {
+        println!("{stmt:?}",);
+    }
+
     println!(
         "{}ms to parse {} chars",
         time.elapsed().as_millis(),
         src.len()
     );
 
-    println!("{:?}", pkl);
+    //  println!("{:#?}", pkl);
 
     Ok(())
 }

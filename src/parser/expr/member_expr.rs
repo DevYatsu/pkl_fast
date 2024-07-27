@@ -24,6 +24,8 @@ impl<'a> From<Identifier<'a>> for ExprMember<'a> {
     }
 }
 
+/// Parses a ExprMember, that is what comes after a dot
+/// when indexing (for example an object).
 pub fn parse_member_expr_member<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
 ) -> PklResult<ExprMember<'a>> {
