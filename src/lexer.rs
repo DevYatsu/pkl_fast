@@ -47,6 +47,9 @@ pub enum PklToken<'a> {
     #[token("null")]
     Null,
 
+    #[token(">")]
+    OperatorMoreThan,
+
     #[regex(r"-?\d+(?:_?\d)*", |lex| {
         let raw = lex.slice();
         // Remove underscores for parsing
@@ -132,6 +135,11 @@ pub enum PklToken<'a> {
     #[regex(r#"[a-zA-Z][a-zA-Z0-9_]*\("#, |lex| {let raw=lex.slice();&raw[..raw.len()-1]})]
     #[regex(r#"`([^`\\]|\\[`\\bnfrt]|\\u\{[a-fA-F0-9]+})*`\("#, |lex| {let raw=lex.slice();&raw[1..raw.len()-2]})]
     FunctionCall(&'a str),
+
+    #[regex(r#"(_|\$)[a-zA-Z0-9_]+<"#, |lex| {let raw=lex.slice();&raw[..raw.len()-1]})]
+    #[regex(r#"[a-zA-Z][a-zA-Z0-9_]*<"#, |lex| {let raw=lex.slice();&raw[..raw.len()-1]})]
+    #[regex(r#"`([^`\\]|\\[`\\bnfrt]|\\u\{[a-fA-F0-9]+})*`<"#, |lex| {let raw=lex.slice();&raw[1..raw.len()-2]})]
+    TypeWithAttributes(&'a str),
 
     #[regex(r#"(_|\$)[a-zA-Z0-9_]+"#, |lex| lex.slice())]
     #[regex(r#"[a-zA-Z][a-zA-Z0-9_]*"#, |lex| lex.slice())]
