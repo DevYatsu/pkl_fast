@@ -1,3 +1,5 @@
+use crate::types::PklType;
+
 use super::expr::PklExpr;
 use class::{ClassField, ClassType};
 use hashbrown::HashMap;
@@ -30,7 +32,7 @@ pub enum PklStatement<'a> {
         name: &'a str,
         _type: ClassType,
         extends: Option<&'a str>,
-        fields: HashMap<ClassField<'a>, PklExpr<'a>>,
+        fields: HashMap<ClassField<'a>, PklType<'a>>,
         span: Range<usize>,
     },
 }

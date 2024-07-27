@@ -13,7 +13,13 @@ pub enum ClassType {
 #[derive(Debug, Clone, Eq, Hash)]
 pub struct ClassField<'a> {
     pub name: &'a str,
-    pub field_type: FieldType,
+    pub kind: FieldKind,
+}
+
+impl<'a> ClassField<'a> {
+    pub fn new(name: &'a str, kind: FieldKind) -> Self {
+        Self { name, kind }
+    }
 }
 
 impl<'a> PartialEq for ClassField<'a> {
@@ -22,21 +28,8 @@ impl<'a> PartialEq for ClassField<'a> {
     }
 }
 
-impl<'a> ClassField<'a> {
-    pub fn new(name: &'a str) -> Self {
-        Self {
-            name,
-            field_type: FieldType::Classical,
-        }
-    }
-
-    pub fn set_hidden(&mut self) {
-        self.field_type = FieldType::Hidden
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum FieldType {
+pub enum FieldKind {
     Hidden,
     Classical,
 }
