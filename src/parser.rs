@@ -68,8 +68,11 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 is_newline = false;
             }
             Ok(PklToken::As) => {
-                if let Some(PklStatement::Import(_, optional_name, rng)) = statements.last_mut() {
-                    if optional_name.is_none() {
+                if let Some(PklStatement::Import {
+                    local_name, span, ..
+                }) = statements.last_mut()
+                {
+                    if local_name.is_none() {
                         fn optional_id<'a>(
                             lexer: &mut Lexer<'a, PklToken<'a>>,
                         ) -> PklResult<Identifier<'a>> {
@@ -80,8 +83,8 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                         }
 
                         let Identifier(other_name, other_rng) = optional_id(lexer)?;
-                        *rng = rng.start..other_rng.end;
-                        *optional_name = Some(other_name);
+                        *span = span.start..other_rng.end;
+                        *local_name = Some(other_name);
                     } else {
                         return Err((
                             "Import statement already has an 'as' close (context: import)"
@@ -97,7 +100,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 }
             }
             Ok(PklToken::Dot) => {
-                if let Some(PklStatement::Constant(_, value, _)) = statements.last_mut() {
+                if let Some(PklStatement::Constant { value, .. }) = statements.last_mut() {
                     let expr_member = parse_member_expr_member(lexer)?;
                     let expr_start = value.span().start;
                     let expr_end = expr_member.span().end;
@@ -115,7 +118,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 }
             }
             Ok(PklToken::OpenBrace) => {
-                if let Some(PklStatement::Constant(_, value, rng)) = statements.last_mut() {
+                if let Some(PklStatement::Constant { value, span, .. }) = statements.last_mut() {
                     match value {
                         PklExpr::Value(AstPklValue::Object(_))
                         | PklExpr::Value(AstPklValue::AmendingObject(_, _, _))
@@ -125,7 +128,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                             *value = AstPklValue::AmendedObject(
                                 Box::new(value.clone().extract_value()),
                                 (new_object, object_span),
-                                rng.start..end,
+                                span.start..end,
                             )
                             .into();
                         }

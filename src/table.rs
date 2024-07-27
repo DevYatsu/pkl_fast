@@ -19,7 +19,7 @@ use base::{
 use hashbrown::HashMap;
 use std::{fs, ops::Range};
 
-mod base;
+pub mod base;
 mod official_pkg;
 mod web_import;
 
@@ -598,22 +598,26 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
     for statement in ast {
         match statement {
-            PklStatement::Constant(name, expr, _) => {
+            PklStatement::Constant { name, value, .. } => {
                 in_body = true;
-                table.insert(name, table.evaluate(expr)?);
+                table.insert(name, table.evaluate(value)?);
             }
-            PklStatement::Class(name, hashmap, _) => {
+            PklStatement::Class { .. } => {
                 in_body = true;
             }
-            PklStatement::Import(value, local_name, rng) => {
+            PklStatement::Import {
+                name,
+                local_name,
+                span,
+            } => {
                 if in_body {
                     return Err((
                         "Import statements must be before document body".to_owned(),
-                        rng,
+                        span,
                     ));
                 }
 
-                table.import(value, local_name, rng)?;
+                table.import(name, local_name, span)?;
             }
         }
     }

@@ -1,7 +1,7 @@
 use super::{member_expr::parse_member_expr_member, PklExpr};
 use crate::{
     lexer::PklToken,
-    parser::{statement::class::parse_class_instance, value::AstPklValue, Identifier},
+    parser::{expr::class::parse_class_instance, value::AstPklValue, Identifier},
     PklResult,
 };
 use logos::Lexer;

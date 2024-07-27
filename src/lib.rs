@@ -1,6 +1,6 @@
 use hashbrown::HashMap;
 use lexer::PklToken;
-use parser::{parse_pkl, PklStatement};
+use parser::{parse_pkl, statement::PklStatement};
 use table::{ast_to_table, PklTable};
 
 mod lexer;
@@ -190,6 +190,6 @@ impl Default for Pkl {
 }
 
 pub mod values {
-    pub use crate::table::data_size::{Byte, Unit as DataSizeUnit};
-    pub use crate::table::duration::Unit as DurationUnit;
+    pub use crate::table::base::data_size::{Byte, Unit as DataSizeUnit};
+    pub use crate::table::base::duration::Unit as DurationUnit;
 }

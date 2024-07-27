@@ -16,7 +16,11 @@ pub fn parse_import<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklSta
         )
     }
 
-    let (value, rng) = parse_value(lexer)?;
+    let (name, rng) = parse_value(lexer)?;
 
-    return Ok(PklStatement::Import(value, None, start..rng.end));
+    return Ok(PklStatement::Import {
+        name,
+        local_name: None,
+        span: start..rng.end,
+    });
 }

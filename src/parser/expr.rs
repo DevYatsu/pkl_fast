@@ -1,14 +1,13 @@
+use super::{value::AstPklValue, ExprHash, Identifier, PklResult};
 use crate::lexer::PklToken;
-
-use super::{
-    statement::class::parse_class_instance, value::AstPklValue, ExprHash, Identifier, PklResult,
-};
+use class::parse_class_instance;
 use fn_call::{parse_fn_call, FuncCall};
 use logos::Lexer;
 use member_expr::ExprMember;
 use object::parse_amended_object;
 use std::ops::Range;
 
+pub mod class;
 pub mod fn_call;
 pub mod member_expr;
 pub mod object;

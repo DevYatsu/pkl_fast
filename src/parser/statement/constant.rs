@@ -14,7 +14,11 @@ pub fn parse_const<'a>(
     let value = parse_const_expr(lexer)?;
     let end = lexer.span().end;
 
-    Ok(PklStatement::Constant(name, value, start..end))
+    Ok(PklStatement::Constant {
+        name,
+        value,
+        span: start..end,
+    })
 }
 
 /* ANCHOR: const_expr */
