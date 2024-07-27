@@ -1,27 +1,27 @@
 use crate::{
     parser::{
-        AstPklValue, ExprHash, ExprMember, FuncCall, Identifier, PklExpr, PklResult, PklStatement,
+        expr::{fn_call::FuncCall, member_expr::ExprMember, PklExpr},
+        statement::PklStatement,
+        value::AstPklValue,
+        ExprHash, Identifier, PklResult,
     },
     Pkl,
 };
-use bool_api::match_bool_methods_api;
-use data_size::{match_data_size_methods_api, match_data_size_props_api, Byte};
-use duration::{match_duration_methods_api, match_duration_props_api, Duration};
-use float_api::{match_float_methods_api, match_float_props_api};
+use base::{
+    bool_api::match_bool_methods_api,
+    data_size::{match_data_size_methods_api, match_data_size_props_api, Byte},
+    duration::{match_duration_methods_api, match_duration_props_api, Duration},
+    float_api::{match_float_methods_api, match_float_props_api},
+    int_api::{match_int_methods_api, match_int_props_api},
+    list_api::match_list_props_api,
+    string_api::{match_string_methods_api, match_string_props_api},
+};
 use hashbrown::HashMap;
-use int_api::{match_int_methods_api, match_int_props_api};
-use list_api::match_list_props_api;
 use std::{fs, ops::Range};
-use string_api::{match_string_methods_api, match_string_props_api};
 
-mod bool_api;
-pub mod data_size;
-pub mod duration;
-mod float_api;
-mod int_api;
-mod list_api;
+mod base;
 mod official_pkg;
-mod string_api;
+mod web_import;
 
 /// Represents a value in the PKL format.
 ///
@@ -339,11 +339,11 @@ impl PklTable {
     ) -> PklResult<()> {
         match name {
             name if name.starts_with("package://") => {
-                return Err(("Package imports not yet supported!".to_owned(), rng))
+                return web_import::import_pkg(self, name, rng)
             }
             name if name.starts_with("pkl:") => return official_pkg::import_pkg(self, name, rng),
             name if name.starts_with("https://") => {
-                return Err(("Web imports not yet supported!".to_owned(), rng))
+                return web_import::import_https(self, name, rng)
             }
             file_name => {
                 let file_content = fs::read_to_string(file_name)
@@ -592,6 +592,8 @@ impl PklTable {
 pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
     let mut table = PklTable::new();
 
+    // encountered a body statement
+    // == no more import stmt
     let mut in_body = false;
 
     for statement in ast {
@@ -599,6 +601,9 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
             PklStatement::Constant(name, expr, _) => {
                 in_body = true;
                 table.insert(name, table.evaluate(expr)?);
+            }
+            PklStatement::Class(name, hashmap, _) => {
+                in_body = true;
             }
             PklStatement::Import(value, local_name, rng) => {
                 if in_body {

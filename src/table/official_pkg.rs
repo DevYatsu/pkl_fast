@@ -2,6 +2,8 @@ use super::PklTable;
 use crate::PklResult;
 use std::ops::Range;
 
+mod math;
+
 /// todo()!
 ///
 /// Official packages support is not yet completed
