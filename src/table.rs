@@ -20,6 +20,7 @@ pub mod duration;
 mod float_api;
 mod int_api;
 mod list_api;
+mod official_pkg;
 mod string_api;
 
 /// Represents a value in the PKL format.
@@ -340,12 +341,7 @@ impl PklTable {
             name if name.starts_with("package://") => {
                 return Err(("Package imports not yet supported!".to_owned(), rng))
             }
-            name if name.starts_with("pkl:") => {
-                return Err((
-                    "Pkl official packages imports not yet supported!".to_owned(),
-                    rng,
-                ))
-            }
+            name if name.starts_with("pkl:") => return official_pkg::import_pkg(self, name, rng),
             name if name.starts_with("https://") => {
                 return Err(("Web imports not yet supported!".to_owned(), rng))
             }
