@@ -387,14 +387,23 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
     for statement in ast {
         match statement {
-            PklStatement::Constant { name, value, .. } => {
+            PklStatement::Constant {
+                name, value, _type, ..
+            } => {
                 in_body = true;
-                table.insert(name.0, table.evaluate(value)?);
+                let evaluated_value = table.evaluate(value)?;
+                // need to check if user-defined type is
+                // the same as the type of the evaluated value
+                table.insert(name.0, evaluated_value);
             }
             PklStatement::Class { .. } => {
+                // need to interpret class declarations
                 in_body = true;
             }
             PklStatement::TypeAlias { .. } => {
+                // need to interpret typealiases
+                // store somewhere in the PklTable
+                // the types
                 // todo!
             }
             PklStatement::Import {
