@@ -1,6 +1,9 @@
 use logos::Span;
 
-use super::{expr::PklExpr, ExprHash};
+use super::{
+    expr::{class::ClassInstance, PklExpr},
+    ExprHash,
+};
 
 /// Represent any valid Pkl value.
 #[derive(Debug, PartialEq, Clone)]
@@ -26,7 +29,7 @@ pub enum AstPklValue<'a> {
     List(Vec<PklExpr<'a>>, Span),
 
     /// A Class instance.
-    ClassInstance(&'a str, ExprHash<'a>, Span),
+    ClassInstance(ClassInstance<'a>),
 
     /// ### An object amending another object:
     /// - First comes the name of the amended object,
@@ -64,7 +67,7 @@ impl<'a> AstPklValue<'a> {
             | AstPklValue::Object((_, rng))
             | AstPklValue::AmendingObject(_, _, rng)
             | AstPklValue::AmendedObject(_, _, rng)
-            | AstPklValue::ClassInstance(_, _, rng)
+            | AstPklValue::ClassInstance(ClassInstance(_, _, rng))
             | AstPklValue::String(_, rng)
             | AstPklValue::List(_, rng)
             | AstPklValue::MultiLineString(_, rng)

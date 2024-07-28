@@ -1,4 +1,4 @@
-use crate::PklValue;
+use crate::parser::types::AstPklType;
 // use hashbrown::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -16,9 +16,42 @@ pub enum PklType {
 
     WithRequirement {
         base_type: Box<PklType>,
-        requirements: Box<PklValue>,
+        requirements: Box<TypeRequirements>,
     },
 }
+
+impl<'a> From<AstPklType<'a>> for PklType {
+    fn from(value: AstPklType<'a>) -> Self {
+        match value {
+            AstPklType::Basic(a, _) => PklType::Basic(a.to_owned()),
+            AstPklType::StringLiteral(a, _) => PklType::StringLiteral(a.to_owned()),
+            AstPklType::Union(a, b) => PklType::Union(Box::new((*a).into()), Box::new((*b).into())),
+            AstPklType::Nullable(a) => PklType::Nullable(Box::new((*a).into())),
+            AstPklType::WithAttributes {
+                name,
+                attributes,
+                span,
+            } => PklType::WithAttributes {
+                name: name.to_owned(),
+                attributes: attributes.into_iter().map(|a| a.into()).collect(),
+            },
+            AstPklType::WithRequirement {
+                base_type,
+                requirements,
+                span,
+            } => {
+                todo!();
+                // PklType::WithRequirement {
+                //     base_type: Box::new((*base_type).into()),
+                //     requirements,
+                // }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeRequirements {}
 
 // #[derive(Debug, Clone, PartialEq)]
 // pub enum TypeKind {

@@ -1,10 +1,7 @@
 use crate::{
     parser::{
-        expr::{fn_call::FuncCall, member_expr::ExprMember, PklExpr},
-        statement::{
-            class::ClassDeclaration, constant::Constant, import::Import, typealias::TypeAlias,
-            PklStatement,
-        },
+        expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
+        statement::{constant::Constant, import::Import, typealias::TypeAlias, PklStatement},
         value::AstPklValue,
         ExprHash, Identifier, PklResult,
     },
@@ -19,6 +16,7 @@ use base::{
     list_api::match_list_props_api,
     string_api::{match_string_methods_api, match_string_props_api},
 };
+use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use std::{fs, ops::Range, path::PathBuf};
 use value::PklValue;
@@ -34,6 +32,8 @@ pub mod value;
 #[derive(Debug, Clone)]
 pub struct PklTable {
     pub variables: HashMap<String, PklValue>,
+
+    pub schemas: HashMap<String, ClassSchema>,
 }
 
 impl PartialEq for PklTable {
@@ -52,6 +52,7 @@ impl PklTable {
     pub fn new() -> Self {
         Self {
             variables: HashMap::new(),
+            schemas: HashMap::new(),
         }
     }
 
@@ -67,6 +68,17 @@ impl PklTable {
     /// An `Option` containing the previous value associated with the name, if any.
     pub fn insert(&mut self, name: impl Into<String>, value: PklValue) -> Option<PklValue> {
         self.variables.insert(name.into(), value)
+    }
+
+    pub fn add_schema(
+        &mut self,
+        name: impl Into<String>,
+        schema: ClassSchema,
+    ) -> Option<ClassSchema> {
+        self.schemas.insert(name.into(), schema)
+    }
+    pub fn get_schema(&self, name: impl AsRef<str>) -> Option<&ClassSchema> {
+        self.schemas.get(name.as_ref())
     }
 
     /// Merges another `PklTable` into this table.
@@ -94,9 +106,8 @@ impl PklTable {
     /// assert_eq!(table1.get("var2"), Some(&PklValue::Int(2)));
     /// ```
     pub fn extends(&mut self, other_table: PklTable) {
-        for (name, value) in other_table.variables {
-            self.insert(name, value);
-        }
+        self.variables.extend(other_table.variables);
+        self.schemas.extend(other_table.schemas);
     }
 
     /// Retrieves the value of a variable with the given name from the context.
@@ -295,7 +306,9 @@ impl PklTable {
             }
             AstPklValue::List(values, _) => self.evaluate_list(values)?,
             AstPklValue::Object(o) => self.evaluate_object(o)?,
-            AstPklValue::ClassInstance(a, b, _) => self.evaluate_class_instance(a, b)?,
+            AstPklValue::ClassInstance(ClassInstance(a, b, _)) => {
+                self.evaluate_class_instance(a, b)?
+            }
             AstPklValue::AmendedObject(a, b, _) => self.evaluate_amended_object(*a, b)?,
             AstPklValue::AmendingObject(a, b, rng) => self.evaluate_amending_object(a, b, rng)?,
         };
@@ -333,7 +346,22 @@ impl PklTable {
         new_hash.map(PklValue::List)
     }
 
-    fn evaluate_class_instance(&self, a: &str, b: ExprHash) -> PklResult<PklValue> {
+    /// Function should only be called when not in a variable declaration
+    fn evaluate_class_instance(
+        &self,
+        a: Option<Identifier<'_>>,
+        b: ExprHash,
+    ) -> PklResult<PklValue> {
+        if a.is_none() {
+            return Err((
+                "Class Instance name is expected to be provided when not in a constant declaration"
+                    .to_owned(),
+                b.1,
+            ));
+        }
+
+        let a = a.unwrap();
+
         let new_hash: Result<HashMap<_, _>, _> =
             b.0.into_iter()
                 .map(|(name, expr)| {
@@ -342,7 +370,29 @@ impl PklTable {
                 })
                 .collect();
 
-        new_hash.map(|h| PklValue::ClassInstance(a.into(), h))
+        let schema = self.get_schema(a.0);
+
+        if schema.is_none() {
+            return Err((format!("Unknown class '{}'", a.0), a.1));
+        }
+
+        let schema = schema.unwrap();
+        let found_schema = new_hash?;
+
+        for k in schema.keys() {
+            if !found_schema.contains_key(k) {
+                return Err((format!("Missing key '{k}' in instance of {}", a.0), b.1));
+            }
+        }
+        for k in found_schema.keys() {
+            if !schema.contains_key(k) {
+                return Err((format!("Unknown key '{k}' in instance of {}", a.0), b.1));
+            }
+        }
+
+        // now check if the types of the values are correct in the found_schema
+
+        Ok(PklValue::ClassInstance(a.0.into(), found_schema))
     }
 
     fn evaluate_amending_object(
@@ -397,9 +447,11 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 // the same as the type of the evaluated value
                 table.insert(name.0, evaluated_value);
             }
-            PklStatement::Class(ClassDeclaration { .. }) => {
-                // need to interpret class declarations
+            PklStatement::Class(declaration) => {
                 in_body = true;
+
+                let (name, schema) = generate_class_schema(declaration);
+                table.add_schema(name, schema);
             }
             PklStatement::TypeAlias(TypeAlias { .. }) => {
                 // need to interpret typealiases

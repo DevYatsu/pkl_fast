@@ -27,10 +27,13 @@ pub fn parse_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<ExprHa
                 expect_new_entry = matches!(value, PklExpr::Value(AstPklValue::Object((_, _))));
                 hashmap.insert(id, value);
             }
-            Ok(PklToken::NewLine) | Ok(PklToken::Comma) => {
+            Ok(PklToken::NewLine) => {
                 expect_new_entry = true;
             }
-            Ok(PklToken::Space) => {}
+            Ok(PklToken::Space)
+            | Ok(PklToken::DocComment(_))
+            | Ok(PklToken::LineComment(_))
+            | Ok(PklToken::MultilineComment(_)) => {}
             Ok(PklToken::CloseBrace) => {
                 let end = lexer.span().end;
                 return Ok((hashmap, start..end));

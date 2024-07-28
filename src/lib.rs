@@ -36,7 +36,8 @@ impl Pkl {
     /// A `PklResult` indicating success or failure.
     pub fn parse(&mut self, source: &str) -> PklResult<()> {
         let parsed = self.generate_ast(source)?;
-        self.table.extends(ast_to_table(parsed)?);
+        let table = ast_to_table(parsed)?;
+        self.table.extends(table);
 
         Ok(())
     }

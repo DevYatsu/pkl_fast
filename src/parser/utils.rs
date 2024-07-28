@@ -49,17 +49,22 @@ pub fn parse_open_brace<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Pk
 }
 
 fn id_token<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
-    parse_multispaces_until!(lexer, PklToken::Identifier(_))
+    parse_multispaces_until!(
+        lexer,
+        PklToken::Identifier(_) | PklToken::IllegalIdentifier(_)
+    )
 }
 pub fn parse_id<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Identifier<'a>> {
     match id_token(lexer)? {
-        PklToken::Identifier(id) => return Ok(Identifier(id, lexer.span())),
+        PklToken::Identifier(id) | PklToken::IllegalIdentifier(id) => {
+            return Ok(Identifier(id, lexer.span()))
+        }
         _ => unreachable!(),
     }
 }
 pub fn parse_id_as_str<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<&'a str> {
     match id_token(lexer)? {
-        PklToken::Identifier(id) => return Ok(id),
+        PklToken::Identifier(id) | PklToken::IllegalIdentifier(id) => return Ok(id),
         _ => unreachable!(),
     }
 }

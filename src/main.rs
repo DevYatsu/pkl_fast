@@ -27,7 +27,7 @@ class ParentBird extends Bird {
 }
 
 // Define a class with fields declared over several lines
-class Bird {
+class Bird2 {
   species: String
   wingspan: Float
   canFly: Boolean
@@ -45,6 +45,10 @@ class Bird {
   /// The migration duration in hours
   migrationDuration:
     Duration
+}
+
+bird000 = new Bird {
+    name = \"string\"
 }
 
 `Hello`: String( \"hello\".capitalize() ) = \"Hello\"
@@ -104,12 +108,12 @@ dodo {
 
 pigeon = new Bird {
   name = \"Pigeon\"
-  lifespan = 8
-  migratory = false
+// lifespan = 8
+// migratory = false
 }
 
 list: List<Mapping<String, Number>>(isParsingTestExpr) | List<Int> = List()
-list_with_values = List(pigeon, int, duration, two, list, List(), pigeon.lifespan)
+list_with_values = List(pigeon, int, duration, two, list, List(), pigeon.name)
 
 STRING = \"test\".repeat(5)
 is_start = STRING.startsWith(\"testtest\")
@@ -124,9 +128,9 @@ s = 5.min.toUnit(\"s\")
     pkl.parse(&src)
         .map_err(|(s, rng)| (s, src[rng].to_owned()))?;
 
-    for stmt in pkl.generate_ast(&src).unwrap() {
-        println!("{stmt:?}",);
-    }
+    // for stmt in pkl.generate_ast(&src).unwrap() {
+    //     println!("{stmt:?}",);
+    // }
 
     println!(
         "{}ms to parse {} chars",
@@ -134,7 +138,7 @@ s = 5.min.toUnit(\"s\")
         src.len()
     );
 
-    // println!("{:#?}", pkl);
+    println!("{:?}", pkl);
 
     Ok(())
 }
