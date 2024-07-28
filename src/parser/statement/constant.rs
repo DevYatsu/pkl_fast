@@ -2,7 +2,7 @@ use super::{PklExpr, PklStatement};
 use crate::lexer::PklToken;
 use crate::parser::expr::object::parse_object;
 use crate::parser::expr::parse_expr;
-use crate::parser::types::{parse_type_until, PklType};
+use crate::parser::types::{parse_type_until, AstPklType};
 use crate::parser::Identifier;
 use crate::PklResult;
 use logos::Lexer;
@@ -28,7 +28,7 @@ pub fn parse_const<'a>(
 /// Parse a token stream into a Pkl Expr after an identifier with a possible type.
 pub fn parse_const_expr<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
-) -> PklResult<(Option<PklType<'a>>, PklExpr<'a>)> {
+) -> PklResult<(Option<AstPklType<'a>>, PklExpr<'a>)> {
     loop {
         match lexer.next() {
             Some(Ok(PklToken::EqualSign)) => {

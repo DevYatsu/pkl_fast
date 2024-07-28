@@ -6,54 +6,54 @@ use crate::{lexer::PklToken, parser::expr::long::parse_long_expression_or};
 use logos::{Lexer, Span};
 
 #[derive(Debug, Clone, PartialEq)]
-/// Representation of a Pkl Type
-pub enum PklType<'a> {
+/// Representation of a Pkl Type in the AST (Abstract Syntax Tree)
+pub enum AstPklType<'a> {
     Basic(&'a str, Span),
     StringLiteral(&'a str, Span),
-    Union(Box<PklType<'a>>, Box<PklType<'a>>),
-    Nullable(Box<PklType<'a>>),
+    Union(Box<AstPklType<'a>>, Box<AstPklType<'a>>),
+    Nullable(Box<AstPklType<'a>>),
 
     WithAttributes {
         name: &'a str,
-        attributes: Vec<PklType<'a>>,
+        attributes: Vec<AstPklType<'a>>,
         span: Span,
     },
 
     WithRequirement {
-        base_type: Box<PklType<'a>>,
+        base_type: Box<AstPklType<'a>>,
         requirements: Box<PklExpr<'a>>,
         span: Span,
     },
 }
 
-impl<'a> PklType<'a> {
+impl<'a> AstPklType<'a> {
     pub fn span(&self) -> Span {
         match self {
-            PklType::Basic(_, s) => s.to_owned(),
-            PklType::StringLiteral(_, s) => s.to_owned(),
-            PklType::Union(s1, s2) => s1.span().start..s2.span().end,
-            PklType::Nullable(s) => s.span().to_owned(),
-            PklType::WithAttributes { span, .. } => span.to_owned(),
-            PklType::WithRequirement { span, .. } => span.to_owned(),
+            AstPklType::Basic(_, s) => s.to_owned(),
+            AstPklType::StringLiteral(_, s) => s.to_owned(),
+            AstPklType::Union(s1, s2) => s1.span().start..s2.span().end,
+            AstPklType::Nullable(s) => s.span().to_owned(),
+            AstPklType::WithAttributes { span, .. } => span.to_owned(),
+            AstPklType::WithRequirement { span, .. } => span.to_owned(),
         }
     }
     pub fn is_last_with_attributes(&self) -> bool {
         match self {
-            PklType::Basic(_, _) => false,
-            PklType::StringLiteral(_, _) => false,
-            PklType::Union(_, x) => x.is_last_with_attributes(),
-            PklType::Nullable(_) => false,
-            PklType::WithAttributes { .. } => true,
-            PklType::WithRequirement { .. } => false,
+            AstPklType::Basic(_, _) => false,
+            AstPklType::StringLiteral(_, _) => false,
+            AstPklType::Union(_, x) => x.is_last_with_attributes(),
+            AstPklType::Nullable(_) => false,
+            AstPklType::WithAttributes { .. } => true,
+            AstPklType::WithRequirement { .. } => false,
         }
     }
 }
 
-pub fn parse_type<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklType<'a>> {
+pub fn parse_type<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<AstPklType<'a>> {
     while let Some(token) = lexer.next() {
         match token {
             Ok(PklToken::Identifier(id)) | Ok(PklToken::IllegalIdentifier(id)) => {
-                return Ok(PklType::Basic(id, lexer.span()))
+                return Ok(AstPklType::Basic(id, lexer.span()))
             }
             Ok(PklToken::TypeWithAttributes(fn_name)) => {
                 let base_span = lexer.span();
@@ -62,7 +62,7 @@ pub fn parse_type<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklType<
                 let attributes = parse_attributes(lexer)?;
                 let span = start..lexer.span().end;
 
-                let _type = PklType::WithAttributes {
+                let _type = AstPklType::WithAttributes {
                     name: fn_name,
                     attributes,
                     span,
@@ -74,7 +74,7 @@ pub fn parse_type<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklType<
                 let base_span = lexer.span();
                 let start = base_span.start;
 
-                let base_type = Box::new(PklType::Basic(fn_name, base_span));
+                let base_type = Box::new(AstPklType::Basic(fn_name, base_span));
 
                 let base_expr = parse_expr(lexer)?;
 
@@ -86,14 +86,14 @@ pub fn parse_type<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklType<
 
                 let span = start..lexer.span().end;
 
-                return Ok(PklType::WithRequirement {
+                return Ok(AstPklType::WithRequirement {
                     base_type,
                     requirements,
                     span,
                 });
             }
             Ok(PklToken::String(s)) | Ok(PklToken::MultiLineString(s)) => {
-                return Ok(PklType::StringLiteral(s, lexer.span()))
+                return Ok(AstPklType::StringLiteral(s, lexer.span()))
             }
             Ok(PklToken::Space)
             | Ok(PklToken::NewLine)
@@ -111,7 +111,7 @@ pub fn parse_type<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklType<
 pub fn parse_type_until<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
     until_token: PklToken<'a>,
-) -> PklResult<PklType<'a>> {
+) -> PklResult<AstPklType<'a>> {
     let mut _type = parse_type(lexer)?;
 
     while let Some(token) = lexer.next() {
@@ -121,11 +121,11 @@ pub fn parse_type_until<'a>(
             }
 
             Ok(PklToken::QuestionMark) => {
-                _type = PklType::Nullable(Box::new(_type));
+                _type = AstPklType::Nullable(Box::new(_type));
             }
             Ok(PklToken::Union) => {
                 let other_type = parse_type(lexer)?;
-                _type = PklType::Union(Box::new(_type), Box::new(other_type));
+                _type = AstPklType::Union(Box::new(_type), Box::new(other_type));
             }
             Ok(PklToken::OpenParen) if _type.is_last_with_attributes() => {
                 let base_span = _type.span();
@@ -142,7 +142,7 @@ pub fn parse_type_until<'a>(
 
                 let span = start..lexer.span().end;
 
-                _type = PklType::WithRequirement {
+                _type = AstPklType::WithRequirement {
                     base_type,
                     requirements,
                     span,
@@ -162,7 +162,7 @@ pub fn parse_type_until<'a>(
 }
 
 /// Parses a type attributes
-fn parse_attributes<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklType<'a>>> {
+fn parse_attributes<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<AstPklType<'a>>> {
     let mut result = Vec::new();
     let mut expect_type = true;
 

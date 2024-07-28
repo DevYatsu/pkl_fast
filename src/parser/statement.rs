@@ -1,4 +1,4 @@
-use super::{expr::PklExpr, types::PklType, Identifier};
+use super::{expr::PklExpr, types::AstPklType, Identifier};
 use class::{ClassField, ClassKind};
 use hashbrown::HashMap;
 use logos::Span;
@@ -16,7 +16,7 @@ pub enum PklStatement<'a> {
     /// A constant/variable statement
     Constant {
         name: Identifier<'a>,
-        _type: Option<PklType<'a>>,
+        _type: Option<AstPklType<'a>>,
         value: PklExpr<'a>,
         span: Span,
     },
@@ -33,7 +33,7 @@ pub enum PklStatement<'a> {
         name: Identifier<'a>,
         _type: ClassKind,
         extends: Option<Identifier<'a>>,
-        fields: HashMap<ClassField<'a>, PklType<'a>>,
+        fields: HashMap<ClassField<'a>, AstPklType<'a>>,
         span: Span,
     },
 
@@ -41,7 +41,7 @@ pub enum PklStatement<'a> {
     TypeAlias {
         name: Identifier<'a>,
         attributes: Vec<Identifier<'a>>,
-        refering_type: PklType<'a>,
+        refering_type: AstPklType<'a>,
         span: Span,
     },
 }

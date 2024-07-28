@@ -1,8 +1,6 @@
-use std::default;
-
 use super::PklStatement;
 use crate::lexer::PklToken;
-use crate::parser::types::{parse_type, parse_type_until, PklType};
+use crate::parser::types::{parse_type_until, AstPklType};
 use crate::parser::utils::{parse_id, parse_id_as_str, parse_multispaces_until, parse_open_brace};
 use crate::PklResult;
 use hashbrown::HashMap;
@@ -86,11 +84,11 @@ fn parse_open_brace_or_extends<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklRe
 
 fn parse_fields<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
-) -> PklResult<HashMap<ClassField<'a>, PklType<'a>>> {
+) -> PklResult<HashMap<ClassField<'a>, AstPklType<'a>>> {
     let mut hashmap = HashMap::new();
 
     let mut key: Option<ClassField<'a>> = None;
-    let mut _type: Option<PklType<'a>> = None;
+    let mut _type: Option<AstPklType<'a>> = None;
 
     loop {
         let token = lexer.next();
@@ -118,7 +116,7 @@ fn parse_fields<'a>(
 
             Ok(PklToken::Union) if _type.is_some() => {
                 let other_type = parse_type_until(lexer, PklToken::NewLine)?;
-                _type = Some(PklType::Union(
+                _type = Some(AstPklType::Union(
                     Box::new(_type.take().unwrap()),
                     Box::new(other_type),
                 ))

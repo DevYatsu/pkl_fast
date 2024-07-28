@@ -10,13 +10,13 @@ use statement::{
     PklStatement,
 };
 use std::ops::Range;
-use types::{parse_type, PklType};
+use types::{parse_type, AstPklType};
 use utils::parse_id;
 use value::AstPklValue;
 
 pub mod expr;
 pub mod statement;
-mod types;
+pub mod types;
 pub mod value;
 
 mod utils;
@@ -89,8 +89,10 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     let second_type = parse_type(lexer)?;
 
                     span.end = second_type.span().end;
-                    *refering_type =
-                        PklType::Union(Box::new(refering_type.to_owned()), Box::new(second_type));
+                    *refering_type = AstPklType::Union(
+                        Box::new(refering_type.to_owned()),
+                        Box::new(second_type),
+                    );
 
                     is_newline = false;
                 } else {

@@ -14,8 +14,8 @@ use hashbrown::HashMap;
 /// * `Int` - Represents an integer, which can be decimal, octal, hex, or binary.
 /// * `String` - Represents a single-line string.
 /// * `MultiLineString` - Represents a multiline string.
-/// * `Object` - Represents a nested object, which is a hashmap of key-value pairs.
-/// * `ClassInstance` - Represents an instance of a class, which includes the class name and its properties.
+/// * `Object` - Represents a nested object (Dynamic Object), which is a hashmap of key-value pairs.
+/// * `ClassInstance` - Represents an instance of a class (Typed Object), which includes the class name and its properties.
 #[derive(Debug, PartialEq, Clone)]
 pub enum PklValue {
     Null,
@@ -39,9 +39,15 @@ pub enum PklValue {
     List(Vec<PklValue>),
 
     /// A nested object represented as a hashmap of key-value pairs.
+    ///
+    /// It represents a [Dynamic object](https://pkl-lang.org/main/current/language-reference/index.html#typed-objects)
+    /// in the documentation.
     Object(HashMap<String, PklValue>),
 
-    /// An instance of a class, including the class name and its properties.
+    /// An instance of a class, including the class name it is refering to and its properties.
+    ///
+    /// It represents a [Typed object](https://pkl-lang.org/main/current/language-reference/index.html#typed-objects)
+    /// in the documentation.
     ClassInstance(String, HashMap<String, PklValue>),
 
     /// A duration
@@ -55,13 +61,13 @@ impl PklValue {
     pub fn get_type(&self) -> &str {
         match self {
             PklValue::Null => "Null",
-            PklValue::Bool(_) => "Bool",
+            PklValue::Bool(_) => "Boolean",
             PklValue::Float(_) => "Float",
             PklValue::Int(_) => "Int",
             PklValue::String(_) => "String",
             PklValue::List(_) => "List",
-            PklValue::Object(_) => "Object",
-            PklValue::ClassInstance(_, _) => "ClassInstance",
+            PklValue::Object(_) => "Dynamic",
+            PklValue::ClassInstance(class_name, _) => &class_name,
             PklValue::Duration(_) => "Duration",
             PklValue::DataSize(_) => "DataSize",
         }

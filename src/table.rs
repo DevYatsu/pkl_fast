@@ -17,17 +17,14 @@ use base::{
     string_api::{match_string_methods_api, match_string_props_api},
 };
 use hashbrown::HashMap;
-use std::{
-    fs,
-    ops::Range,
-    path::{Path, PathBuf},
-};
+use std::{fs, ops::Range, path::PathBuf};
 use value::PklValue;
 
 pub mod base;
 mod official_pkg;
 mod web_import;
 
+pub mod types;
 pub mod value;
 
 #[derive(Debug, Clone)]
