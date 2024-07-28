@@ -6,6 +6,7 @@ use statement::{
     constant::parse_const, import::parse_import, typealias::parse_typealias, PklStatement,
 };
 use std::ops::Range;
+use types::{parse_type, PklType};
 use value::AstPklValue;
 
 pub mod expr;
@@ -72,6 +73,27 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 let statement = parse_typealias(lexer)?;
                 statements.push(statement);
                 is_newline = true;
+            }
+            Ok(PklToken::Union) => {
+                if let Some(PklStatement::TypeAlias {
+                    refering_type,
+                    span,
+                    ..
+                }) = statements.last_mut()
+                {
+                    let second_type = parse_type(lexer)?;
+
+                    span.end = second_type.span().end;
+                    *refering_type =
+                        PklType::Union(Box::new(refering_type.to_owned()), Box::new(second_type));
+
+                    is_newline = false;
+                } else {
+                    return Err((
+                        "unexpected token here (context: global)".to_owned(),
+                        lexer.span(),
+                    ));
+                }
             }
             Ok(PklToken::Import) => {
                 if !is_newline {

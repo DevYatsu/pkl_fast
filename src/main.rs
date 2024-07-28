@@ -3,13 +3,15 @@ use std::time::Instant;
 
 fn main() -> Result<(), (String, String)> {
     let src = "import \"test.pkl\" as test_import
-
+import \"test.pkl\"
 typealias EmailAddress = String(matches(Regex(\".+@.+\")))
 typealias EmailList = List<EmailAddress>
 typealias StringMap<Value> = Map<String, Value>
+    | EmailList
+    | EmailAddress
 
 `Hello`: String( \"hello\".capitalize() ) = \"Hello\"
-test: Int = 222_333.3e-4
+testtt: Int = 222_333.3e-4
 b: Boolean = true
 octal = 0o1_237
 hex = 0x129_EF2444443
@@ -95,7 +97,7 @@ s = 5.min.toUnit(\"s\")
         src.len()
     );
 
-    //  println!("{:#?}", pkl);
+    // println!("{:#?}", pkl);
 
     Ok(())
 }

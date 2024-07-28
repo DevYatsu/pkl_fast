@@ -9,7 +9,7 @@ mod table;
 mod utils;
 
 pub use parser::PklResult;
-pub use table::PklValue;
+pub use table::value::PklValue;
 
 #[derive(Debug, PartialEq, Clone)]
 /// The `Pkl` struct represents the main interface for working with PKL data.
