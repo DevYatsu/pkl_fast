@@ -65,7 +65,7 @@ pigeon = new Bird {
   migratory = false
 }
 
-list: List<Mapping<String, Number>> = List()
+list: List<Mapping<String, Number>>(isTest) | List<Int> = List()
 list_with_values = List(pigeon, int, duration, two, list, List(), pigeon.lifespan)
 
 STRING = \"test\".repeat(5)

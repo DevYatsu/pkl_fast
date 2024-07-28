@@ -47,6 +47,10 @@ pub enum PklToken<'a> {
     #[token("null")]
     Null,
 
+    #[token("?")]
+    QuestionMark,
+    #[token("|")]
+    Union,
     #[token(">")]
     OperatorMoreThan,
 

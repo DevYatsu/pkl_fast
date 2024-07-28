@@ -1,8 +1,6 @@
-use logos::Lexer;
-
-use crate::{lexer::PklToken, PklResult};
-
 use super::{member_expr::parse_member_expr_member, PklExpr};
+use crate::{lexer::PklToken, PklResult};
+use logos::Lexer;
 
 /// Keep parsing a longer expressions until the 'or_token'
 /// is found.

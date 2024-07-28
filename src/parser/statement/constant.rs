@@ -2,7 +2,7 @@ use super::{PklExpr, PklStatement};
 use crate::lexer::PklToken;
 use crate::parser::expr::object::parse_object;
 use crate::parser::expr::parse_expr;
-use crate::parser::types::{parse_type, PklType};
+use crate::parser::types::{parse_type, parse_type_until, PklType};
 use crate::PklResult;
 use logos::Lexer;
 
@@ -27,17 +27,17 @@ pub fn parse_const<'a>(
 pub fn parse_const_expr<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
 ) -> PklResult<(Option<PklType<'a>>, PklExpr<'a>)> {
-    let mut _type = None;
     loop {
         match lexer.next() {
             Some(Ok(PklToken::EqualSign)) => {
-                return Ok((_type, parse_expr(lexer)?));
+                return Ok((None, parse_expr(lexer)?));
             }
             Some(Ok(PklToken::Colon)) => {
-                _type = Some(parse_type(lexer)?);
+                let _type = parse_type_until(lexer, PklToken::EqualSign)?;
+                return Ok((Some(_type), parse_expr(lexer)?));
             }
-            Some(Ok(PklToken::OpenBrace)) if _type.is_none() => {
-                return Ok((_type, parse_object(lexer)?.into()));
+            Some(Ok(PklToken::OpenBrace)) => {
+                return Ok((None, parse_object(lexer)?.into()));
             }
             Some(Ok(PklToken::Space))
             | Some(Ok(PklToken::NewLine))
