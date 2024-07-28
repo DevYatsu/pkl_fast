@@ -51,8 +51,8 @@ bird000 = new Bird {
     name = \"string\"
 }
 
-`Hello`: String( \"hello\".capitalize() ) = \"Hello\"
-testtt: Int = 222_333.3e-4
+`Hello`: String = \"Hello\"
+testtt: Float = 222_333.3e-4
 b: Boolean = true
 octal = 0o1_237
 hex = 0x129_EF2444443
@@ -112,7 +112,7 @@ pigeon: Bird = new {
 // migratory = false
 }
 
-list: List<Mapping<String, Number>>(isParsingTestExpr) | List<Int> = List()
+list: List<Mapping<String, Number>> | List<Int> = List()
 list_with_values = List(pigeon, int, duration, two, list, List(), pigeon.name)
 
 STRING = \"test\".repeat(5)

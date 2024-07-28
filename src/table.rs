@@ -458,6 +458,18 @@ impl PklTable {
         }
 
         // Todo: Check if the types of the values are correct in the found_schema
+        for (k, v) in &found_schema {
+            let _type = schema.get(k).unwrap();
+            if !v.is_instance_of(_type) {
+                return Err((
+                    format!(
+                        "Invalid type for key '{k}', not an instance of '{:?}'",
+                        _type
+                    ),
+                    b.1,
+                ));
+            }
+        }
 
         Ok(PklValue::ClassInstance(a.0.into(), found_schema))
     }
@@ -509,9 +521,22 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 name, value, _type, ..
             }) => {
                 in_body = true;
-                let evaluated_value = table.evaluate_in_variable(value, _type)?;
-                // need to check if user-defined type is
-                // the same as the type of the evaluated value
+                let evaluated_value = table.evaluate_in_variable(value, _type.to_owned())?;
+
+                if let Some(_type) = _type {
+                    let span = _type.span();
+                    let true_type = _type.into();
+                    if !evaluated_value.is_instance_of(&true_type) {
+                        return Err((
+                            format!(
+                                "Type '{}' does not correspond to the value of '{}'",
+                                true_type, name.0
+                            ),
+                            span,
+                        ));
+                    }
+                }
+
                 table.insert(name.0, evaluated_value);
             }
             PklStatement::Class(declaration) => {

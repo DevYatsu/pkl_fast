@@ -1,4 +1,4 @@
-use super::base::duration::Duration;
+use super::{base::duration::Duration, types::PklType};
 use crate::values::Byte;
 use hashbrown::HashMap;
 
@@ -58,6 +58,25 @@ pub enum PklValue {
 }
 
 impl PklValue {
+    pub fn is_instance_of(&self, _type: &PklType) -> bool {
+        match (self, _type) {
+            // does not cover everything for the moment
+            // for example not typealiases
+            // not types with parameters etc.
+            (PklValue::Null, t) if t.can_be_nullable() => true,
+            (PklValue::Bool(_), t) if t.can_be_bool() => true,
+            (PklValue::Float(_), t) if t.can_be_float() => true,
+            (PklValue::Int(i), t) if t.can_be_int(*i) => true,
+            (PklValue::String(s), t) if t.can_be_str(s) => true,
+            (PklValue::List(elements), t) if t.can_be_list(elements) => true,
+            (PklValue::Object(_), t) if t.can_be_object() => true,
+            (PklValue::Duration(_), t) if t.can_be_duration() => true,
+            (PklValue::DataSize(_), t) if t.can_be_datasize() => true,
+            (PklValue::ClassInstance(name, _), t) if t.can_be_instance_of(&name) => true,
+
+            _ => false,
+        }
+    }
     pub fn get_type(&self) -> &str {
         match self {
             PklValue::Null => "Null",
