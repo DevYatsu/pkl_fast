@@ -5,7 +5,7 @@ use crate::parser::Identifier;
 use crate::{lexer::PklToken, PklResult};
 use logos::Lexer;
 
-/// Function called after 'import' keyword.
+/// Function called after 'typealias' keyword.
 pub fn parse_typealias<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklStatement<'a>> {
     let start = lexer.span().start;
     let (name, attributes) = parse_typealias_name(lexer)?;
