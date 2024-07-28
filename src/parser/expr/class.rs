@@ -1,5 +1,6 @@
 use super::PklExpr;
 use crate::parser::expr::object::parse_object;
+use crate::parser::utils::parse_open_brace;
 use crate::parser::value::AstPklValue;
 use crate::parser::Identifier;
 use crate::PklResult;
@@ -30,41 +31,17 @@ pub fn parse_class_instance<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResul
     let class_name = match parse_id_or_open_brace(lexer)? {
         PklToken::OpenBrace => None,
         PklToken::Identifier(id) | PklToken::IllegalIdentifier(id) => {
-            Some(Identifier(id, lexer.span()))
+            let name = Some(Identifier(id, lexer.span()));
+            parse_open_brace(lexer)?;
+            name
         }
         _ => unreachable!(),
     };
 
-    loop {
-        match lexer.next() {
-            Some(Ok(PklToken::OpenBrace)) => {
-                return Ok(AstPklValue::ClassInstance(ClassInstance(
-                    class_name,
-                    parse_object(lexer)?,
-                    start..lexer.span().end,
-                ))
-                .into());
-            }
-            Some(Ok(PklToken::Space))
-            | Some(Ok(PklToken::NewLine))
-            | Some(Ok(PklToken::DocComment(_)))
-            | Some(Ok(PklToken::LineComment(_)))
-            | Some(Ok(PklToken::MultilineComment(_))) => {
-                // Continue the loop to process the next token
-                continue;
-            }
-            Some(Err(e)) => {
-                return Err((e.to_string(), lexer.span()));
-            }
-            Some(_) => {
-                return Err((
-                    "unexpected token here (context: constant)".to_owned(),
-                    lexer.span(),
-                ));
-            }
-            None => {
-                return Err(("Expected '='".to_owned(), lexer.span()));
-            }
-        }
-    }
+    let object = parse_object(lexer)?;
+
+    Ok(
+        AstPklValue::ClassInstance(ClassInstance(class_name, object, start..lexer.span().end))
+            .into(),
+    )
 }

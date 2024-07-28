@@ -2,6 +2,7 @@ use crate::{
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
         statement::{constant::Constant, import::Import, typealias::TypeAlias, PklStatement},
+        types::AstPklType,
         value::AstPklValue,
         ExprHash, Identifier, PklResult,
     },
@@ -19,6 +20,7 @@ use base::{
 use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use std::{fs, ops::Range, path::PathBuf};
+use types::PklType;
 use value::PklValue;
 
 pub mod base;
@@ -286,6 +288,74 @@ impl PklTable {
         }
     }
 
+    /// Evaluates an expression in the context of a variable declaration.
+    ///
+    /// # Arguments
+    ///
+    /// * `expr` - The expression to evaluate.
+    /// * `opt_type` - If written, the user-defined type of the expression to evaluate.
+    ///
+    /// # Returns
+    ///
+    /// A `PklResult` containing the evaluated value or an error message with the range.
+    pub fn evaluate_in_variable(
+        &self,
+        expr: PklExpr,
+        opt_type: Option<AstPklType>,
+    ) -> PklResult<PklValue> {
+        match expr {
+            PklExpr::Value(v) => match v {
+                AstPklValue::ClassInstance(ClassInstance(a, b, span)) => match (a, opt_type) {
+                    (Some(id), Some(_type)) => match _type {
+                        AstPklType::Basic(ref value, _) if value == &id.0 => self
+                            .evaluate_class_instance(Some(Identifier(value, b.1.to_owned())), b)
+                            .map(PklValue::into),
+                        AstPklType::Basic(value, type_span) => Err((
+                            format!("Type '{value}' and '{}' do not match.", id.0),
+                            type_span,
+                        )),
+                        AstPklType::StringLiteral(_, _) => todo!(),
+                        AstPklType::Union(_, _) => todo!(),
+                        AstPklType::Nullable(_) => todo!(),
+                        AstPklType::WithAttributes {
+                            name, attributes, ..
+                        } => todo!(),
+                        AstPklType::WithRequirement {
+                            base_type,
+                            requirements,
+                            ..
+                        } => todo!(),
+                    },
+                    (Some(id), None) => self
+                        .evaluate_class_instance(Some(id), b)
+                        .map(PklValue::into),
+                    (None, Some(_type)) => match _type {
+                        AstPklType::Basic(ref value, _) => self
+                            .evaluate_class_instance(Some(Identifier(value, b.1.to_owned())), b)
+                            .map(PklValue::into),
+                        AstPklType::StringLiteral(_, _) => todo!(),
+                        AstPklType::Union(_, _) => todo!(),
+                        AstPklType::Nullable(_) => todo!(),
+                        AstPklType::WithAttributes {
+                            name, attributes, ..
+                        } => todo!(),
+                        AstPklType::WithRequirement {
+                            base_type,
+                            requirements,
+                            ..
+                        } => todo!(),
+                    },
+                    (None, None) => Err((
+                        "Unknown class instance, add the name of the class!".to_owned(),
+                        span,
+                    )),
+                },
+                _ => self.evaluate_value(v),
+            },
+            _ => self.evaluate(expr),
+        }
+    }
+
     /// Evaluates an AST PKL value in the current context.
     ///
     /// # Arguments
@@ -352,15 +422,14 @@ impl PklTable {
         a: Option<Identifier<'_>>,
         b: ExprHash,
     ) -> PklResult<PklValue> {
-        if a.is_none() {
-            return Err((
+        let a = match a {
+            Some(a) => a,
+            None => return Err((
                 "Class Instance name is expected to be provided when not in a constant declaration"
                     .to_owned(),
                 b.1,
-            ));
-        }
-
-        let a = a.unwrap();
+            )),
+        };
 
         let new_hash: Result<HashMap<_, _>, _> =
             b.0.into_iter()
@@ -370,13 +439,11 @@ impl PklTable {
                 })
                 .collect();
 
-        let schema = self.get_schema(a.0);
+        let schema = match self.get_schema(a.0) {
+            Some(schema) => schema,
+            None => return Err((format!("Unknown class '{}'", a.0), a.1)),
+        };
 
-        if schema.is_none() {
-            return Err((format!("Unknown class '{}'", a.0), a.1));
-        }
-
-        let schema = schema.unwrap();
         let found_schema = new_hash?;
 
         for k in schema.keys() {
@@ -390,7 +457,7 @@ impl PklTable {
             }
         }
 
-        // now check if the types of the values are correct in the found_schema
+        // Todo: Check if the types of the values are correct in the found_schema
 
         Ok(PklValue::ClassInstance(a.0.into(), found_schema))
     }
@@ -442,7 +509,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 name, value, _type, ..
             }) => {
                 in_body = true;
-                let evaluated_value = table.evaluate(value)?;
+                let evaluated_value = table.evaluate_in_variable(value, _type)?;
                 // need to check if user-defined type is
                 // the same as the type of the evaluated value
                 table.insert(name.0, evaluated_value);
