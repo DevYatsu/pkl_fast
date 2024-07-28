@@ -10,6 +10,15 @@ typealias StringMap<Value> = Map<String, Value>
     | EmailList
     | EmailAddress
 
+// Define a type alias over several lines
+typealias ComplexType =
+        OptionOne |
+        OptionTwo |
+        OptionThree |
+        OptionFour |
+        OptionFive
+
+
 `Hello`: String( \"hello\".capitalize() ) = \"Hello\"
 testtt: Int = 222_333.3e-4
 b: Boolean = true
