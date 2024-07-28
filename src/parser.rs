@@ -4,9 +4,9 @@ use hashbrown::HashMap;
 use logos::{Lexer, Span};
 use statement::{
     class::{parse_class_declaration, ClassKind},
-    constant::parse_const,
-    import::parse_import,
-    typealias::parse_typealias,
+    constant::{parse_const, Constant},
+    import::{parse_import, Import},
+    typealias::{parse_typealias, TypeAlias},
     PklStatement,
 };
 use std::ops::Range;
@@ -80,11 +80,11 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 is_newline = true;
             }
             Ok(PklToken::Union) => {
-                if let Some(PklStatement::TypeAlias {
+                if let Some(PklStatement::TypeAlias(TypeAlias {
                     refering_type,
                     span,
                     ..
-                }) = statements.last_mut()
+                })) = statements.last_mut()
                 {
                     let second_type = parse_type(lexer)?;
 
@@ -114,9 +114,9 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 is_newline = false;
             }
             Ok(PklToken::As) => {
-                if let Some(PklStatement::Import {
+                if let Some(PklStatement::Import(Import {
                     local_name, span, ..
-                }) = statements.last_mut()
+                })) = statements.last_mut()
                 {
                     if local_name.is_none() {
                         let Identifier(other_name, other_rng) = parse_id(lexer)?;
@@ -150,7 +150,8 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
             }
 
             Ok(PklToken::Dot) => {
-                if let Some(PklStatement::Constant { value, .. }) = statements.last_mut() {
+                if let Some(PklStatement::Constant(Constant { value, .. })) = statements.last_mut()
+                {
                     let expr_member = parse_member_expr_member(lexer)?;
                     let expr_start = value.span().start;
                     let expr_end = expr_member.span().end;
@@ -168,7 +169,9 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 }
             }
             Ok(PklToken::OpenBrace) => {
-                if let Some(PklStatement::Constant { value, span, .. }) = statements.last_mut() {
+                if let Some(PklStatement::Constant(Constant { value, span, .. })) =
+                    statements.last_mut()
+                {
                     match value {
                         PklExpr::Value(AstPklValue::Object(_))
                         | PklExpr::Value(AstPklValue::AmendingObject(_, _, _))

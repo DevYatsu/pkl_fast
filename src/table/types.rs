@@ -1,6 +1,5 @@
-use hashbrown::HashMap;
-
 use crate::PklValue;
+// use hashbrown::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 /// Representation of a Pkl Type
@@ -21,30 +20,82 @@ pub enum PklType {
     },
 }
 
-pub struct TypeHierarchy {
-    equivalences: HashMap<String, Vec<PklType>>,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum TypeKind {
+//     Named(String),
+//     DerivedOf(String),
+//     Union(Box<TypeKind>, Box<TypeKind>),
 
-impl TypeHierarchy {
-    pub fn new() -> Self {
-        let mut equivalences = HashMap::new();
+//     ReferTo(TypeKind),
+// }
 
-        equivalences.insert(
-            "Number".into(),
-            vec![
-                PklType::Basic("Int".to_owned()),
-                PklType::Basic("Float".to_owned()),
-            ],
-        );
+// pub struct TypeHierarchy {
+//     hierarchy: HashMap<String, Vec>,
+// }
 
-        TypeHierarchy { equivalences }
-    }
+// impl From<Vec<&str>> for Vec<TypeKind> {
+//     fn from(value: Vec<&str>) -> Self {
+//         value
+//             .into_iter()
+//             .map(|s| TypeKind::Named(s.to_owned()))
+//             .collect()
+//     }
+// }
 
-    pub fn is_equivalent(&self, base_type: &str, other_type: &PklType) -> bool {
-        if let Some(equivalent_types) = self.equivalences.get(base_type) {
-            equivalent_types.contains(other_type)
-        } else {
-            false
-        }
-    }
-}
+// impl TypeHierarchy {
+//     pub fn new() -> Self {
+//         let mut hierarchy = HashMap::new();
+
+//         hierarchy.insert(
+//             "Any".to_owned(),
+//             vec![
+//                 "Any",
+//                 "Null",
+//                 "Module",
+//                 "Annotation",
+//                 "Boolean",
+//                 "String",
+//                 "Duration",
+//                 "DataSize",
+//                 "Number",
+//                 "Object",
+//             ],
+//         );
+
+//         hierarchy.insert("Object".to_owned(), vec!["Dynamic", "Typed"]);
+
+//         hierarchy.insert("Number".to_owned(), vec!["Int", "Float"]);
+//         hierarchy.insert(
+//             "Int".to_owned(),
+//             vec!["Int8", "Int16", "Int32", "UInt8", "UInt16", "UInt32"],
+//         );
+
+//         hierarchy.insert(
+//             "Annotation".to_owned(),
+//             vec![
+//                 "Deprecated",
+//                 "AlsoKnownAs",
+//                 "Unlisted",
+//                 "DocExample",
+//                 "SourceCode",
+//                 "ModuleInfo",
+//             ],
+//         );
+
+//         TypeHierarchy { hierarchy }
+//     }
+
+//     pub fn is_type_parent_of(&self, parent_type: PklType, son_type: PklType) -> bool {
+//         match parent_type {
+//             PklType::Basic(name) => self.hierarchy.get(name),
+//             PklType::StringLiteral(_) => todo!(),
+//             PklType::Union(_, _) => todo!(),
+//             PklType::Nullable(_) => todo!(),
+//             PklType::WithAttributes { name, attributes } => todo!(),
+//             PklType::WithRequirement {
+//                 base_type,
+//                 requirements,
+//             } => todo!(),
+//         }
+//     }
+// }

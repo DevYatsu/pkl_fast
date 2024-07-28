@@ -1,7 +1,10 @@
 use crate::{
     parser::{
         expr::{fn_call::FuncCall, member_expr::ExprMember, PklExpr},
-        statement::PklStatement,
+        statement::{
+            class::ClassDeclaration, constant::Constant, import::Import, typealias::TypeAlias,
+            PklStatement,
+        },
         value::AstPklValue,
         ExprHash, Identifier, PklResult,
     },
@@ -24,6 +27,7 @@ pub mod base;
 mod official_pkg;
 mod web_import;
 
+pub mod class;
 pub mod types;
 pub mod value;
 
@@ -384,30 +388,30 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
     for statement in ast {
         match statement {
-            PklStatement::Constant {
+            PklStatement::Constant(Constant {
                 name, value, _type, ..
-            } => {
+            }) => {
                 in_body = true;
                 let evaluated_value = table.evaluate(value)?;
                 // need to check if user-defined type is
                 // the same as the type of the evaluated value
                 table.insert(name.0, evaluated_value);
             }
-            PklStatement::Class { .. } => {
+            PklStatement::Class(ClassDeclaration { .. }) => {
                 // need to interpret class declarations
                 in_body = true;
             }
-            PklStatement::TypeAlias { .. } => {
+            PklStatement::TypeAlias(TypeAlias { .. }) => {
                 // need to interpret typealiases
                 // store somewhere in the PklTable
                 // the types
                 // todo!
             }
-            PklStatement::Import {
+            PklStatement::Import(Import {
                 name,
                 local_name,
                 span,
-            } => {
+            }) => {
                 if in_body {
                     return Err((
                         "Import statements must be before document body".to_owned(),

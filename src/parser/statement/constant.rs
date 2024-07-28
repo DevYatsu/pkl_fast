@@ -5,7 +5,15 @@ use crate::parser::expr::parse_expr;
 use crate::parser::types::{parse_type_until, AstPklType};
 use crate::parser::Identifier;
 use crate::PklResult;
-use logos::Lexer;
+use logos::{Lexer, Span};
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Constant<'a> {
+    pub name: Identifier<'a>,
+    pub _type: Option<AstPklType<'a>>,
+    pub value: PklExpr<'a>,
+    pub span: Span,
+}
 
 /// Parse a token stream into a Pkl const Statement.
 pub fn parse_const<'a>(
@@ -17,12 +25,12 @@ pub fn parse_const<'a>(
     let (_type, value) = parse_const_expr(lexer)?;
     let end = lexer.span().end;
 
-    Ok(PklStatement::Constant {
+    Ok(PklStatement::Constant(Constant {
         name: Identifier(name, name_span),
         _type,
         value,
         span: start..end,
-    })
+    }))
 }
 
 /// Parse a token stream into a Pkl Expr after an identifier with a possible type.

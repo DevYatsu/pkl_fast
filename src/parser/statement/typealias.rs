@@ -1,9 +1,17 @@
 use crate::parser::statement::PklStatement;
-use crate::parser::types::parse_type_until;
+use crate::parser::types::{parse_type_until, AstPklType};
 use crate::parser::utils::{parse_equal, parse_id};
 use crate::parser::Identifier;
 use crate::{lexer::PklToken, PklResult};
-use logos::Lexer;
+use logos::{Lexer, Span};
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TypeAlias<'a> {
+    pub name: Identifier<'a>,
+    pub attributes: Vec<Identifier<'a>>,
+    pub refering_type: AstPklType<'a>,
+    pub span: Span,
+}
 
 /// Function called after 'typealias' keyword.
 pub fn parse_typealias<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklStatement<'a>> {
@@ -15,12 +23,13 @@ pub fn parse_typealias<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Pkl
     let refering_type = parse_type_until(lexer, PklToken::NewLine)?;
 
     let span = start..lexer.span().end;
-    return Ok(PklStatement::TypeAlias {
+
+    Ok(PklStatement::TypeAlias(TypeAlias {
         name,
         attributes,
         refering_type,
         span,
-    });
+    }))
 }
 
 pub fn parse_typealias_name<'a>(

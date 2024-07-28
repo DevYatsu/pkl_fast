@@ -2,9 +2,19 @@ use super::PklStatement;
 use crate::lexer::PklToken;
 use crate::parser::types::{parse_type_until, AstPklType};
 use crate::parser::utils::{parse_id, parse_id_as_str, parse_multispaces_until, parse_open_brace};
+use crate::parser::Identifier;
 use crate::PklResult;
 use hashbrown::HashMap;
 use logos::{Lexer, Span};
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ClassDeclaration<'a> {
+    pub name: Identifier<'a>,
+    pub _type: ClassKind,
+    pub extends: Option<Identifier<'a>>,
+    pub fields: HashMap<ClassField<'a>, AstPklType<'a>>,
+    pub span: Span,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum ClassKind {
@@ -69,13 +79,13 @@ pub fn parse_class_declaration<'a>(
     let fields = parse_fields(lexer)?;
     let end = lexer.span().end;
 
-    Ok(PklStatement::Class {
+    Ok(PklStatement::Class(ClassDeclaration {
         name,
         _type: class_type,
         extends,
         fields,
         span: start..end,
-    })
+    }))
 }
 
 fn parse_open_brace_or_extends<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
