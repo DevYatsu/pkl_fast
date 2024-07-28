@@ -101,10 +101,9 @@ fn parse_fields<'a>(
 
         match token.unwrap() {
             Ok(PklToken::Identifier(id)) | Ok(PklToken::IllegalIdentifier(id)) => {
-                if key.is_some() & _type.is_some() {
-                    hashmap.insert(key.take().unwrap(), _type.take().unwrap());
+                if let (Some(k), Some(t)) = (key.take(), _type.take()) {
+                    hashmap.insert(k, t);
                 }
-
                 key = Some(ClassField::new(id, FieldKind::default(), lexer.span()))
             }
             Ok(PklToken::Hidden) if key.is_none() => {
@@ -126,8 +125,8 @@ fn parse_fields<'a>(
             }
 
             Ok(PklToken::CloseBrace) => {
-                if _type.is_some() {
-                    hashmap.insert(key.take().unwrap(), _type.take().unwrap());
+                if let (Some(k), Some(t)) = (key.take(), _type.take()) {
+                    hashmap.insert(k, t);
                 }
                 break;
             }
