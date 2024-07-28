@@ -4,6 +4,10 @@ use std::time::Instant;
 fn main() -> Result<(), (String, String)> {
     let src = "import \"test.pkl\" as test_import
 
+typealias EmailAddress = String(matches(Regex(\".+@.+\")))
+typealias EmailList = List<EmailAddress>
+typealias StringMap<Value> = Map<String, Value>
+
 `Hello`: String( \"hello\".capitalize() ) = \"Hello\"
 test: Int = 222_333.3e-4
 b: Boolean = true
