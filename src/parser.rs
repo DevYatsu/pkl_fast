@@ -2,7 +2,9 @@ use crate::{lexer::PklToken, parse_identifier};
 use expr::{member_expr::parse_member_expr_member, object::parse_object, PklExpr};
 use hashbrown::HashMap;
 use logos::{Lexer, Span};
-use statement::{constant::parse_const, import::parse_import, PklStatement};
+use statement::{
+    constant::parse_const, import::parse_import, typealias::parse_typealias, PklStatement,
+};
 use std::ops::Range;
 use value::AstPklValue;
 
@@ -10,6 +12,8 @@ pub mod expr;
 pub mod statement;
 mod types;
 pub mod value;
+
+mod utils;
 
 /// Represents a parsing error in the PKL format.
 ///
@@ -56,6 +60,18 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 let statement = parse_const(lexer, id)?;
                 statements.push(statement);
                 is_newline = false;
+            }
+            Ok(PklToken::TypeAlias) => {
+                if !is_newline {
+                    return Err((
+                        "unexpected token here (context: global), expected newline".to_owned(),
+                        lexer.span(),
+                    ));
+                }
+                // parses until newline here
+                let statement = parse_typealias(lexer)?;
+                statements.push(statement);
+                is_newline = true;
             }
             Ok(PklToken::Import) => {
                 if !is_newline {

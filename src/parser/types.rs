@@ -161,6 +161,7 @@ pub fn parse_type_until<'a>(
     Ok(_type)
 }
 
+/// Parses a type attributes
 fn parse_attributes<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklType<'a>>> {
     let mut result = Vec::new();
     let mut expect_type = true;

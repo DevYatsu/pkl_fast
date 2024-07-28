@@ -2,7 +2,7 @@ use super::{PklExpr, PklStatement};
 use crate::lexer::PklToken;
 use crate::parser::expr::object::parse_object;
 use crate::parser::expr::parse_expr;
-use crate::parser::types::{parse_type, parse_type_until, PklType};
+use crate::parser::types::{parse_type_until, PklType};
 use crate::PklResult;
 use logos::Lexer;
 

@@ -605,6 +605,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
             PklStatement::Class { .. } => {
                 in_body = true;
             }
+            PklStatement::TypeAlias { .. } => {}
             PklStatement::Import {
                 name,
                 local_name,

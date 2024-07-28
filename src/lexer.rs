@@ -46,7 +46,8 @@ pub enum PklToken<'a> {
     Dot,
     #[token("null")]
     Null,
-
+    #[token("typealias")]
+    TypeAlias,
     #[token("?")]
     QuestionMark,
     #[token("|")]

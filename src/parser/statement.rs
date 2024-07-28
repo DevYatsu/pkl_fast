@@ -1,4 +1,4 @@
-use super::{expr::PklExpr, types::PklType};
+use super::{expr::PklExpr, types::PklType, Identifier};
 use class::{ClassField, ClassType};
 use hashbrown::HashMap;
 use logos::Span;
@@ -7,6 +7,7 @@ use std::ops::{Deref, DerefMut};
 pub mod class;
 pub mod constant;
 pub mod import;
+pub mod typealias;
 
 /* ANCHOR: statements */
 /// Represent any valid Pkl value.
@@ -35,6 +36,14 @@ pub enum PklStatement<'a> {
         fields: HashMap<ClassField<'a>, PklType<'a>>,
         span: Span,
     },
+
+    /// A typealias
+    TypeAlias {
+        name: &'a str,
+        attributes: Vec<Identifier<'a>>,
+        refering_type: PklType<'a>,
+        span: Span,
+    },
 }
 /* ANCHOR_END: statements */
 
@@ -46,6 +55,7 @@ impl<'a> Deref for PklStatement<'a> {
             PklStatement::Constant { value, .. } => value,
             PklStatement::Import { .. } => unreachable!(),
             PklStatement::Class { .. } => unreachable!(),
+            PklStatement::TypeAlias { .. } => unreachable!(),
         }
     }
 }
@@ -55,6 +65,7 @@ impl<'a> DerefMut for PklStatement<'a> {
             PklStatement::Constant { value, .. } => value,
             PklStatement::Import { .. } => unreachable!(),
             PklStatement::Class { .. } => unreachable!(),
+            PklStatement::TypeAlias { .. } => unreachable!(),
         }
     }
 }
@@ -64,6 +75,7 @@ impl<'a> PklStatement<'a> {
             PklStatement::Constant { span, .. } => span.clone(),
             PklStatement::Import { span, .. } => span.clone(),
             PklStatement::Class { span, .. } => span.clone(),
+            PklStatement::TypeAlias { span, .. } => span.clone(),
         }
     }
     pub fn is_import(&self) -> bool {
