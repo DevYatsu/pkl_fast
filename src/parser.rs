@@ -1,12 +1,17 @@
-use crate::{lexer::PklToken, parse_identifier};
+use crate::lexer::PklToken;
 use expr::{member_expr::parse_member_expr_member, object::parse_object, PklExpr};
 use hashbrown::HashMap;
 use logos::{Lexer, Span};
 use statement::{
-    constant::parse_const, import::parse_import, typealias::parse_typealias, PklStatement,
+    class::{parse_class_declaration, ClassKind},
+    constant::parse_const,
+    import::parse_import,
+    typealias::parse_typealias,
+    PklStatement,
 };
 use std::ops::Range;
 use types::{parse_type, PklType};
+use utils::parse_id;
 use value::AstPklValue;
 
 pub mod expr;
@@ -112,16 +117,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 }) = statements.last_mut()
                 {
                     if local_name.is_none() {
-                        fn optional_id<'a>(
-                            lexer: &mut Lexer<'a, PklToken<'a>>,
-                        ) -> PklResult<Identifier<'a>> {
-                            parse_identifier!(
-                                lexer,
-                                "unexpected token here, expected an identifier (context: import)"
-                            )
-                        }
-
-                        let Identifier(other_name, other_rng) = optional_id(lexer)?;
+                        let Identifier(other_name, other_rng) = parse_id(lexer)?;
                         *span = span.start..other_rng.end;
                         *local_name = Some(other_name);
                     } else {
@@ -138,6 +134,19 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     ));
                 }
             }
+            Ok(PklToken::AbstractClass) => {
+                let stmt = parse_class_declaration(lexer, ClassKind::Abstract)?;
+                statements.push(stmt)
+            }
+            Ok(PklToken::OpenClass) => {
+                let stmt = parse_class_declaration(lexer, ClassKind::Open)?;
+                statements.push(stmt)
+            }
+            Ok(PklToken::Class) => {
+                let stmt = parse_class_declaration(lexer, ClassKind::default())?;
+                statements.push(stmt)
+            }
+
             Ok(PklToken::Dot) => {
                 if let Some(PklStatement::Constant { value, .. }) = statements.last_mut() {
                     let expr_member = parse_member_expr_member(lexer)?;

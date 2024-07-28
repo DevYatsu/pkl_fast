@@ -1,5 +1,5 @@
 use super::{expr::PklExpr, types::PklType, Identifier};
-use class::{ClassField, ClassType};
+use class::{ClassField, ClassKind};
 use hashbrown::HashMap;
 use logos::Span;
 use std::ops::{Deref, DerefMut};
@@ -15,7 +15,7 @@ pub mod typealias;
 pub enum PklStatement<'a> {
     /// A constant/variable statement
     Constant {
-        name: &'a str,
+        name: Identifier<'a>,
         _type: Option<PklType<'a>>,
         value: PklExpr<'a>,
         span: Span,
@@ -30,16 +30,16 @@ pub enum PklStatement<'a> {
 
     /// A class declaration
     Class {
-        name: &'a str,
-        _type: ClassType,
-        extends: Option<&'a str>,
+        name: Identifier<'a>,
+        _type: ClassKind,
+        extends: Option<Identifier<'a>>,
         fields: HashMap<ClassField<'a>, PklType<'a>>,
         span: Span,
     },
 
     /// A typealias
     TypeAlias {
-        name: &'a str,
+        name: Identifier<'a>,
         attributes: Vec<Identifier<'a>>,
         refering_type: PklType<'a>,
         span: Span,

@@ -36,8 +36,7 @@ pub enum PklToken<'a> {
     Comma,
     #[token(":")]
     Colon,
-    #[token("new")]
-    New,
+
     #[token("import")]
     Import,
     #[token("as")]
@@ -46,6 +45,7 @@ pub enum PklToken<'a> {
     Dot,
     #[token("null")]
     Null,
+
     #[token("typealias")]
     TypeAlias,
     #[token("?")]
@@ -54,6 +54,20 @@ pub enum PklToken<'a> {
     Union,
     #[token(">")]
     OperatorMoreThan,
+
+    #[token("new")]
+    New,
+    #[token("class")]
+    Class,
+    #[token("extends")]
+    Extends,
+    #[regex(r"open\s+class")]
+    OpenClass,
+    #[regex(r"abstract\s+class")]
+    AbstractClass,
+
+    #[token("hidden")]
+    Hidden,
 
     #[regex(r"-?\d+(?:_?\d)*", |lex| {
         let raw = lex.slice();

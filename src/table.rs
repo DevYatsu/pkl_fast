@@ -389,7 +389,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
         match statement {
             PklStatement::Constant { name, value, .. } => {
                 in_body = true;
-                table.insert(name, table.evaluate(value)?);
+                table.insert(name.0, table.evaluate(value)?);
             }
             PklStatement::Class { .. } => {
                 in_body = true;

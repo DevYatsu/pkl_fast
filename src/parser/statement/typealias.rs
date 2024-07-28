@@ -25,15 +25,17 @@ pub fn parse_typealias<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Pkl
 
 pub fn parse_typealias_name<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
-) -> PklResult<(&'a str, Vec<Identifier<'a>>)> {
+) -> PklResult<(Identifier<'a>, Vec<Identifier<'a>>)> {
     while let Some(token) = lexer.next() {
         match token {
             Ok(PklToken::Identifier(id)) | Ok(PklToken::IllegalIdentifier(id)) => {
-                return Ok((id, vec![]))
+                return Ok((Identifier(id, lexer.span()), vec![]))
             }
             Ok(PklToken::TypeWithAttributes(fn_name)) => {
+                let start = lexer.span().start;
+                let end = start + fn_name.len();
                 let attributes = parse_attributes(lexer)?;
-                return Ok((fn_name, attributes));
+                return Ok((Identifier(fn_name, start..end), attributes));
             }
             Ok(PklToken::Space)
             | Ok(PklToken::NewLine)

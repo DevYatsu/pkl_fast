@@ -39,8 +39,13 @@ macro_rules! parse_multispaces_until {
     }};
 }
 
+pub(super) use parse_multispaces_until;
+
 pub fn parse_equal<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
     parse_multispaces_until!(lexer, PklToken::EqualSign)
+}
+pub fn parse_open_brace<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
+    parse_multispaces_until!(lexer, PklToken::OpenBrace)
 }
 
 fn id_token<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
@@ -49,6 +54,32 @@ fn id_token<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> 
 pub fn parse_id<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Identifier<'a>> {
     match id_token(lexer)? {
         PklToken::Identifier(id) => return Ok(Identifier(id, lexer.span())),
+        _ => unreachable!(),
+    }
+}
+pub fn parse_id_as_str<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<&'a str> {
+    match id_token(lexer)? {
+        PklToken::Identifier(id) => return Ok(id),
+        _ => unreachable!(),
+    }
+}
+
+fn any_string_token<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
+    parse_multispaces_until!(lexer, PklToken::String(_), PklToken::MultiLineString(_))
+}
+pub fn parse_any_string<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<&'a str> {
+    match any_string_token(lexer)? {
+        PklToken::String(s) | PklToken::MultiLineString(s) => return Ok(s),
+        _ => unreachable!(),
+    }
+}
+
+fn simple_string_token<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
+    parse_multispaces_until!(lexer, PklToken::String(_))
+}
+pub fn parse_simple_string<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<&'a str> {
+    match simple_string_token(lexer)? {
+        PklToken::String(s) | PklToken::MultiLineString(s) => return Ok(s),
         _ => unreachable!(),
     }
 }

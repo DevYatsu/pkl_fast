@@ -18,6 +18,34 @@ typealias ComplexType =
         OptionFour |
         OptionFive
 
+abstract class Bird {
+  name: String
+}
+
+class ParentBird extends Bird {
+  kids: List<String>
+}
+
+// Define a class with fields declared over several lines
+class Bird {
+  species: String
+  wingspan: Float
+  canFly: Boolean
+
+  /// Age of the bird in years
+  age: Int?
+
+  /// The diet of the bird, which can be one of several options
+  diet:
+    \"Seeds\"
+    | \"Berries\" |
+    \"Insects\" |
+    \"Nectar\"
+
+  /// The migration duration in hours
+  migrationDuration:
+    Duration
+}
 
 `Hello`: String( \"hello\".capitalize() ) = \"Hello\"
 testtt: Int = 222_333.3e-4

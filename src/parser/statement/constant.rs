@@ -3,6 +3,7 @@ use crate::lexer::PklToken;
 use crate::parser::expr::object::parse_object;
 use crate::parser::expr::parse_expr;
 use crate::parser::types::{parse_type_until, PklType};
+use crate::parser::Identifier;
 use crate::PklResult;
 use logos::Lexer;
 
@@ -11,12 +12,13 @@ pub fn parse_const<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
     name: &'a str,
 ) -> PklResult<PklStatement<'a>> {
-    let start = lexer.span().start;
+    let name_span = lexer.span();
+    let start = name_span.start;
     let (_type, value) = parse_const_expr(lexer)?;
     let end = lexer.span().end;
 
     Ok(PklStatement::Constant {
-        name,
+        name: Identifier(name, name_span),
         _type,
         value,
         span: start..end,
