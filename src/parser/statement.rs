@@ -35,13 +35,16 @@ pub enum PklStatement<'a> {
     /// A module clause, used to declare a module name
     ModuleClause(Module<'a>),
 
-    /// An amends clause, literally it's like importing
+    /// An amends clause, it's like extending
+    /// but then you can't create any variable
+    /// that is not declared in the amended
+    /// module
+    AmendsClause(Amends<'a>),
+
+    /// An extends clause, literally it's like importing
     /// but directly in the main context,
     /// not in a variable creating in the context
     /// containing the import values.
-    AmendsClause(Amends<'a>),
-
-    /// An extends clause
     ExtendsClause(Extends<'a>),
 }
 /* ANCHOR_END: statements */

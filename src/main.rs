@@ -5,8 +5,10 @@ fn main() -> Result<(), (String, String)> {
     let src = "
 module com.animals.test
 
-amends \"x.pkl\"
+// amends \"x.pkl\"
 // amends \"test.pkl\"
+
+extends \"x.pkl\"
 
 import \"test.pkl\" as test_import
 import \"test.pkl\"

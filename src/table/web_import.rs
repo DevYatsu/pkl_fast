@@ -12,6 +12,9 @@ pub fn import_pkg(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> Pkl
 pub fn amends_pkg(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> PklResult<()> {
     return Err(("Package amending not yet supported!".to_owned(), rng));
 }
+pub fn extends_pkg(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> PklResult<()> {
+    return Err(("Package extending not yet supported!".to_owned(), rng));
+}
 
 /// todo()!
 ///
@@ -22,4 +25,7 @@ pub fn import_https(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> P
 
 pub fn amends_http(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> PklResult<()> {
     return Err(("Web amending not yet supported!".to_owned(), rng));
+}
+pub fn extends_http(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> PklResult<()> {
+    return Err(("Web extending not yet supported!".to_owned(), rng));
 }

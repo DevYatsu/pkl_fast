@@ -43,7 +43,7 @@ impl Pkl {
             return Ok(());
         }
 
-        self.table.extends(table);
+        self.table.extend(table);
 
         Ok(())
     }

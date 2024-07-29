@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 // Helper macro to count arguments
 #[macro_export]
 macro_rules! count_args {
@@ -129,4 +131,21 @@ macro_rules! generate_method {
         $action(args_tuple)
     }};
 
+}
+
+pub trait PathUriName {
+    fn get_uri_name(self) -> String;
+}
+
+impl PathUriName for &str {
+    fn get_uri_name(self) -> String {
+        PathBuf::from(self)
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string()
+            .split_terminator('.')
+            .take(1)
+            .collect::<String>()
+    }
 }

@@ -9,6 +9,7 @@ use crate::{
         value::AstPklValue,
         ExprHash, Identifier, PklResult,
     },
+    utils::PathUriName,
     Pkl,
 };
 use base::{
@@ -24,7 +25,7 @@ use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use logos::Span;
 use spelling::check_closest_word;
-use std::{fs, path::PathBuf};
+use std::{default, fs};
 use types::PklType;
 use value::PklValue;
 
@@ -39,11 +40,120 @@ pub mod types;
 pub mod value;
 
 #[derive(Debug, Clone, Default)]
+pub enum ModuleData {
+    Extended {
+        module_name: String,
+        variables: Vec<String>,
+    },
+    Amended {
+        module_name: String,
+        variables: Vec<String>,
+    },
+    #[default]
+    None,
+}
+
+impl ModuleData {
+    pub fn get_variables(&mut self) -> Option<&Vec<String>> {
+        match self {
+            ModuleData::Extended {
+                module_name,
+                variables,
+            } => Some(variables),
+            ModuleData::Amended {
+                module_name,
+                variables,
+            } => Some(variables),
+            ModuleData::None => None,
+        }
+    }
+    pub fn get_variables_mut(&mut self) -> Option<&mut Vec<String>> {
+        match self {
+            ModuleData::Extended {
+                module_name,
+                variables,
+            } => Some(variables),
+            ModuleData::Amended {
+                module_name,
+                variables,
+            } => Some(variables),
+            ModuleData::None => None,
+        }
+    }
+    pub fn name(&self) -> Option<&str> {
+        match self {
+            ModuleData::Extended {
+                module_name,
+                variables,
+            } => Some(module_name),
+            ModuleData::Amended {
+                module_name,
+                variables,
+            } => Some(module_name),
+            ModuleData::None => None,
+        }
+    }
+
+    pub fn get_amended_variables(&self) -> Option<&Vec<String>> {
+        match self {
+            ModuleData::Extended {
+                module_name,
+                variables,
+            } => None,
+            ModuleData::Amended {
+                module_name,
+                variables,
+            } => Some(variables),
+            ModuleData::None => None,
+        }
+    }
+    pub fn get_amended_variables_mut(&mut self) -> Option<&mut Vec<String>> {
+        match self {
+            ModuleData::Extended {
+                module_name,
+                variables,
+            } => None,
+            ModuleData::Amended {
+                module_name,
+                variables,
+            } => Some(variables),
+            ModuleData::None => None,
+        }
+    }
+    pub fn get_exteded_variables(&self) -> Option<&Vec<String>> {
+        match self {
+            ModuleData::Extended {
+                module_name,
+                variables,
+            } => Some(variables),
+            ModuleData::Amended {
+                module_name,
+                variables,
+            } => None,
+            ModuleData::None => None,
+        }
+    }
+    pub fn get_exteded_variables_mut(&mut self) -> Option<&mut Vec<String>> {
+        match self {
+            ModuleData::Extended {
+                module_name,
+                variables,
+            } => Some(variables),
+            ModuleData::Amended {
+                module_name,
+                variables,
+            } => None,
+            ModuleData::None => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct PklTable {
     pub variables: HashMap<String, PklValue>,
     pub schemas: HashMap<String, ClassSchema>,
 
-    pub amended_variables: Vec<String>,
+    pub module_data: ModuleData,
     pub module_name: Option<String>,
     pub is_open: bool,
 }
@@ -109,12 +219,12 @@ impl PklTable {
     /// let mut table2 = PklTable::new();
     /// table2.insert("var2", PklValue::Int(2));
     ///
-    /// table1.extends(table2);
+    /// table1.extend(table2);
     ///
     /// assert_eq!(table1.get("var1"), Some(&PklValue::Int(1)));
     /// assert_eq!(table1.get("var2"), Some(&PklValue::Int(2)));
     /// ```
-    pub fn extends(&mut self, other_table: PklTable) {
+    pub fn extend(&mut self, other_table: PklTable) {
         self.variables.extend(other_table.variables);
         self.schemas.extend(other_table.schemas);
     }
@@ -133,18 +243,19 @@ impl PklTable {
         self.variables.get(&name.into())
     }
 
-    pub fn import(&mut self, name: &str, local_name: Option<&str>, span: Span) -> PklResult<()> {
-        match name {
-            name if name.starts_with("package://") => {
-                return web_import::import_pkg(self, name, span)
-            }
-            name if name.starts_with("pkl:") => return official_pkg::import_pkg(self, name, span),
-            name if name.starts_with("https://") => {
-                return web_import::import_https(self, name, span)
-            }
-            file_name => {
-                let file_content = fs::read_to_string(file_name)
-                    .map_err(|e| (format!("Error reading {file_name}: {}", e), span))?;
+    pub fn import(
+        &mut self,
+        module_uri: &str,
+        local_name: Option<&str>,
+        span: Span,
+    ) -> PklResult<()> {
+        match module_uri {
+            uri if uri.starts_with("package://") => return web_import::import_pkg(self, uri, span),
+            uri if uri.starts_with("pkl:") => return official_pkg::import_pkg(self, uri, span),
+            uri if uri.starts_with("https://") => return web_import::import_https(self, uri, span),
+            file_path => {
+                let file_content = fs::read_to_string(file_path)
+                    .map_err(|e| (format!("Error reading {file_path}: {}", e), span))?;
 
                 let mut pkl = Pkl::new();
                 pkl.parse(&file_content)?;
@@ -155,14 +266,7 @@ impl PklTable {
                     return Ok(());
                 }
 
-                let name = PathBuf::from(file_name)
-                    .file_name()
-                    .unwrap()
-                    .to_string_lossy()
-                    .to_string()
-                    .split_terminator('.')
-                    .take(1)
-                    .collect::<String>();
+                let name = file_path.get_uri_name();
                 self.insert(name, hash.into());
             }
         };
@@ -170,18 +274,14 @@ impl PklTable {
         Ok(())
     }
 
-    pub fn amends(&mut self, name: &str, span: Span) -> PklResult<()> {
-        match name {
-            name if name.starts_with("package://") => {
-                return web_import::amends_pkg(self, name, span)
-            }
-            name if name.starts_with("pkl:") => return official_pkg::amends_pkg(self, name, span),
-            name if name.starts_with("https://") => {
-                return web_import::amends_http(self, name, span)
-            }
-            file_name => {
-                let file_content = fs::read_to_string(file_name)
-                    .map_err(|e| (format!("Error reading {file_name}: {}", e), span))?;
+    pub fn amends(&mut self, module_uri: &str, span: Span) -> PklResult<()> {
+        match module_uri {
+            uri if uri.starts_with("package://") => return web_import::amends_pkg(self, uri, span),
+            uri if uri.starts_with("pkl:") => return official_pkg::amends_pkg(self, uri, span),
+            uri if uri.starts_with("https://") => return web_import::amends_http(self, uri, span),
+            file_path => {
+                let file_content = fs::read_to_string(file_path)
+                    .map_err(|e| (format!("Error reading {file_path}: {}", e), span))?;
 
                 let mut pkl = Pkl::new();
                 pkl.parse(&file_content)?;
@@ -192,9 +292,57 @@ impl PklTable {
                     .keys()
                     .map(|s| s.to_owned())
                     .collect::<Vec<String>>();
-                self.amended_variables = amended;
 
-                self.extends(pkl.table);
+                self.module_data = ModuleData::Amended {
+                    module_name: file_path.get_uri_name(),
+                    variables: amended,
+                };
+                self.extend(pkl.table);
+            }
+        };
+
+        Ok(())
+    }
+
+    /// Interpret an pkl extends clause,
+    /// reads the given module uri and
+    /// extends the current file if the
+    /// other module is an open module.
+    pub fn extends(&mut self, module_uri: &str, span: Span) -> PklResult<()> {
+        match module_uri {
+            uri if uri.starts_with("package://") => {
+                return web_import::extends_pkg(self, uri, span)
+            }
+            uri if uri.starts_with("pkl:") => return official_pkg::extends_pkg(self, uri, span),
+            uri if uri.starts_with("https://") => return web_import::extends_http(self, uri, span),
+            file_path => {
+                let file_content = fs::read_to_string(file_path)
+                    .map_err(|e| (format!("Error reading {file_path}: {}", e), span.to_owned()))?;
+
+                let mut pkl = Pkl::new();
+                pkl.parse(&file_content)?;
+
+                if !pkl.table.is_open {
+                    return Err((
+                        format!(
+                            "Cannot extend module '{file_path}': module is not declared as open"
+                        ),
+                        span,
+                    ));
+                }
+
+                let extended = pkl
+                    .table
+                    .variables
+                    .keys()
+                    .map(|s| s.to_owned())
+                    .collect::<Vec<String>>();
+
+                self.module_data = ModuleData::Extended {
+                    module_name: file_path.get_uri_name(),
+                    variables: extended,
+                };
+                self.extend(pkl.table);
             }
         };
 
@@ -602,9 +750,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                     ));
                 }
 
-                // check if the module we want to extend is open first
-
-                // implement interpreting extends clause
+                table.extends(name, span)?;
                 extends_found = true;
             }
             PklStatement::Constant(Constant {
@@ -654,6 +800,19 @@ fn handle_constant(
 ) -> PklResult<()> {
     let evaluated_value = table.evaluate_in_variable(value, _type.clone())?;
 
+    if let Some(amended_vars) = table.module_data.get_amended_variables() {
+        if !amended_vars.contains(&name.0.to_owned()) {
+            return Err((
+                format!(
+                    "Cannot add variable '{}' to extended module '{}'",
+                    name.0,
+                    table.module_data.name().unwrap(/* safe: if amended_variables.is_some() then name is too */)
+                ),
+                name.1,
+            ));
+        }
+    }
+
     if let Some(_type) = _type {
         let span = _type.span();
         let true_type: PklType = _type.into();
@@ -668,35 +827,41 @@ fn handle_constant(
         }
     }
 
-    if !table.amended_variables.is_empty() {
-        match check_closest_word(
-            name.0,
-            table
-                .amended_variables
-                .iter()
-                .map(String::as_str)
-                .collect::<Vec<&str>>()
-                .as_slice(),
-            1,
-        ) {
-            Some(closest) => {
-                return Err((
-                    format!(
-                        "Did you mean to write '{}' instead of '{}'?",
-                        closest, name.0
-                    ),
-                    name.1,
-                ))
-            }
-            None => (),
-        };
+    // checks for spelling errors
+    if let Some(vars) = table.module_data.get_variables() {
+        if !vars.is_empty() {
+            match check_closest_word(
+                name.0,
+                vars.iter()
+                    .map(String::as_str)
+                    .collect::<Vec<&str>>()
+                    .as_slice(),
+                1,
+            ) {
+                Some(closest) => {
+                    return Err((
+                        format!(
+                            "Did you mean to write '{}' instead of '{}'?",
+                            closest, name.0
+                        ),
+                        name.1,
+                    ))
+                }
+                None => (),
+            };
+        }
     }
 
     if let Some(_) = table.insert(name.0, evaluated_value) {
-        if let Some(pos) = table.amended_variables.iter().position(|x| x == name.0) {
-            table.amended_variables.remove(pos);
-        } else {
-            return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
+        match table.module_data.get_amended_variables_mut() {
+            Some(amended_variables) => {
+                if let Some(pos) = amended_variables.iter().position(|x| x == &name.0) {
+                    amended_variables.remove(pos);
+                } else {
+                    return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
+                }
+            }
+            None => return Err((format!("Cannot reassign variable '{}'", name.0), name.1)),
         }
     }
 
