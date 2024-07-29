@@ -24,6 +24,7 @@ use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use logos::Span;
 use std::{fs, path::PathBuf};
+use types::PklType;
 use value::PklValue;
 
 pub mod base;
@@ -584,34 +585,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 name, value, _type, ..
             }) => {
                 in_body = true;
-                let evaluated_value = table.evaluate_in_variable(value, _type.to_owned())?;
-
-                if let Some(_type) = _type {
-                    let span = _type.span();
-                    let true_type = _type.into();
-                    if !evaluated_value.is_instance_of(&true_type) {
-                        return Err((
-                            format!(
-                                "Type '{}' does not correspond to the value of '{}'",
-                                true_type, name.0
-                            ),
-                            span,
-                        ));
-                    }
-                }
-
-                if let Some(_) = table.insert(name.0, evaluated_value) {
-                    if table.amended_variables.contains(&name.0.to_owned()) {
-                        table.amended_variables = table
-                            .amended_variables
-                            .into_iter()
-                            .filter(|x| x != name.0)
-                            .collect();
-                        continue;
-                    } else {
-                        return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
-                    }
-                };
+                handle_constant(&mut table, name, value, _type)?;
             }
             PklStatement::Class(declaration) => {
                 in_body = true;
@@ -644,4 +618,37 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
     }
 
     Ok(table)
+}
+
+fn handle_constant(
+    table: &mut PklTable,
+    name: Identifier<'_>,
+    value: PklExpr<'_>,
+    _type: Option<AstPklType>,
+) -> PklResult<()> {
+    let evaluated_value = table.evaluate_in_variable(value, _type.clone())?;
+
+    if let Some(_type) = _type {
+        let span = _type.span();
+        let true_type: PklType = _type.into();
+        if !evaluated_value.is_instance_of(&true_type) {
+            return Err((
+                format!(
+                    "Type '{}' does not correspond to the value of '{}'",
+                    true_type, name.0
+                ),
+                span,
+            ));
+        }
+    }
+
+    if let Some(_) = table.insert(name.0, evaluated_value) {
+        if let Some(pos) = table.amended_variables.iter().position(|x| x == name.0) {
+            table.amended_variables.remove(pos);
+        } else {
+            return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
+        }
+    }
+
+    Ok(())
 }
