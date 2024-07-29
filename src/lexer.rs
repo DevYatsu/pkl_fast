@@ -69,6 +69,9 @@ pub enum PklToken<'a> {
     #[token("hidden")]
     Hidden,
 
+    #[token("module")]
+    Module,
+
     #[regex(r"-?\d+(?:_?\d)*", |lex| {
         let raw = lex.slice();
         // Remove underscores for parsing

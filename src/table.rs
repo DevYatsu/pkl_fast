@@ -1,7 +1,9 @@
 use crate::{
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
-        statement::{constant::Constant, import::Import, typealias::TypeAlias, PklStatement},
+        statement::{
+            constant::Constant, import::Import, module::Module, typealias::TypeAlias, PklStatement,
+        },
         types::AstPklType,
         value::AstPklValue,
         ExprHash, Identifier, PklResult,
@@ -34,8 +36,9 @@ pub mod value;
 #[derive(Debug, Clone)]
 pub struct PklTable {
     pub variables: HashMap<String, PklValue>,
-
     pub schemas: HashMap<String, ClassSchema>,
+
+    pub module_name: Option<String>,
 }
 
 impl PartialEq for PklTable {
@@ -55,6 +58,7 @@ impl PklTable {
         Self {
             variables: HashMap::new(),
             schemas: HashMap::new(),
+            module_name: None,
         }
     }
 
@@ -517,6 +521,9 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
     for statement in ast {
         match statement {
+            PklStatement::ModuleClause(Module { full_name, .. }) => {
+                table.module_name = Some(full_name.to_owned())
+            }
             PklStatement::Constant(Constant {
                 name, value, _type, ..
             }) => {

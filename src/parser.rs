@@ -1,11 +1,12 @@
 use crate::lexer::PklToken;
 use expr::{member_expr::parse_member_expr_member, object::parse_object, PklExpr};
 use hashbrown::HashMap;
-use logos::{Lexer, Span};
+use logos::{Lexer, Source, Span};
 use statement::{
     class::{parse_class_declaration, ClassKind},
     constant::{parse_const, Constant},
     import::{parse_import, Import},
+    module::{parse_module_clause, Module},
     typealias::{parse_typealias, TypeAlias},
     PklStatement,
 };
@@ -113,6 +114,17 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 statements.push(statement);
                 is_newline = false;
             }
+            Ok(PklToken::Module) => {
+                if !is_newline {
+                    return Err((
+                        "unexpected token here (context: global), expected newline".to_owned(),
+                        lexer.span(),
+                    ));
+                }
+                let statement = parse_module_clause(lexer)?;
+                statements.push(statement);
+                is_newline = false;
+            }
             Ok(PklToken::As) => {
                 if let Some(PklStatement::Import(Import {
                     local_name, span, ..
@@ -161,6 +173,14 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                         expr_member,
                         expr_start..expr_end,
                     );
+                }
+                if let Some(PklStatement::ModuleClause(Module { full_name, span })) =
+                    statements.last_mut()
+                {
+                    let other_component = parse_id(lexer)?;
+                    let new_span = span.start..other_component.1.end;
+                    *full_name = lexer.source().slice(new_span.to_owned()).unwrap();
+                    *span = new_span;
                 } else {
                     return Err((
                         "unexpected token here (context: global)".to_owned(),

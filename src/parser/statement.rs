@@ -3,12 +3,13 @@ use class::ClassDeclaration;
 use constant::Constant;
 use import::Import;
 use logos::Span;
-use std::ops::{Deref, DerefMut};
+use module::Module;
 use typealias::TypeAlias;
 
 pub mod class;
 pub mod constant;
 pub mod import;
+pub mod module;
 pub mod typealias;
 
 /* ANCHOR: statements */
@@ -26,31 +27,12 @@ pub enum PklStatement<'a> {
 
     /// A typealias
     TypeAlias(TypeAlias<'a>),
+
+    /// A module clause, used to declare a module name
+    ModuleClause(Module<'a>),
 }
 /* ANCHOR_END: statements */
 
-impl<'a> Deref for PklStatement<'a> {
-    type Target = PklExpr<'a>;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            PklStatement::Constant(Constant { value, .. }) => value,
-            PklStatement::Import { .. } => unreachable!(),
-            PklStatement::Class { .. } => unreachable!(),
-            PklStatement::TypeAlias { .. } => unreachable!(),
-        }
-    }
-}
-impl<'a> DerefMut for PklStatement<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        match self {
-            PklStatement::Constant(Constant { value, .. }) => value,
-            PklStatement::Import { .. } => unreachable!(),
-            PklStatement::Class { .. } => unreachable!(),
-            PklStatement::TypeAlias { .. } => unreachable!(),
-        }
-    }
-}
 impl<'a> PklStatement<'a> {
     pub fn span(&self) -> Span {
         match self {
@@ -58,6 +40,7 @@ impl<'a> PklStatement<'a> {
             PklStatement::Import(Import { span, .. }) => span.clone(),
             PklStatement::Class(ClassDeclaration { span, .. }) => span.clone(),
             PklStatement::TypeAlias(TypeAlias { span, .. }) => span.clone(),
+            PklStatement::ModuleClause(Module { span, .. }) => span.clone(),
         }
     }
     pub fn is_import(&self) -> bool {
