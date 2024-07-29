@@ -25,7 +25,7 @@ use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use logos::Span;
 use spelling::check_closest_word;
-use std::{default, fs};
+use std::fs;
 use types::PklType;
 use value::PklValue;
 
@@ -41,19 +41,33 @@ pub mod value;
 
 #[derive(Debug, Clone, Default)]
 pub enum ModuleData {
+    // we keep track of variables/classes
+    // to know which variables
+    // is the user allowed to
+    // redefine
     Extended {
         module_name: String,
         variables: Vec<String>,
+        schemas: Vec<String>,
     },
     Amended {
         module_name: String,
         variables: Vec<String>,
+        schemas: Vec<String>,
     },
     #[default]
     None,
 }
 
 impl ModuleData {
+    pub fn name(&self) -> Option<&str> {
+        match self {
+            ModuleData::Extended { module_name, .. } => Some(module_name),
+            ModuleData::Amended { module_name, .. } => Some(module_name),
+            ModuleData::None => None,
+        }
+    }
+
     pub fn get_variables(&mut self) -> Option<&Vec<String>> {
         match self {
             ModuleData::Extended { variables, .. } => Some(variables),
@@ -68,10 +82,17 @@ impl ModuleData {
             ModuleData::None => None,
         }
     }
-    pub fn name(&self) -> Option<&str> {
+    pub fn get_schemas(&mut self) -> Option<&Vec<String>> {
         match self {
-            ModuleData::Extended { module_name, .. } => Some(module_name),
-            ModuleData::Amended { module_name, .. } => Some(module_name),
+            ModuleData::Extended { schemas, .. } => Some(schemas),
+            ModuleData::Amended { schemas, .. } => Some(schemas),
+            ModuleData::None => None,
+        }
+    }
+    pub fn get_schemas_mut(&mut self) -> Option<&mut Vec<String>> {
+        match self {
+            ModuleData::Extended { schemas, .. } => Some(schemas),
+            ModuleData::Amended { schemas, .. } => Some(schemas),
             ModuleData::None => None,
         }
     }
@@ -250,10 +271,17 @@ impl PklTable {
                     .keys()
                     .map(|s| s.to_owned())
                     .collect::<Vec<String>>();
+                let schemas = pkl
+                    .table
+                    .schemas
+                    .keys()
+                    .map(|s| s.to_owned())
+                    .collect::<Vec<String>>();
 
                 self.module_data = ModuleData::Amended {
                     module_name: file_path.get_uri_name(),
                     variables: amended,
+                    schemas,
                 };
                 self.extend(pkl.table);
             }
@@ -295,10 +323,17 @@ impl PklTable {
                     .keys()
                     .map(|s| s.to_owned())
                     .collect::<Vec<String>>();
+                let schemas = pkl
+                    .table
+                    .schemas
+                    .keys()
+                    .map(|s| s.to_owned())
+                    .collect::<Vec<String>>();
 
                 self.module_data = ModuleData::Extended {
                     module_name: file_path.get_uri_name(),
                     variables: extended,
+                    schemas,
                 };
                 self.extend(pkl.table);
             }
@@ -711,6 +746,8 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 table.extends(name, span)?;
                 extends_found = true;
             }
+
+            // handle definition of local variables as a different statement next
             PklStatement::Constant(Constant {
                 name, value, _type, ..
             }) => {
