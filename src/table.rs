@@ -2,8 +2,8 @@ use crate::{
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
         statement::{
-            amends::Amends, constant::Constant, extends::Extends, import::Import, module::Module,
-            typealias::TypeAlias, PklStatement,
+            amends::Amends, class::ClassDeclaration, constant::Constant, extends::Extends,
+            import::Import, module::Module, typealias::TypeAlias, PklStatement,
         },
         types::AstPklType,
         value::AstPklValue,
@@ -111,17 +111,17 @@ impl ModuleData {
             ModuleData::None => None,
         }
     }
-    pub fn get_extended_variables(&self) -> Option<&Vec<String>> {
+    pub fn get_amended_schemas(&self) -> Option<&Vec<String>> {
         match self {
-            ModuleData::Extended { variables, .. } => Some(variables),
-            ModuleData::Amended { .. } => None,
+            ModuleData::Amended { schemas, .. } => Some(schemas),
+            ModuleData::Extended { .. } => None,
             ModuleData::None => None,
         }
     }
-    pub fn get_extended_variables_mut(&mut self) -> Option<&mut Vec<String>> {
+    pub fn get_amended_schemas_mut(&mut self) -> Option<&mut Vec<String>> {
         match self {
-            ModuleData::Extended { variables, .. } => Some(variables),
-            ModuleData::Amended { .. } => None,
+            ModuleData::Amended { schemas, .. } => Some(schemas),
+            ModuleData::Extended { .. } => None,
             ModuleData::None => None,
         }
     }
@@ -756,9 +756,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
             }
             PklStatement::Class(declaration) => {
                 in_body = true;
-
-                let (name, schema) = generate_class_schema(declaration);
-                table.add_schema(name, schema);
+                handle_class(&mut table, declaration)?;
             }
             PklStatement::TypeAlias(TypeAlias { .. }) => {
                 // need to interpret typealiases
@@ -857,6 +855,70 @@ fn handle_constant(
     if let Some(_) = table.insert(name.0, evaluated_value) {
         // variables can be either amended or extended
         match table.module_data.get_variables_mut() {
+            Some(vars) => {
+                if let Some(pos) = vars.iter().position(|x| x == &name.0) {
+                    vars.remove(pos);
+                } else {
+                    return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
+                }
+            }
+            None => return Err((format!("Cannot reassign variable '{}'", name.0), name.1)),
+        }
+    }
+
+    Ok(())
+}
+
+fn handle_class(table: &mut PklTable, declaration: ClassDeclaration) -> PklResult<()> {
+    let (name, schema) = generate_class_schema(declaration);
+
+    // checks for spelling errors
+    if let Some(vars) = table.module_data.get_schemas() {
+        let vars = vars
+            .iter()
+            .filter(|x| x != &name.0)
+            .map(String::as_str)
+            .collect::<Vec<&str>>();
+
+        if !vars.is_empty() {
+            match check_closest_word(name.0, vars.as_slice(), 1) {
+                Some(closest) => {
+                    return Err((
+                        format!(
+                            "Did you mean to write '{}' instead of '{}'?",
+                            closest, name.0
+                        ),
+                        name.1,
+                    ))
+                }
+                None => (),
+            };
+        }
+    }
+
+    // checks if adding variables to amending module
+    // that is not in amended module
+    if let Some(amended_schemas) = table.module_data.get_amended_schemas() {
+        if !amended_schemas.contains(&name.0.to_owned()) {
+            return Err((
+                format!(
+                    "Cannot redefine class '{}', class is not defined inside of amended module '{}'",
+                    name.0,
+                    table.module_data.name().unwrap(/* safe: if amended_variables.is_some() then name is too */)
+                ),
+                name.1,
+            ));
+        }
+    }
+
+    // assign schema
+    // if reassigned then checks
+    // if schema is amended/extended then allows
+    // assignment in new module
+    // otherwise throws an Error
+    if let Some(_) = table.add_schema(name.0, schema) {
+        // variables can be either amended or extended
+        match table.module_data.get_schemas_mut() {
             Some(vars) => {
                 if let Some(pos) = vars.iter().position(|x| x == &name.0) {
                     vars.remove(pos);
