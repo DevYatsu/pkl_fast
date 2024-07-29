@@ -3,6 +3,7 @@ use expr::{member_expr::parse_member_expr_member, object::parse_object, PklExpr}
 use hashbrown::HashMap;
 use logos::{Lexer, Source, Span};
 use statement::{
+    amends::parse_amends_clause,
     class::{parse_class_declaration, ClassKind},
     constant::{parse_const, Constant},
     import::{parse_import, Import},
@@ -103,17 +104,6 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     ));
                 }
             }
-            Ok(PklToken::Import) => {
-                if !is_newline {
-                    return Err((
-                        "unexpected token here (context: global), expected newline".to_owned(),
-                        lexer.span(),
-                    ));
-                }
-                let statement = parse_import(lexer)?;
-                statements.push(statement);
-                is_newline = false;
-            }
             Ok(PklToken::Module) => {
                 if !is_newline {
                     return Err((
@@ -125,6 +115,29 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 statements.push(statement);
                 is_newline = false;
             }
+            Ok(PklToken::Amends) => {
+                if !is_newline {
+                    return Err((
+                        "unexpected token here (context: global), expected newline".to_owned(),
+                        lexer.span(),
+                    ));
+                }
+                let statement = parse_amends_clause(lexer)?;
+                statements.push(statement);
+                is_newline = false;
+            }
+            Ok(PklToken::Import) => {
+                if !is_newline {
+                    return Err((
+                        "unexpected token here (context: global), expected newline".to_owned(),
+                        lexer.span(),
+                    ));
+                }
+                let statement = parse_import(lexer)?;
+                statements.push(statement);
+                is_newline = false;
+            }
+
             Ok(PklToken::As) => {
                 if let Some(PklStatement::Import(Import {
                     local_name, span, ..

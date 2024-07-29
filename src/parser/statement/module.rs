@@ -21,10 +21,11 @@ impl<'a> Module<'a> {
 
 /// Function called after 'import' keyword.
 pub fn parse_module_clause<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklStatement<'a>> {
+    let start = lexer.span().start;
     let name = parse_id_as_str(lexer)?;
 
     Ok(PklStatement::ModuleClause(Module {
         full_name: name,
-        span: lexer.span(),
+        span: start..lexer.span().end,
     }))
 }

@@ -2,10 +2,14 @@ use new_pkl::Pkl;
 use std::time::Instant;
 
 fn main() -> Result<(), (String, String)> {
-    let src = "module com.animals.test
+    let src = "
+module com.animals.test
+
+amends \"x.pkl\"
 
 import \"test.pkl\" as test_import
 import \"test.pkl\"
+
 typealias EmailAddress = String(matches(Regex(\".+@.+\")))
 typealias EmailList = List<EmailAddress>
 typealias StringMap<Value> = Map<String, Value>

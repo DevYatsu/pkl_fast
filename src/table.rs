@@ -2,7 +2,8 @@ use crate::{
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
         statement::{
-            constant::Constant, import::Import, module::Module, typealias::TypeAlias, PklStatement,
+            amends::Amends, constant::Constant, import::Import, module::Module,
+            typealias::TypeAlias, PklStatement,
         },
         types::AstPklType,
         value::AstPklValue,
@@ -21,8 +22,8 @@ use base::{
 };
 use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
+use logos::Span;
 use std::{fs, ops::Range, path::PathBuf};
-use types::PklType;
 use value::PklValue;
 
 pub mod base;
@@ -134,23 +135,18 @@ impl PklTable {
         self.variables.get(&name.into())
     }
 
-    pub fn import(
-        &mut self,
-        name: &str,
-        local_name: Option<&str>,
-        rng: Range<usize>,
-    ) -> PklResult<()> {
+    pub fn import(&mut self, name: &str, local_name: Option<&str>, span: Span) -> PklResult<()> {
         match name {
             name if name.starts_with("package://") => {
-                return web_import::import_pkg(self, name, rng)
+                return web_import::import_pkg(self, name, span)
             }
-            name if name.starts_with("pkl:") => return official_pkg::import_pkg(self, name, rng),
+            name if name.starts_with("pkl:") => return official_pkg::import_pkg(self, name, span),
             name if name.starts_with("https://") => {
-                return web_import::import_https(self, name, rng)
+                return web_import::import_https(self, name, span)
             }
             file_name => {
                 let file_content = fs::read_to_string(file_name)
-                    .map_err(|e| (format!("Error reading {file_name}: {}", e), rng))?;
+                    .map_err(|e| (format!("Error reading {file_name}: {}", e), span))?;
 
                 let mut pkl = Pkl::new();
                 pkl.parse(&file_content)?;
@@ -170,6 +166,29 @@ impl PklTable {
                     .take(1)
                     .collect::<String>();
                 self.insert(name, hash.into());
+            }
+        };
+
+        Ok(())
+    }
+
+    pub fn amends(&mut self, name: &str, span: Span) -> PklResult<()> {
+        match name {
+            name if name.starts_with("package://") => {
+                return web_import::amends_pkg(self, name, span)
+            }
+            name if name.starts_with("pkl:") => return official_pkg::amends_pkg(self, name, span),
+            name if name.starts_with("https://") => {
+                return web_import::amends_http(self, name, span)
+            }
+            file_name => {
+                let file_content = fs::read_to_string(file_name)
+                    .map_err(|e| (format!("Error reading {file_name}: {}", e), span))?;
+
+                let mut pkl = Pkl::new();
+                pkl.parse(&file_content)?;
+
+                self.extends(pkl.table);
             }
         };
 
@@ -286,7 +305,7 @@ impl PklTable {
                     }
                 }
             }
-            PklExpr::FuncCall(FuncCall(Identifier(name, _), args, _rng)) => {
+            PklExpr::FuncCall(FuncCall(Identifier(name, _), args, _span)) => {
                 // all function calls
                 match name {
                     "List" => self.evaluate_list(args),
@@ -388,7 +407,7 @@ impl PklTable {
                 self.evaluate_class_instance(a, b)?
             }
             AstPklValue::AmendedObject(a, b, _) => self.evaluate_amended_object(*a, b)?,
-            AstPklValue::AmendingObject(a, b, rng) => self.evaluate_amending_object(a, b, rng)?,
+            AstPklValue::AmendingObject(a, b, span) => self.evaluate_amending_object(a, b, span)?,
         };
 
         Ok(result)
@@ -482,15 +501,10 @@ impl PklTable {
         Ok(PklValue::ClassInstance(a.0.into(), found_schema))
     }
 
-    fn evaluate_amending_object(
-        &self,
-        a: &str,
-        b: ExprHash,
-        rng: Range<usize>,
-    ) -> PklResult<PklValue> {
+    fn evaluate_amending_object(&self, a: &str, b: ExprHash, span: Span) -> PklResult<PklValue> {
         let other_object = match self.get(a) {
             Some(PklValue::Object(hash)) => hash,
-            _ => return Err((format!("Unknown object `{}`", a), rng)),
+            _ => return Err((format!("Unknown object `{}`", a), span)),
         };
 
         let mut new_hash = other_object.clone();
@@ -522,11 +536,36 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
     // encountered a body statement
     // == no more import stmt
     let mut in_body = false;
+    let mut module_clause_found = false;
+    let mut amends_found = false;
+    let mut import_found = false;
 
     for statement in ast {
         match statement {
-            PklStatement::ModuleClause(Module { full_name, .. }) => {
-                table.module_name = Some(full_name.to_owned())
+            PklStatement::ModuleClause(Module { full_name, span }) => {
+                if module_clause_found {
+                    return Err(("A file cannot have 2 module clauses".to_owned(), span));
+                }
+                if amends_found || import_found || in_body {
+                    return Err((
+                        "Module clause must be at the start of the file".to_owned(),
+                        span,
+                    ));
+                }
+
+                table.module_name = Some(full_name.to_owned());
+                module_clause_found = true;
+            }
+            PklStatement::AmendsClause(Amends { name, span }) => {
+                if import_found || in_body {
+                    return Err((
+                        "Amends clause must be before import clauses and file body".to_owned(),
+                        span,
+                    ));
+                }
+
+                table.amends(name, span)?;
+                amends_found = true;
             }
             PklStatement::Constant(Constant {
                 name, value, _type, ..
@@ -575,6 +614,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 }
 
                 table.import(name, local_name, span)?;
+                import_found = true;
             }
         }
     }
