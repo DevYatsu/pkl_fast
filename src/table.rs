@@ -62,6 +62,10 @@ impl PklTable {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.variables.is_empty() & self.schemas.is_empty() & self.module_name.is_none()
+    }
+
     /// Inserts a variable with the given name and value into the context.
     ///
     /// # Arguments

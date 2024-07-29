@@ -173,8 +173,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                         expr_member,
                         expr_start..expr_end,
                     );
-                }
-                if let Some(PklStatement::ModuleClause(Module { full_name, span })) =
+                } else if let Some(PklStatement::ModuleClause(Module { full_name, span })) =
                     statements.last_mut()
                 {
                     let other_component = parse_id(lexer)?;

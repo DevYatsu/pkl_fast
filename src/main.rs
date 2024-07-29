@@ -2,7 +2,9 @@ use new_pkl::Pkl;
 use std::time::Instant;
 
 fn main() -> Result<(), (String, String)> {
-    let src = "import \"test.pkl\" as test_import
+    let src = "module com.animals.test
+
+import \"test.pkl\" as test_import
 import \"test.pkl\"
 typealias EmailAddress = String(matches(Regex(\".+@.+\")))
 typealias EmailList = List<EmailAddress>
