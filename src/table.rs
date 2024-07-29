@@ -38,13 +38,14 @@ pub mod class;
 pub mod types;
 pub mod value;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct PklTable {
     pub variables: HashMap<String, PklValue>,
     pub schemas: HashMap<String, ClassSchema>,
 
     pub amended_variables: Vec<String>,
     pub module_name: Option<String>,
+    pub is_open: bool,
 }
 
 impl PartialEq for PklTable {
@@ -60,15 +61,6 @@ impl PartialEq for PklTable {
 }
 
 impl PklTable {
-    pub fn new() -> Self {
-        Self {
-            variables: HashMap::new(),
-            schemas: HashMap::new(),
-            module_name: None,
-            amended_variables: vec![],
-        }
-    }
-
     pub fn is_empty(&self) -> bool {
         self.variables.is_empty() & self.schemas.is_empty() & self.module_name.is_none()
     }
@@ -545,7 +537,7 @@ impl PklTable {
 }
 
 pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
-    let mut table = PklTable::new();
+    let mut table = PklTable::default();
 
     // encountered a body statement
     // == no more import stmt
@@ -557,7 +549,11 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
     for statement in ast {
         match statement {
-            PklStatement::ModuleClause(Module { full_name, span }) => {
+            PklStatement::ModuleClause(Module {
+                full_name,
+                span,
+                is_open,
+            }) => {
                 if module_clause_found {
                     return Err(("A file cannot have 2 module clauses".to_owned(), span));
                 }
@@ -569,6 +565,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 }
 
                 table.module_name = Some(full_name.to_owned());
+                table.is_open = is_open;
                 module_clause_found = true;
             }
             PklStatement::AmendsClause(Amends { name, span }) => {
@@ -604,6 +601,8 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                         span,
                     ));
                 }
+
+                // check if the module we want to extend is open first
 
                 // implement interpreting extends clause
                 extends_found = true;

@@ -7,25 +7,26 @@ use logos::{Lexer, Span};
 pub struct Module<'a> {
     pub full_name: &'a str,
     pub span: Span,
+    pub is_open: bool,
 }
 
 impl<'a> Module<'a> {
-    pub fn new(full_name: &'a str, span: Span) -> Self {
-        Self { full_name, span }
-    }
-
     pub fn last_name_component(&self) -> &str {
         self.full_name.split('.').last().unwrap()
     }
 }
 
 /// Function called after 'import' keyword.
-pub fn parse_module_clause<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklStatement<'a>> {
+pub fn parse_module_clause<'a>(
+    lexer: &mut Lexer<'a, PklToken<'a>>,
+    is_open: bool,
+) -> PklResult<PklStatement<'a>> {
     let start = lexer.span().start;
     let name = parse_id_as_str(lexer)?;
 
     Ok(PklStatement::ModuleClause(Module {
         full_name: name,
         span: start..lexer.span().end,
+        is_open,
     }))
 }

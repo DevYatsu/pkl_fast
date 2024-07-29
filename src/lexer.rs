@@ -71,6 +71,8 @@ pub enum PklToken<'a> {
 
     #[token("module")]
     Module,
+    #[regex(r"open\s+module")]
+    OpenModule,
     #[token("amends")]
     Amends,
 

@@ -21,7 +21,7 @@ impl Pkl {
     /// Creates a new, empty `Pkl` instance.
     pub fn new() -> Self {
         Self {
-            table: PklTable::new(),
+            table: PklTable::default(),
         }
     }
 

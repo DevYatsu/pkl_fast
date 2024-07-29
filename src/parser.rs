@@ -105,6 +105,17 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     ));
                 }
             }
+            Ok(PklToken::OpenModule) => {
+                if !is_newline {
+                    return Err((
+                        "unexpected token here (context: global), expected newline".to_owned(),
+                        lexer.span(),
+                    ));
+                }
+                let statement = parse_module_clause(lexer, true)?;
+                statements.push(statement);
+                is_newline = false;
+            }
             Ok(PklToken::Module) => {
                 if !is_newline {
                     return Err((
@@ -112,7 +123,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                         lexer.span(),
                     ));
                 }
-                let statement = parse_module_clause(lexer)?;
+                let statement = parse_module_clause(lexer, false)?;
                 statements.push(statement);
                 is_newline = false;
             }
@@ -198,8 +209,9 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                         expr_member,
                         expr_start..expr_end,
                     );
-                } else if let Some(PklStatement::ModuleClause(Module { full_name, span })) =
-                    statements.last_mut()
+                } else if let Some(PklStatement::ModuleClause(Module {
+                    full_name, span, ..
+                })) = statements.last_mut()
                 {
                     let other_component = parse_id(lexer)?;
                     let new_span = span.start..other_component.1.end;
