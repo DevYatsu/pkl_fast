@@ -23,7 +23,7 @@ use base::{
 use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use logos::Span;
-use std::{fs, ops::Range, path::PathBuf};
+use std::{fs, path::PathBuf};
 use value::PklValue;
 
 pub mod base;
@@ -39,6 +39,7 @@ pub struct PklTable {
     pub variables: HashMap<String, PklValue>,
     pub schemas: HashMap<String, ClassSchema>,
 
+    pub amended_variables: Vec<String>,
     pub module_name: Option<String>,
 }
 
@@ -60,6 +61,7 @@ impl PklTable {
             variables: HashMap::new(),
             schemas: HashMap::new(),
             module_name: None,
+            amended_variables: vec![],
         }
     }
 
@@ -187,6 +189,14 @@ impl PklTable {
 
                 let mut pkl = Pkl::new();
                 pkl.parse(&file_content)?;
+
+                let amended = pkl
+                    .table
+                    .variables
+                    .keys()
+                    .map(|s| s.to_owned())
+                    .collect::<Vec<String>>();
+                self.amended_variables = amended;
 
                 self.extends(pkl.table);
             }
@@ -590,7 +600,18 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                     }
                 }
 
-                table.insert(name.0, evaluated_value);
+                if let Some(_) = table.insert(name.0, evaluated_value) {
+                    if table.amended_variables.contains(&name.0.to_owned()) {
+                        table.amended_variables = table
+                            .amended_variables
+                            .into_iter()
+                            .filter(|x| x != name.0)
+                            .collect();
+                        continue;
+                    } else {
+                        return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
+                    }
+                };
             }
             PklStatement::Class(declaration) => {
                 in_body = true;

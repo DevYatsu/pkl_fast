@@ -113,7 +113,7 @@ dodo {
   test = false
 }
 
-pigeon: Bird = new {
+pigeon2: Bird = new {
   name = \"Pigeon\"
 // lifespan = 8
 // migratory = false
