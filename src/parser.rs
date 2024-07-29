@@ -6,6 +6,7 @@ use statement::{
     amends::parse_amends_clause,
     class::{parse_class_declaration, ClassKind},
     constant::{parse_const, Constant},
+    extends::parse_extends_clause,
     import::{parse_import, Import},
     module::{parse_module_clause, Module},
     typealias::{parse_typealias, TypeAlias},
@@ -123,6 +124,17 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     ));
                 }
                 let statement = parse_amends_clause(lexer)?;
+                statements.push(statement);
+                is_newline = false;
+            }
+            Ok(PklToken::Extends) => {
+                if !is_newline {
+                    return Err((
+                        "unexpected token here (context: global), expected newline".to_owned(),
+                        lexer.span(),
+                    ));
+                }
+                let statement = parse_extends_clause(lexer)?;
                 statements.push(statement);
                 is_newline = false;
             }

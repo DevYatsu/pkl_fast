@@ -2,6 +2,7 @@ use super::expr::PklExpr;
 use amends::Amends;
 use class::ClassDeclaration;
 use constant::Constant;
+use extends::Extends;
 use import::Import;
 use logos::Span;
 use module::Module;
@@ -10,6 +11,7 @@ use typealias::TypeAlias;
 pub mod amends;
 pub mod class;
 pub mod constant;
+pub mod extends;
 pub mod import;
 pub mod module;
 pub mod typealias;
@@ -38,6 +40,9 @@ pub enum PklStatement<'a> {
     /// not in a variable creating in the context
     /// containing the import values.
     AmendsClause(Amends<'a>),
+
+    /// An extends clause
+    ExtendsClause(Extends<'a>),
 }
 /* ANCHOR_END: statements */
 
@@ -50,6 +55,7 @@ impl<'a> PklStatement<'a> {
             PklStatement::TypeAlias(TypeAlias { span, .. }) => span.clone(),
             PklStatement::ModuleClause(Module { span, .. }) => span.clone(),
             PklStatement::AmendsClause(Amends { span, .. }) => span.clone(),
+            PklStatement::ExtendsClause(Extends { span, .. }) => span.clone(),
         }
     }
     pub fn is_import(&self) -> bool {

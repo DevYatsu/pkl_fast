@@ -2,7 +2,7 @@ use crate::{
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
         statement::{
-            amends::Amends, constant::Constant, import::Import, module::Module,
+            amends::Amends, constant::Constant, extends::Extends, import::Import, module::Module,
             typealias::TypeAlias, PklStatement,
         },
         types::AstPklType,
@@ -552,6 +552,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
     let mut in_body = false;
     let mut module_clause_found = false;
     let mut amends_found = false;
+    let mut extends_found = false;
     let mut import_found = false;
 
     for statement in ast {
@@ -571,6 +572,12 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 module_clause_found = true;
             }
             PklStatement::AmendsClause(Amends { name, span }) => {
+                if extends_found {
+                    return Err((
+                        "Cannot have both an amends clause and an extends clause".to_owned(),
+                        span,
+                    ));
+                }
                 if amends_found {
                     return Err(("A file cannot have 2 amends clauses".to_owned(), span));
                 }
@@ -583,6 +590,23 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
                 table.amends(name, span)?;
                 amends_found = true;
+            }
+            PklStatement::ExtendsClause(Extends { name, span }) => {
+                if amends_found {
+                    return Err((
+                        "Cannot have both an amends clause and an extends clause".to_owned(),
+                        span,
+                    ));
+                }
+                if import_found || in_body {
+                    return Err((
+                        "Extends clause must be before import clauses and file body".to_owned(),
+                        span,
+                    ));
+                }
+
+                // implement interpreting extends clause
+                extends_found = true;
             }
             PklStatement::Constant(Constant {
                 name, value, _type, ..
