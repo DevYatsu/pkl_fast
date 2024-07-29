@@ -56,93 +56,51 @@ pub enum ModuleData {
 impl ModuleData {
     pub fn get_variables(&mut self) -> Option<&Vec<String>> {
         match self {
-            ModuleData::Extended {
-                module_name,
-                variables,
-            } => Some(variables),
-            ModuleData::Amended {
-                module_name,
-                variables,
-            } => Some(variables),
+            ModuleData::Extended { variables, .. } => Some(variables),
+            ModuleData::Amended { variables, .. } => Some(variables),
             ModuleData::None => None,
         }
     }
     pub fn get_variables_mut(&mut self) -> Option<&mut Vec<String>> {
         match self {
-            ModuleData::Extended {
-                module_name,
-                variables,
-            } => Some(variables),
-            ModuleData::Amended {
-                module_name,
-                variables,
-            } => Some(variables),
+            ModuleData::Extended { variables, .. } => Some(variables),
+            ModuleData::Amended { variables, .. } => Some(variables),
             ModuleData::None => None,
         }
     }
     pub fn name(&self) -> Option<&str> {
         match self {
-            ModuleData::Extended {
-                module_name,
-                variables,
-            } => Some(module_name),
-            ModuleData::Amended {
-                module_name,
-                variables,
-            } => Some(module_name),
+            ModuleData::Extended { module_name, .. } => Some(module_name),
+            ModuleData::Amended { module_name, .. } => Some(module_name),
             ModuleData::None => None,
         }
     }
 
     pub fn get_amended_variables(&self) -> Option<&Vec<String>> {
         match self {
-            ModuleData::Extended {
-                module_name,
-                variables,
-            } => None,
-            ModuleData::Amended {
-                module_name,
-                variables,
-            } => Some(variables),
+            ModuleData::Extended { .. } => None,
+            ModuleData::Amended { variables, .. } => Some(variables),
             ModuleData::None => None,
         }
     }
     pub fn get_amended_variables_mut(&mut self) -> Option<&mut Vec<String>> {
         match self {
-            ModuleData::Extended {
-                module_name,
-                variables,
-            } => None,
-            ModuleData::Amended {
-                module_name,
-                variables,
-            } => Some(variables),
+            ModuleData::Extended { .. } => None,
+            ModuleData::Amended { variables, .. } => Some(variables),
             ModuleData::None => None,
         }
     }
-    pub fn get_exteded_variables(&self) -> Option<&Vec<String>> {
+    pub fn get_extended_variables(&self) -> Option<&Vec<String>> {
         match self {
-            ModuleData::Extended {
-                module_name,
-                variables,
-            } => Some(variables),
-            ModuleData::Amended {
-                module_name,
-                variables,
-            } => None,
+            ModuleData::Extended { variables, .. } => Some(variables),
+            ModuleData::Amended { .. } => None,
             ModuleData::None => None,
         }
     }
-    pub fn get_exteded_variables_mut(&mut self) -> Option<&mut Vec<String>> {
+    pub fn get_extended_variables_mut(&mut self) -> Option<&mut Vec<String>> {
         match self {
-            ModuleData::Extended {
-                module_name,
-                variables,
-            } => Some(variables),
-            ModuleData::Amended {
-                module_name,
-                variables,
-            } => None,
+            ModuleData::Extended { variables, .. } => Some(variables),
+            ModuleData::Amended { .. } => None,
             ModuleData::None => None,
         }
     }
@@ -800,11 +758,13 @@ fn handle_constant(
 ) -> PklResult<()> {
     let evaluated_value = table.evaluate_in_variable(value, _type.clone())?;
 
+    // checks if adding variables to amending module
+    // that is not in amended module
     if let Some(amended_vars) = table.module_data.get_amended_variables() {
         if !amended_vars.contains(&name.0.to_owned()) {
             return Err((
                 format!(
-                    "Cannot add variable '{}' to extended module '{}'",
+                    "Cannot add variable '{}' to amended module '{}'",
                     name.0,
                     table.module_data.name().unwrap(/* safe: if amended_variables.is_some() then name is too */)
                 ),
@@ -813,6 +773,7 @@ fn handle_constant(
         }
     }
 
+    // checks if type corresponds to value
     if let Some(_type) = _type {
         let span = _type.span();
         let true_type: PklType = _type.into();
@@ -829,15 +790,14 @@ fn handle_constant(
 
     // checks for spelling errors
     if let Some(vars) = table.module_data.get_variables() {
+        let vars = vars
+            .iter()
+            .filter(|x| x != &name.0)
+            .map(String::as_str)
+            .collect::<Vec<&str>>();
+
         if !vars.is_empty() {
-            match check_closest_word(
-                name.0,
-                vars.iter()
-                    .map(String::as_str)
-                    .collect::<Vec<&str>>()
-                    .as_slice(),
-                1,
-            ) {
+            match check_closest_word(name.0, vars.as_slice(), 1) {
                 Some(closest) => {
                     return Err((
                         format!(
@@ -853,10 +813,11 @@ fn handle_constant(
     }
 
     if let Some(_) = table.insert(name.0, evaluated_value) {
-        match table.module_data.get_amended_variables_mut() {
-            Some(amended_variables) => {
-                if let Some(pos) = amended_variables.iter().position(|x| x == &name.0) {
-                    amended_variables.remove(pos);
+        // variables can be either amended or extended
+        match table.module_data.get_variables_mut() {
+            Some(vars) => {
+                if let Some(pos) = vars.iter().position(|x| x == &name.0) {
+                    vars.remove(pos);
                 } else {
                     return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
                 }
