@@ -6,6 +6,7 @@ fn main() -> Result<(), (String, String)> {
 module com.animals.test
 
 amends \"x.pkl\"
+// amends \"test.pkl\"
 
 import \"test.pkl\" as test_import
 import \"test.pkl\"

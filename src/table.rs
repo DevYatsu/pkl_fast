@@ -557,6 +557,9 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 module_clause_found = true;
             }
             PklStatement::AmendsClause(Amends { name, span }) => {
+                if amends_found {
+                    return Err(("A file cannot have 2 amends clauses".to_owned(), span));
+                }
                 if import_found || in_body {
                     return Err((
                         "Amends clause must be before import clauses and file body".to_owned(),
