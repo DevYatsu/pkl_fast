@@ -24,16 +24,14 @@ use base::{
 use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use logos::Span;
-use spelling::check_closest_word;
 use std::fs;
 use types::PklType;
+use utils::spelling::check_closest_word;
 use value::PklValue;
 
 pub mod base;
-mod official_pkg;
-mod web_import;
-
-mod spelling;
+mod import;
+mod utils;
 
 pub mod class;
 pub mod types;
@@ -229,9 +227,13 @@ impl PklTable {
         span: Span,
     ) -> PklResult<()> {
         match module_uri {
-            uri if uri.starts_with("package://") => return web_import::import_pkg(self, uri, span),
-            uri if uri.starts_with("pkl:") => return official_pkg::import_pkg(self, uri, span),
-            uri if uri.starts_with("https://") => return web_import::import_https(self, uri, span),
+            uri if uri.starts_with("package://") => {
+                return import::web::import_pkg(self, uri, span)
+            }
+            uri if uri.starts_with("pkl:") => return import::official::import_pkg(self, uri, span),
+            uri if uri.starts_with("https://") => {
+                return import::web::import_https(self, uri, span)
+            }
             file_path => {
                 let file_content = fs::read_to_string(file_path)
                     .map_err(|e| (format!("Error reading {file_path}: {}", e), span))?;
@@ -255,9 +257,11 @@ impl PklTable {
 
     pub fn amends(&mut self, module_uri: &str, span: Span) -> PklResult<()> {
         match module_uri {
-            uri if uri.starts_with("package://") => return web_import::amends_pkg(self, uri, span),
-            uri if uri.starts_with("pkl:") => return official_pkg::amends_pkg(self, uri, span),
-            uri if uri.starts_with("https://") => return web_import::amends_http(self, uri, span),
+            uri if uri.starts_with("package://") => {
+                return import::web::amends_pkg(self, uri, span)
+            }
+            uri if uri.starts_with("pkl:") => return import::official::amends_pkg(self, uri, span),
+            uri if uri.starts_with("https://") => return import::web::amends_http(self, uri, span),
             file_path => {
                 let file_content = fs::read_to_string(file_path)
                     .map_err(|e| (format!("Error reading {file_path}: {}", e), span))?;
@@ -297,10 +301,14 @@ impl PklTable {
     pub fn extends(&mut self, module_uri: &str, span: Span) -> PklResult<()> {
         match module_uri {
             uri if uri.starts_with("package://") => {
-                return web_import::extends_pkg(self, uri, span)
+                return import::web::extends_pkg(self, uri, span)
             }
-            uri if uri.starts_with("pkl:") => return official_pkg::extends_pkg(self, uri, span),
-            uri if uri.starts_with("https://") => return web_import::extends_http(self, uri, span),
+            uri if uri.starts_with("pkl:") => {
+                return import::official::extends_pkg(self, uri, span)
+            }
+            uri if uri.starts_with("https://") => {
+                return import::web::extends_http(self, uri, span)
+            }
             file_path => {
                 let file_content = fs::read_to_string(file_path)
                     .map_err(|e| (format!("Error reading {file_path}: {}", e), span.to_owned()))?;

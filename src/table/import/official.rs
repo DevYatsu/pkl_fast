@@ -1,5 +1,5 @@
-use super::PklTable;
 use crate::PklResult;
+use crate::PklTable;
 use std::ops::Range;
 
 mod math;
