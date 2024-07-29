@@ -68,6 +68,10 @@ pub enum PklToken<'a> {
 
     #[token("hidden")]
     Hidden,
+    #[token("local")]
+    Local,
+    #[token("const")]
+    Const,
 
     #[token("module")]
     Module,

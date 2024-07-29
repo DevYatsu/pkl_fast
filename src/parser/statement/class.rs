@@ -52,6 +52,7 @@ pub enum FieldKind {
     #[default]
     Classical,
     Hidden,
+    Local,
 }
 
 /// Parse a token stream into a Pkl class Statement.
