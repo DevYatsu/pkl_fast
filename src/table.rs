@@ -795,6 +795,30 @@ fn handle_constant(
 ) -> PklResult<()> {
     let evaluated_value = table.evaluate_in_variable(value, _type.clone())?;
 
+    // checks for spelling errors
+    if let Some(vars) = table.module_data.get_variables() {
+        let vars = vars
+            .iter()
+            .filter(|x| x != &name.0)
+            .map(String::as_str)
+            .collect::<Vec<&str>>();
+
+        if !vars.is_empty() {
+            match check_closest_word(name.0, vars.as_slice(), 1) {
+                Some(closest) => {
+                    return Err((
+                        format!(
+                            "Did you mean to write '{}' instead of '{}'?",
+                            closest, name.0
+                        ),
+                        name.1,
+                    ))
+                }
+                None => (),
+            };
+        }
+    }
+
     // checks if adding variables to amending module
     // that is not in amended module
     if let Some(amended_vars) = table.module_data.get_amended_variables() {
@@ -825,30 +849,11 @@ fn handle_constant(
         }
     }
 
-    // checks for spelling errors
-    if let Some(vars) = table.module_data.get_variables() {
-        let vars = vars
-            .iter()
-            .filter(|x| x != &name.0)
-            .map(String::as_str)
-            .collect::<Vec<&str>>();
-
-        if !vars.is_empty() {
-            match check_closest_word(name.0, vars.as_slice(), 1) {
-                Some(closest) => {
-                    return Err((
-                        format!(
-                            "Did you mean to write '{}' instead of '{}'?",
-                            closest, name.0
-                        ),
-                        name.1,
-                    ))
-                }
-                None => (),
-            };
-        }
-    }
-
+    // assign variable
+    // if reassigned then checks
+    // if var is amended/extended then allows
+    // assignment in new module
+    // otherwise throws an Error
     if let Some(_) = table.insert(name.0, evaluated_value) {
         // variables can be either amended or extended
         match table.module_data.get_variables_mut() {
