@@ -23,6 +23,7 @@ use base::{
 use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use logos::Span;
+use spelling::check_closest_word;
 use std::{fs, path::PathBuf};
 use types::PklType;
 use value::PklValue;
@@ -30,6 +31,8 @@ use value::PklValue;
 pub mod base;
 mod official_pkg;
 mod web_import;
+
+mod spelling;
 
 pub mod class;
 pub mod types;
@@ -640,6 +643,30 @@ fn handle_constant(
                 span,
             ));
         }
+    }
+
+    if !table.amended_variables.is_empty() {
+        match check_closest_word(
+            name.0,
+            table
+                .amended_variables
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<&str>>()
+                .as_slice(),
+            1,
+        ) {
+            Some(closest) => {
+                return Err((
+                    format!(
+                        "Did you mean to write '{}' instead of '{}'?",
+                        closest, name.0
+                    ),
+                    name.1,
+                ))
+            }
+            None => (),
+        };
     }
 
     if let Some(_) = table.insert(name.0, evaluated_value) {

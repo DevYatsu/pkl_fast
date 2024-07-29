@@ -11,6 +11,8 @@ amends \"x.pkl\"
 import \"test.pkl\" as test_import
 import \"test.pkl\"
 
+zero = 2
+
 typealias EmailAddress = String(matches(Regex(\".+@.+\")))
 typealias EmailList = List<EmailAddress>
 typealias StringMap<Value> = Map<String, Value>
