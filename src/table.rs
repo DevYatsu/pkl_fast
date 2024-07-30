@@ -737,7 +737,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                         .into());
                 }
 
-                table.module_name = Some(full_name.to_owned());
+                table.module_name = Some(full_name.0.to_owned());
                 table.is_open = is_open;
                 module_clause_found = true;
             }

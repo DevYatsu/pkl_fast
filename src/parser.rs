@@ -197,8 +197,11 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 })) = statements.last_mut()
                 {
                     let other_component = parse_id(lexer)?;
-                    let new_span = span.start..other_component.1.end;
-                    *full_name = lexer.source().slice(new_span.to_owned()).unwrap();
+                    let new_span = full_name.1.start..other_component.1.end;
+                    *full_name = Identifier(
+                        lexer.source().slice(new_span.to_owned()).unwrap(),
+                        new_span.to_owned(),
+                    );
                     *span = new_span;
                 } else {
                     return Err((
