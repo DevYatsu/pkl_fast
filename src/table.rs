@@ -279,49 +279,33 @@ impl PklTable {
     }
 
     pub fn amends(&mut self, module_uri: &str, span: Span) -> PklResult<()> {
-        match module_uri {
-            uri if uri.starts_with("package://") => {
-                return import::web::amends_pkg(self, uri, span).into()
-            }
-            uri if uri.starts_with("pkl:") => {
-                return import::official::amends_pkg(self, uri, span).into()
-            }
-            uri if uri.starts_with("https://") => {
-                return import::web::amends_http(self, uri, span).into()
-            }
-            file_path => {
-                let file_content = fs::read_to_string(file_path)
-                    .map_err(|e| (format!("Error reading {file_path}: {}", e), span.to_owned()))?;
+        let amended_table = self
+            .importer
+            .amends(module_uri, span.to_owned())
+            .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
 
-                let mut pkl = Pkl::new();
-                pkl.parse(&file_content)?;
+        let amended = amended_table
+            .variables
+            .keys()
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let schemas = amended_table
+            .schemas
+            .keys()
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
 
-                let amended = pkl
-                    .table
-                    .variables
-                    .keys()
-                    .map(|s| s.to_owned())
-                    .collect::<Vec<String>>();
-                let schemas = pkl
-                    .table
-                    .schemas
-                    .keys()
-                    .map(|s| s.to_owned())
-                    .collect::<Vec<String>>();
-
-                let module_name = match pkl.table.module_name.to_owned() {
-                    Some(name) => name,
-                    None => Importer::construct_name_from_uri(file_path, span.to_owned())?,
-                };
-
-                self.module_data = ModuleData::Amended {
-                    module_name,
-                    variables: amended,
-                    schemas,
-                };
-                self.extend(pkl.table);
-            }
+        let module_name = match amended_table.module_name.to_owned() {
+            Some(name) => name,
+            None => Importer::construct_name_from_uri(module_uri, span.to_owned())?,
         };
+
+        self.module_data = ModuleData::Amended {
+            module_name,
+            variables: amended,
+            schemas,
+        };
+        self.extend(amended_table);
 
         Ok(())
     }
@@ -331,59 +315,41 @@ impl PklTable {
     /// extends the current file if the
     /// other module is an open module.
     pub fn extends(&mut self, module_uri: &str, span: Span) -> PklResult<()> {
-        match module_uri {
-            uri if uri.starts_with("package://") => {
-                return import::web::extends_pkg(self, uri, span).into()
-            }
-            uri if uri.starts_with("pkl:") => {
-                return import::official::extends_pkg(self, uri, span).into()
-            }
-            uri if uri.starts_with("https://") => {
-                return import::web::extends_http(self, uri, span).into()
-            }
-            file_path => {
-                let file_content = fs::read_to_string(file_path)
-                    .map_err(|e| (format!("Error reading {file_path}: {}", e), span.to_owned()))?;
+        let extended_table = self
+            .importer
+            .extends(module_uri, span.to_owned())
+            .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
 
-                let mut pkl = Pkl::new();
-                pkl.parse(&file_content)?;
+        if !extended_table.is_open {
+            return Err((
+                format!("Cannot extend module '{module_uri}': module is not declared as open"),
+                span,
+            )
+                .into());
+        }
 
-                if !pkl.table.is_open {
-                    return Err((
-                        format!(
-                            "Cannot extend module '{file_path}': module is not declared as open"
-                        ),
-                        span,
-                    )
-                        .into());
-                }
+        let extended = extended_table
+            .variables
+            .keys()
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+        let schemas = extended_table
+            .schemas
+            .keys()
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
 
-                let extended = pkl
-                    .table
-                    .variables
-                    .keys()
-                    .map(|s| s.to_owned())
-                    .collect::<Vec<String>>();
-                let schemas = pkl
-                    .table
-                    .schemas
-                    .keys()
-                    .map(|s| s.to_owned())
-                    .collect::<Vec<String>>();
-
-                let module_name = match pkl.table.module_name.to_owned() {
-                    Some(name) => name,
-                    None => Importer::construct_name_from_uri(file_path, span)?,
-                };
-
-                self.module_data = ModuleData::Extended {
-                    module_name,
-                    variables: extended,
-                    schemas,
-                };
-                self.extend(pkl.table);
-            }
+        let module_name = match extended_table.module_name.to_owned() {
+            Some(name) => name,
+            None => Importer::construct_name_from_uri(module_uri, span)?,
         };
+
+        self.module_data = ModuleData::Extended {
+            module_name,
+            variables: extended,
+            schemas,
+        };
+        self.extend(extended_table);
 
         Ok(())
     }
