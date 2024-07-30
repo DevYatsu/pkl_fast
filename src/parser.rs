@@ -100,13 +100,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     statements.as_mut(),
                 )?;
             }
-            Ok(PklToken::TypeAlias) => {
-                if !is_newline {
-                    return Err((
-                        "unexpected token here (context: global), expected newline".to_owned(),
-                        lexer.span(),
-                    ));
-                }
+            Ok(PklToken::TypeAlias) if is_newline => {
                 // parses until newline here
                 let statement = parse_typealias(lexer)?;
                 statements.push(statement);
@@ -135,57 +129,27 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     ));
                 }
             }
-            Ok(PklToken::OpenModule) => {
-                if !is_newline {
-                    return Err((
-                        "unexpected token here (context: global), expected newline".to_owned(),
-                        lexer.span(),
-                    ));
-                }
+            Ok(PklToken::OpenModule) if is_newline => {
                 let statement = parse_module_clause(lexer, true)?;
                 statements.push(statement);
                 is_newline = false;
             }
-            Ok(PklToken::Module) => {
-                if !is_newline {
-                    return Err((
-                        "unexpected token here (context: global), expected newline".to_owned(),
-                        lexer.span(),
-                    ));
-                }
+            Ok(PklToken::Module) if is_newline => {
                 let statement = parse_module_clause(lexer, false)?;
                 statements.push(statement);
                 is_newline = false;
             }
-            Ok(PklToken::Amends) => {
-                if !is_newline {
-                    return Err((
-                        "unexpected token here (context: global), expected newline".to_owned(),
-                        lexer.span(),
-                    ));
-                }
+            Ok(PklToken::Amends) if is_newline => {
                 let statement = parse_amends_clause(lexer)?;
                 statements.push(statement);
                 is_newline = false;
             }
-            Ok(PklToken::Extends) => {
-                if !is_newline {
-                    return Err((
-                        "unexpected token here (context: global), expected newline".to_owned(),
-                        lexer.span(),
-                    ));
-                }
+            Ok(PklToken::Extends) if is_newline => {
                 let statement = parse_extends_clause(lexer)?;
                 statements.push(statement);
                 is_newline = false;
             }
-            Ok(PklToken::Import) => {
-                if !is_newline {
-                    return Err((
-                        "unexpected token here (context: global), expected newline".to_owned(),
-                        lexer.span(),
-                    ));
-                }
+            Ok(PklToken::Import) if is_newline => {
                 let statement = parse_import(lexer)?;
                 statements.push(statement);
                 is_newline = false;
@@ -214,15 +178,15 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     ));
                 }
             }
-            Ok(PklToken::AbstractClass) => {
+            Ok(PklToken::AbstractClass) if is_newline => {
                 let stmt = parse_class_declaration(lexer, ClassKind::Abstract)?;
                 statements.push(stmt)
             }
-            Ok(PklToken::OpenClass) => {
+            Ok(PklToken::OpenClass) if is_newline => {
                 let stmt = parse_class_declaration(lexer, ClassKind::Open)?;
                 statements.push(stmt)
             }
-            Ok(PklToken::Class) => {
+            Ok(PklToken::Class) if is_newline => {
                 let stmt = parse_class_declaration(lexer, ClassKind::default())?;
                 statements.push(stmt)
             }
@@ -299,7 +263,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
             Err(e) => return Err((e.to_string(), lexer.span())),
             _ => {
                 return Err((
-                    "unexpected token here (context: statement)".to_owned(),
+                    "unexpected token here (context: global)".to_owned(),
                     lexer.span(),
                 ));
             }
