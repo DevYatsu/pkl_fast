@@ -186,6 +186,13 @@ fn parse_attributes<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<As
                 continue;
             }
 
+            Some(Ok(PklToken::Union)) if result.len() != 0 => {
+                if let Some(last) = result.last_mut() {
+                    let other_type = parse_type(lexer)?;
+                    *last = AstPklType::Union(Box::new(last.to_owned()), Box::new(other_type));
+                };
+                continue;
+            }
             Some(Ok(PklToken::Comma)) => {
                 expect_type = true;
                 continue;
