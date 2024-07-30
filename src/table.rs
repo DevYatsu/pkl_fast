@@ -136,7 +136,7 @@ impl ModuleData {
 pub struct PklTable {
     pub importer: Importer,
 
-    pub variables: HashMap<String, PklValue>,
+    pub variables: HashMap<String, (PropertyKind, PklValue)>,
     pub schemas: HashMap<String, ClassSchema>,
 
     pub module_data: ModuleData,
@@ -171,7 +171,11 @@ impl PklTable {
     /// # Returns
     ///
     /// An `Option` containing the previous value associated with the name, if any.
-    pub fn insert(&mut self, name: impl Into<String>, value: PklValue) -> Option<PklValue> {
+    pub fn insert(
+        &mut self,
+        name: impl Into<String>,
+        value: (PropertyKind, PklValue),
+    ) -> Option<(PropertyKind, PklValue)> {
         self.variables.insert(name.into(), value)
     }
 
@@ -225,7 +229,7 @@ impl PklTable {
     ///
     /// An `Option` containing a reference to the `PklValue` associated with the name,
     /// or `None` if the variable is not found.
-    pub fn get(&self, name: impl Into<String>) -> Option<&PklValue> {
+    pub fn get(&self, name: impl Into<String>) -> Option<&(PropertyKind, PklValue)> {
         self.variables.get(&name.into())
     }
 
@@ -240,15 +244,36 @@ impl PklTable {
             .import(module_uri, span.to_owned())
             .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
 
+        fn transform_map(
+            original: HashMap<String, (PropertyKind, PklValue)>,
+        ) -> HashMap<String, PklValue> {
+            original
+                .into_iter()
+                .map(|(key, (_, pkl_value))| (key, pkl_value))
+                .collect()
+        }
+
         if let Some(local) = local_name {
-            self.insert(local, imported_table.variables.into());
+            self.insert(
+                local,
+                (
+                    PropertyKind::ConstLocal,
+                    transform_map(imported_table.variables).into(),
+                ),
+            );
             return Ok(());
         }
 
         let name = Importer::construct_name_from_uri(module_uri, span)
             .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
 
-        self.insert(name, imported_table.variables.into());
+        self.insert(
+            name,
+            (
+                PropertyKind::ConstLocal,
+                transform_map(imported_table.variables).into(),
+            ),
+        );
 
         Ok(())
     }
@@ -377,6 +402,7 @@ impl PklTable {
             PklExpr::Identifier(Identifier(id, range)) => self
                 .get(id)
                 .cloned()
+                .map(|v| v.1)
                 .ok_or_else(|| (format!("unknown variable `{}`", id), range).into()),
             PklExpr::Value(value) => self.evaluate_value(value),
             PklExpr::MemberExpression(base_expr, indexor, range) => {
@@ -681,7 +707,7 @@ impl PklTable {
 
     fn evaluate_amending_object(&self, a: &str, b: ExprHash, span: Span) -> PklResult<PklValue> {
         let other_object = match self.get(a) {
-            Some(PklValue::Object(hash)) => hash,
+            Some((_kind, PklValue::Object(hash))) => hash,
             _ => return Err((format!("Unknown object `{}`", a), span).into()),
         };
 
@@ -893,7 +919,7 @@ fn handle_property(
     // if var is amended/extended then allows
     // assignment in new module
     // otherwise throws an Error
-    if let Some(_) = table.insert(name.0, evaluated_value) {
+    if let Some(_) = table.insert(name.0, (kind, evaluated_value)) {
         // variables can be either amended or extended
         match table.module_data.get_variables_mut() {
             Some(vars) => {

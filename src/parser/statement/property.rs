@@ -22,6 +22,7 @@ pub enum PropertyKind {
     Local,
     Fixed,
     Const,
+    ConstLocal,
 }
 
 /// Parse a token stream into a Pkl const Statement.

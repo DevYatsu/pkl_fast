@@ -86,6 +86,15 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     statements.as_mut(),
                 )?;
             }
+            Ok(token) if matches!(token, PklToken::ConstLocal) => {
+                handle_property_token(
+                    &mut is_newline,
+                    lexer,
+                    token,
+                    PropertyKind::ConstLocal,
+                    statements.as_mut(),
+                )?;
+            }
             Ok(PklToken::TypeAlias) if is_newline => {
                 // parses until newline here thus is_newline is set to true
                 let statement = parse_typealias(lexer)?;

@@ -74,6 +74,8 @@ pub enum PklToken<'a> {
     Const,
     #[token("fixed")]
     Fixed,
+    #[regex(r"const\s+local")]
+    ConstLocal,
 
     #[token("module")]
     Module,
