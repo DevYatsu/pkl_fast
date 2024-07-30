@@ -2,8 +2,8 @@ use crate::{
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
         statement::{
-            amends::Amends, class::ClassDeclaration, constant::Constant, extends::Extends,
-            import::Import, module::Module, typealias::TypeAlias, PklStatement,
+            amends::Amends, class::ClassDeclaration, extends::Extends, import::Import,
+            module::Module, property::Property, typealias::TypeAlias, PklStatement,
         },
         types::AstPklType,
         value::AstPklValue,
@@ -756,7 +756,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
             }
 
             // handle definition of local variables as a different statement next
-            PklStatement::Constant(Constant {
+            PklStatement::Property(Property {
                 name, value, _type, ..
             }) => {
                 in_body = true;
@@ -910,7 +910,7 @@ fn handle_class(table: &mut PklTable, declaration: ClassDeclaration) -> PklResul
         if !amended_schemas.contains(&name.0.to_owned()) {
             return Err((
                 format!(
-                    "Cannot redefine class '{}', class is not defined inside of amended module '{}'",
+                    "Cannot define class '{}', class is not defined inside of amended module '{}'",
                     name.0,
                     table.module_data.name().unwrap(/* safe: if amended_variables.is_some() then name is too */)
                 ),

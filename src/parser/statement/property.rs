@@ -8,7 +8,7 @@ use crate::PklResult;
 use logos::{Lexer, Span};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Constant<'a> {
+pub struct Property<'a> {
     pub name: Identifier<'a>,
     pub _type: Option<AstPklType<'a>>,
     pub value: PklExpr<'a>,
@@ -16,16 +16,16 @@ pub struct Constant<'a> {
 }
 
 /// Parse a token stream into a Pkl const Statement.
-pub fn parse_const<'a>(
+pub fn parse_property<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
     name: &'a str,
 ) -> PklResult<PklStatement<'a>> {
     let name_span = lexer.span();
     let start = name_span.start;
-    let (_type, value) = parse_const_expr(lexer)?;
+    let (_type, value) = parse_property_expr(lexer)?;
     let end = lexer.span().end;
 
-    Ok(PklStatement::Constant(Constant {
+    Ok(PklStatement::Property(Property {
         name: Identifier(name, name_span),
         _type,
         value,
@@ -34,7 +34,7 @@ pub fn parse_const<'a>(
 }
 
 /// Parse a token stream into a Pkl Expr after an identifier with a possible type.
-pub fn parse_const_expr<'a>(
+pub fn parse_property_expr<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
 ) -> PklResult<(Option<AstPklType<'a>>, PklExpr<'a>)> {
     loop {
@@ -62,7 +62,7 @@ pub fn parse_const_expr<'a>(
             }
             Some(_) => {
                 return Err((
-                    "unexpected token here (context: constant)".to_owned(),
+                    "unexpected token here (context: property)".to_owned(),
                     lexer.span(),
                 ));
             }
@@ -74,7 +74,7 @@ pub fn parse_const_expr<'a>(
 }
 
 /// Parse a token stream into a Pkl Expr after an identifier.
-pub fn parse_const_expr_without_type<'a>(
+pub fn parse_property_expr_without_type<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
 ) -> PklResult<PklExpr<'a>> {
     loop {
@@ -98,7 +98,7 @@ pub fn parse_const_expr_without_type<'a>(
             }
             Some(_) => {
                 return Err((
-                    "unexpected token here (context: constant)".to_owned(),
+                    "unexpected token here (context: property)".to_owned(),
                     lexer.span(),
                 ));
             }

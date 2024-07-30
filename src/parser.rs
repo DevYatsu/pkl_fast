@@ -5,10 +5,10 @@ use logos::{Lexer, Source, Span};
 use statement::{
     amends::parse_amends_clause,
     class::{parse_class_declaration, ClassKind},
-    constant::{parse_const, Constant},
     extends::parse_extends_clause,
     import::{parse_import, Import},
     module::{parse_module_clause, Module},
+    property::{parse_property, Property},
     typealias::{parse_typealias, TypeAlias},
     PklStatement,
 };
@@ -66,7 +66,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                         lexer.span(),
                     ));
                 }
-                let statement = parse_const(lexer, id)?;
+                let statement = parse_property(lexer, id)?;
                 statements.push(statement);
                 is_newline = false;
             }
@@ -198,7 +198,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
             }
 
             Ok(PklToken::Dot) => {
-                if let Some(PklStatement::Constant(Constant { value, .. })) = statements.last_mut()
+                if let Some(PklStatement::Property(Property { value, .. })) = statements.last_mut()
                 {
                     let expr_member = parse_member_expr_member(lexer)?;
                     let expr_start = value.span().start;
@@ -225,7 +225,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 }
             }
             Ok(PklToken::OpenBrace) => {
-                if let Some(PklStatement::Constant(Constant { value, span, .. })) =
+                if let Some(PklStatement::Property(Property { value, span, .. })) =
                     statements.last_mut()
                 {
                     match value {

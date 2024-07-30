@@ -1,19 +1,19 @@
 use super::expr::PklExpr;
 use amends::Amends;
 use class::ClassDeclaration;
-use constant::Constant;
 use extends::Extends;
 use import::Import;
 use logos::Span;
 use module::Module;
+use property::Property;
 use typealias::TypeAlias;
 
 pub mod amends;
 pub mod class;
-pub mod constant;
 pub mod extends;
 pub mod import;
 pub mod module;
+pub mod property;
 pub mod typealias;
 
 /* ANCHOR: statements */
@@ -21,7 +21,7 @@ pub mod typealias;
 #[derive(Debug, PartialEq, Clone)]
 pub enum PklStatement<'a> {
     /// A constant/variable statement
-    Constant(Constant<'a>),
+    Property(Property<'a>),
 
     /// Am import statement
     Import(Import<'a>),
@@ -52,7 +52,7 @@ pub enum PklStatement<'a> {
 impl<'a> PklStatement<'a> {
     pub fn span(&self) -> Span {
         match self {
-            PklStatement::Constant(Constant { span, .. }) => span.clone(),
+            PklStatement::Property(Property { span, .. }) => span.clone(),
             PklStatement::Import(Import { span, .. }) => span.clone(),
             PklStatement::Class(ClassDeclaration { span, .. }) => span.clone(),
             PklStatement::TypeAlias(TypeAlias { span, .. }) => span.clone(),
@@ -65,7 +65,7 @@ impl<'a> PklStatement<'a> {
         matches!(self, &PklStatement::Import { .. })
     }
     pub fn is_constant(&self) -> bool {
-        matches!(self, &PklStatement::Constant { .. })
+        matches!(self, &PklStatement::Property { .. })
     }
     pub fn is_class_declaration(&self) -> bool {
         matches!(self, &PklStatement::Class { .. })
