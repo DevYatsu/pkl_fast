@@ -10,23 +10,33 @@ use logos::{Lexer, Span};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Property<'a> {
     pub name: Identifier<'a>,
+    pub kind: PropertyKind,
     pub _type: Option<AstPklType<'a>>,
     pub value: PklExpr<'a>,
     pub span: Span,
+}
+#[derive(Debug, Clone, PartialEq, Default)]
+pub enum PropertyKind {
+    #[default]
+    Classical,
+    Local,
+    Fixed,
+    Const,
 }
 
 /// Parse a token stream into a Pkl const Statement.
 pub fn parse_property<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
-    name: &'a str,
+    name: Identifier<'a>,
+    kind: PropertyKind,
 ) -> PklResult<PklStatement<'a>> {
-    let name_span = lexer.span();
-    let start = name_span.start;
+    let start = name.1.start;
     let (_type, value) = parse_property_expr(lexer)?;
     let end = lexer.span().end;
 
     Ok(PklStatement::Property(Property {
-        name: Identifier(name, name_span),
+        name,
+        kind,
         _type,
         value,
         span: start..end,
