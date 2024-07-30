@@ -36,7 +36,8 @@ pub fn match_data_size_props_api(
             return Err((
                 format!("DataSize does not possess {} property", property),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }
@@ -101,7 +102,8 @@ pub fn match_data_size_methods_api(
             return Err((
                 format!("DataSize does not possess {} method", property),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }

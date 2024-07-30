@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 // Helper macro to count arguments
 #[macro_export]
 macro_rules! count_args {
@@ -13,6 +11,7 @@ macro_rules! count_args {
 macro_rules! generate_method {
     ($name:expr,$args:expr; $($arg_index:tt : $arg_type:ident),+; $action:expr; $range:expr) => {{
         use crate::count_args;
+        use crate::errors::PklError;
 
         let name: &str = $name;
         let number_of_args: usize = count_args!($($arg_index),+);
@@ -24,8 +23,7 @@ macro_rules! generate_method {
                     "Method '{}' expects exactly {} argument(s)",
                     name, number_of_args
                 ),
-                $range,
-            ));
+                $range,).into());
         }
 
         $(
@@ -36,8 +34,7 @@ macro_rules! generate_method {
                             "{} method expects argument at index {} to be of type Number, but found {}",
                             name, $arg_index, args[$arg_index].get_type()
                         ),
-                        $range,
-                    ));
+                        $range).into());
                 }
             } else if args[$arg_index].get_type() != stringify!($arg_type) {
                 return Err((
@@ -45,8 +42,7 @@ macro_rules! generate_method {
                         "{} method expects argument at index {} to be of type {}, but found {}",
                         name, $arg_index, stringify!($arg_type), args[$arg_index].get_type()
                     ),
-                    $range,
-                ));
+                    $range).into());
             }
         )+
 
@@ -59,13 +55,12 @@ macro_rules! generate_method {
                             "{} method expects argument at index {} to be of type {}, but found {}",
                             name, $arg_index, stringify!($arg_type), args[$arg_index].get_type()
                         ),
-                        $range,
-                    )),
+                        $range).into()),
                 }
             ),+
         );
 
-        $action(args_tuple)
+        $action(args_tuple).map_err(|e: (String, Range<usize>)| e.into())
     }};
     ($name:expr,$args:expr; $action:expr; $range:expr) => {{
         let name: &str = $name;
@@ -78,8 +73,7 @@ macro_rules! generate_method {
                     "Method '{}' expects 0 argument",
                     name
                 ),
-                $range,
-            ));
+                $range,).into());
         }
 
         $action
@@ -97,8 +91,7 @@ macro_rules! generate_method {
                     "Method '{}' expects exactly {} argument(s)",
                     name, number_of_args
                 ),
-                $range,
-            ));
+                $range,).into());
         }
 
 
@@ -112,8 +105,7 @@ macro_rules! generate_method {
                         "{} method expects argument at index {} to be of type Number, but found {}",
                         name, arg_number, args[arg_number].get_type()
                     ),
-                    $range,
-                ));
+                    $range).into());
             }
 
             args_tuple[arg_number] = match &args[arg_number] {
@@ -124,8 +116,7 @@ macro_rules! generate_method {
                         "{} method expects argument at index {} to be of type Number, but found {}",
                         name, arg_number, args[arg_number].get_type()
                     ),
-                    $range,
-                )),
+                    $range).into()),
             };
         }
         $action(args_tuple)

@@ -41,21 +41,23 @@ pub fn match_float_props_api(
         "isFinite" => return Ok(PklValue::Bool(float.is_finite())),
         "isInfinite" => return Ok(PklValue::Bool(float.is_infinite())),
         "isNaN" => return Ok(PklValue::Bool(float.is_nan())),
-        "isNonZero" => return Ok(PklValue::Bool(float != 0.0)),
+        "isNonZero" => return Ok(PklValue::Bool(float != 0.0).into()),
 
-        "isEven" => return Err(("Float does not possess isEven property".to_owned(), range)),
-        "isOdd" => return Err(("Float does not possess isOdd property".to_owned(), range)),
+        "isEven" => return Err(("Float does not possess isEven property".to_owned(), range).into()),
+        "isOdd" => return Err(("Float does not possess isOdd property".to_owned(), range).into()),
         "inv" => {
             return Err((
                 "Cannot apply bitwise NOT operator on floats".to_owned(),
                 range,
-            ))
+            )
+                .into())
         }
         _ => {
             return Err((
                 format!("Float does not possess {} property", property),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }
@@ -95,15 +97,15 @@ pub fn match_float_methods_api(
                             {
                                 let value = float.trunc();
                                 if value.is_infinite() {
-                                    return Err(("Cannot convert Float to Int, float represents infinity".to_owned(), range))
+                                    return Err(("Cannot convert Float to Int, float represents infinity".to_owned(), range).into())
                                 }else if value.is_nan() {
-                                    return Err(("Cannot convert Float to Int, float is NaN".to_owned(), range))
+                                    return Err(("Cannot convert Float to Int, float is NaN".to_owned(), range).into())
                                 }
             else
                                if value > i64::MAX as f64 {
-                                   return Err(("Cannot convert Float to Int, float is too large".to_owned(), range))
+                                   return Err(("Cannot convert Float to Int, float is too large".to_owned(), range).into())
                                }else if value < i64::MIN as f64 {
-                                   return Err(("Cannot convert Float to Int, float is too large".to_owned(), range))
+                                   return Err(("Cannot convert Float to Int, float is too large".to_owned(), range).into())
                                }
                                Ok((value as i64).into())}
                             ;
@@ -176,7 +178,8 @@ pub fn match_float_methods_api(
                     fn_name
                 ),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }

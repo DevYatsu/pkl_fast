@@ -46,13 +46,14 @@ pub fn parse_member_expr_member<'a>(
                 // Skip spaces and newlines
             }
             Err(e) => {
-                return Err((e.to_string(), lexer.span()));
+                return Err((e.to_string(), lexer.span()).into());
             }
             _ => {
                 return Err((
                     "unexpected token, expected identifier".to_owned(),
                     lexer.span(),
-                ));
+                )
+                    .into());
             }
         }
     }
@@ -60,5 +61,6 @@ pub fn parse_member_expr_member<'a>(
     Err((
         "expected identifier but got nothing".to_owned(),
         lexer.span(),
-    ))
+    )
+        .into())
 }

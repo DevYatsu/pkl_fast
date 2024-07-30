@@ -30,12 +30,12 @@ macro_rules! parse_multispaces_until {
                 | Ok(PklToken::NewLine) => {
                     continue;
                 }
-                Err(e) => return Err((e.to_string(), lexer.span())),
-                _ => return Err(("unexpected token here".to_owned(), lexer.span())),
+                Err(e) => return Err((e.to_string(), lexer.span()).into()),
+                _ => return Err(("unexpected token here".to_owned(), lexer.span()).into()),
             }
         }
 
-        Err(("Unexpected end of input".to_owned(), lexer.span()))
+        Err(("Unexpected end of input".to_owned(), lexer.span()).into())
     }};
 }
 

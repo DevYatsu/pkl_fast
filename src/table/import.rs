@@ -36,7 +36,8 @@ impl Importer {
             return Err((
                 format!("Cannot extract a valid name out of uri '{uri}'"),
                 span,
-            ));
+            )
+                .into());
         }
 
         Ok(name.to_owned())
@@ -58,7 +59,8 @@ impl Importer {
             return Err((
                 format!("Circular import detected for file: {:?}", path_as_str),
                 span,
-            ));
+            )
+                .into());
         }
 
         self.currently_importing.insert(path_as_str.to_owned());

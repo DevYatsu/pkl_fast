@@ -48,6 +48,7 @@ pub fn match_bool_methods_api(
         _ => Err((
             format!("Boolean does not possess {} method", fn_name),
             range,
-        )),
+        )
+            .into()),
     }
 }

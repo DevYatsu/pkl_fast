@@ -1,4 +1,5 @@
 use crate::{
+    errors::PklError,
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
         statement::{
@@ -13,9 +14,9 @@ use crate::{
         },
         types::AstPklType,
         value::AstPklValue,
-        ExprHash, Identifier, PklResult,
+        ExprHash, Identifier,
     },
-    Pkl,
+    Pkl, PklResult,
 };
 use base::{
     bool_api::match_bool_methods_api,
@@ -199,14 +200,14 @@ impl PklTable {
     ///
     /// ```
     /// let mut table1 = PklTable::new();
-    /// table1.insert("var1", PklValue::Int(1));
+    /// table1.insert("var1", PklValue::Int(1).into());
     ///
     /// let mut table2 = PklTable::new();
     /// table2.insert("var2", PklValue::Int(2));
     ///
     /// table1.extend(table2);
     ///
-    /// assert_eq!(table1.get("var1"), Some(&PklValue::Int(1)));
+    /// assert_eq!(table1.get("var1"), Some(&PklValue::Int(1).into()));
     /// assert_eq!(table1.get("var2"), Some(&PklValue::Int(2)));
     /// ```
     pub fn extend(&mut self, other_table: PklTable) {
@@ -234,14 +235,19 @@ impl PklTable {
         local_name: Option<&str>,
         span: Span,
     ) -> PklResult<()> {
-        let imported_table = self.importer.import(module_uri, span.to_owned())?;
+        let imported_table = self
+            .importer
+            .import(module_uri, span.to_owned())
+            .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
 
         if let Some(local) = local_name {
             self.insert(local, imported_table.variables.into());
             return Ok(());
         }
 
-        let name = Importer::construct_name_from_uri(module_uri, span)?;
+        let name = Importer::construct_name_from_uri(module_uri, span)
+            .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
+
         self.insert(name, imported_table.variables.into());
 
         Ok(())
@@ -250,10 +256,14 @@ impl PklTable {
     pub fn amends(&mut self, module_uri: &str, span: Span) -> PklResult<()> {
         match module_uri {
             uri if uri.starts_with("package://") => {
-                return import::web::amends_pkg(self, uri, span)
+                return import::web::amends_pkg(self, uri, span).into()
             }
-            uri if uri.starts_with("pkl:") => return import::official::amends_pkg(self, uri, span),
-            uri if uri.starts_with("https://") => return import::web::amends_http(self, uri, span),
+            uri if uri.starts_with("pkl:") => {
+                return import::official::amends_pkg(self, uri, span).into()
+            }
+            uri if uri.starts_with("https://") => {
+                return import::web::amends_http(self, uri, span).into()
+            }
             file_path => {
                 let file_content = fs::read_to_string(file_path)
                     .map_err(|e| (format!("Error reading {file_path}: {}", e), span.to_owned()))?;
@@ -298,13 +308,13 @@ impl PklTable {
     pub fn extends(&mut self, module_uri: &str, span: Span) -> PklResult<()> {
         match module_uri {
             uri if uri.starts_with("package://") => {
-                return import::web::extends_pkg(self, uri, span)
+                return import::web::extends_pkg(self, uri, span).into()
             }
             uri if uri.starts_with("pkl:") => {
-                return import::official::extends_pkg(self, uri, span)
+                return import::official::extends_pkg(self, uri, span).into()
             }
             uri if uri.starts_with("https://") => {
-                return import::web::extends_http(self, uri, span)
+                return import::web::extends_http(self, uri, span).into()
             }
             file_path => {
                 let file_content = fs::read_to_string(file_path)
@@ -319,7 +329,8 @@ impl PklTable {
                             "Cannot extend module '{file_path}': module is not declared as open"
                         ),
                         span,
-                    ));
+                    )
+                        .into());
                 }
 
                 let extended = pkl
@@ -366,7 +377,7 @@ impl PklTable {
             PklExpr::Identifier(Identifier(id, range)) => self
                 .get(id)
                 .cloned()
-                .ok_or_else(|| (format!("unknown variable `{}`", id), range)),
+                .ok_or_else(|| (format!("unknown variable `{}`", id), range).into()),
             PklExpr::Value(value) => self.evaluate_value(value),
             PklExpr::MemberExpression(base_expr, indexor, range) => {
                 let base = self.evaluate(*base_expr)?;
@@ -382,7 +393,8 @@ impl PklTable {
                                 Err((
                                     format!("Object does not possess a '{property}' field"),
                                     range,
-                                ))
+                                )
+                                    .into())
                             }
                         }
                         PklValue::String(s) => match_string_props_api(&s, property, range),
@@ -393,7 +405,8 @@ impl PklTable {
                                 Err((
                                     format!("Object does not possess a '{property}' field"),
                                     range,
-                                ))
+                                )
+                                    .into())
                             }
                         }
                         PklValue::DataSize(byte) => {
@@ -407,7 +420,8 @@ impl PklTable {
                         _ => Err((
                             format!("Indexing of value '{:?}' not yet supported", base),
                             range,
-                        )),
+                        )
+                            .into()),
                     },
                     ExprMember::FuncCall(FuncCall(Identifier(fn_name, _), values, _)) => {
                         // here are method calls
@@ -429,7 +443,8 @@ impl PklTable {
                                     Err((
                                         format!("Object does not possess a '{fn_name}' field"),
                                         range,
-                                    ))
+                                    )
+                                        .into())
                                 }
                             }
                             PklValue::String(s) => {
@@ -443,7 +458,8 @@ impl PklTable {
                                     Err((
                                         format!("Object does not possess a '{fn_name}' field"),
                                         range,
-                                    ))
+                                    )
+                                        .into())
                                 }
                             }
                             PklValue::DataSize(byte) => {
@@ -457,7 +473,8 @@ impl PklTable {
                             _ => Err((
                                 format!("Indexing of value '{:?}' not yet supported", base),
                                 range,
-                            )),
+                            )
+                                .into()),
                         }
                     }
                 }
@@ -497,7 +514,8 @@ impl PklTable {
                         AstPklType::Basic(value, type_span) => Err((
                             format!("Type '{value}' and '{}' do not match.", id.0),
                             type_span,
-                        )),
+                        )
+                            .into()),
                         AstPklType::StringLiteral(_, _) => todo!(),
                         AstPklType::Union(_, _) => todo!(),
                         AstPklType::Nullable(_) => todo!(),
@@ -532,7 +550,8 @@ impl PklTable {
                     (None, None) => Err((
                         "Unknown class instance, add the name of the class!".to_owned(),
                         span,
-                    )),
+                    )
+                        .into()),
                 },
                 _ => self.evaluate_value(v),
             },
@@ -612,10 +631,11 @@ impl PklTable {
                 "Class Instance name is expected to be provided when not in a constant declaration"
                     .to_owned(),
                 b.1,
-            )),
+            )
+                .into()),
         };
 
-        let new_hash: Result<HashMap<_, _>, _> =
+        let new_hash: Result<HashMap<_, _>, PklError> =
             b.0.into_iter()
                 .map(|(name, expr)| {
                     let evaluated_expr = self.evaluate(expr)?;
@@ -625,19 +645,19 @@ impl PklTable {
 
         let schema = match self.get_schema(a.0) {
             Some(schema) => schema,
-            None => return Err((format!("Unknown class '{}'", a.0), a.1)),
+            None => return Err((format!("Unknown class '{}'", a.0), a.1).into()),
         };
 
         let found_schema = new_hash?;
 
         for k in schema.keys() {
             if !found_schema.contains_key(k) {
-                return Err((format!("Missing key '{k}' in instance of {}", a.0), b.1));
+                return Err((format!("Missing key '{k}' in instance of {}", a.0), b.1).into());
             }
         }
         for k in found_schema.keys() {
             if !schema.contains_key(k) {
-                return Err((format!("Unknown key '{k}' in instance of {}", a.0), b.1));
+                return Err((format!("Unknown key '{k}' in instance of {}", a.0), b.1).into());
             }
         }
 
@@ -651,7 +671,8 @@ impl PklTable {
                         _type
                     ),
                     b.1,
-                ));
+                )
+                    .into());
             }
         }
 
@@ -661,7 +682,7 @@ impl PklTable {
     fn evaluate_amending_object(&self, a: &str, b: ExprHash, span: Span) -> PklResult<PklValue> {
         let other_object = match self.get(a) {
             Some(PklValue::Object(hash)) => hash,
-            _ => return Err((format!("Unknown object `{}`", a), span)),
+            _ => return Err((format!("Unknown object `{}`", a), span).into()),
         };
 
         let mut new_hash = other_object.clone();
@@ -706,13 +727,14 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 is_open,
             }) => {
                 if module_clause_found {
-                    return Err(("A file cannot have 2 module clauses".to_owned(), span));
+                    return Err(("A file cannot have 2 module clauses".to_owned(), span).into());
                 }
                 if amends_found || import_found || in_body {
                     return Err((
                         "Module clause must be at the start of the file".to_owned(),
                         span,
-                    ));
+                    )
+                        .into());
                 }
 
                 table.module_name = Some(full_name.to_owned());
@@ -724,16 +746,18 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                     return Err((
                         "Cannot have both an amends clause and an extends clause".to_owned(),
                         span,
-                    ));
+                    )
+                        .into());
                 }
                 if amends_found {
-                    return Err(("A file cannot have 2 amends clauses".to_owned(), span));
+                    return Err(("A file cannot have 2 amends clauses".to_owned(), span).into());
                 }
                 if import_found || in_body {
                     return Err((
                         "Amends clause must be before import clauses and file body".to_owned(),
                         span,
-                    ));
+                    )
+                        .into());
                 }
 
                 table.amends(name, span)?;
@@ -744,13 +768,15 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                     return Err((
                         "Cannot have both an amends clause and an extends clause".to_owned(),
                         span,
-                    ));
+                    )
+                        .into());
                 }
                 if import_found || in_body {
                     return Err((
                         "Extends clause must be before import clauses and file body".to_owned(),
                         span,
-                    ));
+                    )
+                        .into());
                 }
 
                 table.extends(name, span)?;
@@ -759,7 +785,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
             PklStatement::Property(declaration) => {
                 in_body = true;
-                handle_constant(&mut table, declaration)?;
+                handle_property(&mut table, declaration)?;
             }
             PklStatement::Class(declaration) => {
                 in_body = true;
@@ -780,7 +806,8 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                     return Err((
                         "Import statements must be before document body".to_owned(),
                         span,
-                    ));
+                    )
+                        .into());
                 }
 
                 table.import(name, local_name, span)?;
@@ -792,7 +819,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
     Ok(table)
 }
 
-fn handle_constant(
+fn handle_property(
     table: &mut PklTable,
     Property {
         name,
@@ -812,7 +839,7 @@ fn handle_constant(
             .map(String::as_str)
             .collect::<Vec<&str>>();
 
-        if !vars.is_empty() {
+        if !vars.is_empty() && name.0.len() > 2 {
             match check_closest_word(name.0, vars.as_slice(), 1) {
                 Some(closest) => {
                     return Err((
@@ -821,7 +848,8 @@ fn handle_constant(
                             closest, name.0
                         ),
                         name.1,
-                    ))
+                    )
+                        .into())
                 }
                 None => (),
             };
@@ -838,8 +866,7 @@ fn handle_constant(
                     name.0,
                     table.module_data.name().unwrap(/* safe: if amended_variables.is_some() then name is too */)
                 ),
-                name.1,
-            ));
+                name.1).into());
         }
     }
 
@@ -854,7 +881,8 @@ fn handle_constant(
                     true_type, name.0
                 ),
                 span,
-            ));
+            )
+                .into());
         }
     }
 
@@ -870,10 +898,10 @@ fn handle_constant(
                 if let Some(pos) = vars.iter().position(|x| x == &name.0) {
                     vars.remove(pos);
                 } else {
-                    return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
+                    return Err((format!("Cannot reassign variable '{}'", name.0), name.1).into());
                 }
             }
-            None => return Err((format!("Cannot reassign variable '{}'", name.0), name.1)),
+            None => return Err((format!("Cannot reassign variable '{}'", name.0), name.1).into()),
         }
     }
 
@@ -900,7 +928,8 @@ fn handle_class(table: &mut PklTable, declaration: ClassDeclaration) -> PklResul
                             closest, name.0
                         ),
                         name.1,
-                    ))
+                    )
+                        .into())
                 }
                 None => (),
             };
@@ -917,8 +946,7 @@ fn handle_class(table: &mut PklTable, declaration: ClassDeclaration) -> PklResul
                     name.0,
                     table.module_data.name().unwrap(/* safe: if amended_variables.is_some() then name is too */)
                 ),
-                name.1,
-            ));
+                name.1).into());
         }
     }
 
@@ -934,10 +962,10 @@ fn handle_class(table: &mut PklTable, declaration: ClassDeclaration) -> PklResul
                 if let Some(pos) = vars.iter().position(|x| x == &name.0) {
                     vars.remove(pos);
                 } else {
-                    return Err((format!("Cannot reassign variable '{}'", name.0), name.1));
+                    return Err((format!("Cannot reassign variable '{}'", name.0), name.1).into());
                 }
             }
-            None => return Err((format!("Cannot reassign variable '{}'", name.0), name.1)),
+            None => return Err((format!("Cannot reassign variable '{}'", name.0), name.1).into()),
         }
     }
 

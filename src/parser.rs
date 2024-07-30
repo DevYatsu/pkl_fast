@@ -1,7 +1,7 @@
-use crate::lexer::PklToken;
+use crate::{lexer::PklToken, PklResult};
 use expr::{member_expr::parse_member_expr_member, object::parse_object, PklExpr};
 use hashbrown::HashMap;
-use logos::{Lexer, Source, Span};
+use logos::{Lexer, Source};
 use statement::{
     amends::parse_amends_clause,
     class::{parse_class_declaration, ClassKind},
@@ -23,20 +23,6 @@ pub mod types;
 pub mod value;
 
 mod utils;
-
-/// Represents a parsing error in the PKL format.
-///
-/// A `ParseError` is a tuple consisting of:
-///
-/// * `String` - A message describing the error.
-/// * `Span` - The span in the source where the error occurred.
-pub type ParseError = (String, Span);
-
-/// A result type for PKL parsing operations.
-///
-/// The `PklResult` type is a specialized `Result` type used throughout the PKL parsing code.
-/// It represents either a successful result (`T`) or a `ParseError`.
-pub type PklResult<T> = std::result::Result<T, ParseError>;
 
 pub type ExprHash<'a> = (HashMap<&'a str, PklExpr<'a>>, Range<usize>);
 
@@ -126,7 +112,8 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     return Err((
                         "unexpected token here (context: global)".to_owned(),
                         lexer.span(),
-                    ));
+                    )
+                        .into());
                 }
             }
             Ok(PklToken::OpenModule) if is_newline => {
@@ -169,13 +156,15 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                             "Import statement already has an 'as' close (context: import)"
                                 .to_owned(),
                             lexer.span(),
-                        ));
+                        )
+                            .into());
                     }
                 } else {
                     return Err((
                         "unexpected token here (context: global)".to_owned(),
                         lexer.span(),
-                    ));
+                    )
+                        .into());
                 }
             }
             Ok(PklToken::AbstractClass) if is_newline => {
@@ -215,7 +204,8 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     return Err((
                         "unexpected token here (context: global)".to_owned(),
                         lexer.span(),
-                    ));
+                    )
+                        .into());
                 }
             }
             Ok(PklToken::OpenBrace) => {
@@ -239,14 +229,16 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                             return Err((
                                 "unexpected token here (context: global)".to_owned(),
                                 lexer.span(),
-                            ));
+                            )
+                                .into());
                         }
                     }
                 } else {
                     return Err((
                         "unexpected token here (context: global)".to_owned(),
                         lexer.span(),
-                    ));
+                    )
+                        .into());
                 }
             }
             Ok(PklToken::Space)
@@ -260,12 +252,13 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 is_newline = true;
                 continue;
             }
-            Err(e) => return Err((e.to_string(), lexer.span())),
+            Err(e) => return Err((e.to_string(), lexer.span()).into()),
             _ => {
                 return Err((
                     "unexpected token here (context: global)".to_owned(),
                     lexer.span(),
-                ));
+                )
+                    .into());
             }
         }
     }
@@ -279,12 +272,13 @@ fn handle_property_token<'a>(
     prop_initial_token: PklToken<'a>,
     property_kind: PropertyKind,
     statements: &mut Vec<PklStatement<'a>>,
-) -> Result<(), (String, Span)> {
+) -> PklResult<()> {
     if !*is_newline {
         return Err((
             "unexpected token here (context: global), expected newline".to_owned(),
             lexer.span(),
-        ));
+        )
+            .into());
     }
 
     let id = match prop_initial_token {

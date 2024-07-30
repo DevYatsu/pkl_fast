@@ -17,26 +17,31 @@ pub fn match_string_props_api(s: &str, property: &str, range: Range<usize>) -> P
             }))
         }
         "isEmpty" => return Ok(PklValue::Bool(s.len() == 0)),
-        "isBlank" => return Ok(PklValue::Bool(s.trim().len() == 0)),
+        "isBlank" => return Ok(PklValue::Bool(s.trim().len() == 0).into()),
         "isRegex" => {
             return Err((
                 "isRegex String API method not yet supported".to_owned(),
                 range,
-            ))
+            )
+                .into())
         }
-        "md5" => return Err(("md5 String API method not yet supported".to_owned(), range)),
-        "sha1" => return Err(("sha1 String API method not yet supported".to_owned(), range)),
+        "md5" => return Err(("md5 String API method not yet supported".to_owned(), range).into()),
+        "sha1" => {
+            return Err(("sha1 String API method not yet supported".to_owned(), range).into())
+        }
         "sha256" => {
             return Err((
                 "sha256 String API method not yet supported".to_owned(),
                 range,
-            ))
+            )
+                .into())
         }
         "sha256Int" => {
             return Err((
                 "sha256Int String API method not yet supported".to_owned(),
                 range,
-            ))
+            )
+                .into())
         }
         "base64" => return Ok(PklValue::String(BASE64_STANDARD.encode(s))),
         "base64Decoded" => {
@@ -73,7 +78,8 @@ pub fn match_string_props_api(s: &str, property: &str, range: Range<usize>) -> P
             return Err((
                 format!("String does not possess {} property", property),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }
@@ -540,7 +546,7 @@ pub fn match_string_methods_api(
                 {
                     match s.parse::<i64>() {
                         Ok(result) => Ok(PklValue::Int(result)),
-                        Err(e) => Err((format!("Failed to convert string to Int: {}", e), range))
+                        Err(e) => Err((format!("Failed to convert string to Int: {}", e), range).into())
                     }
                 };
                 range
@@ -564,7 +570,7 @@ pub fn match_string_methods_api(
                 {
                     match s.parse::<f64>() {
                         Ok(result) => Ok(PklValue::Float(result)),
-                        Err(e) => Err((format!("Failed to convert string to Float: {}", e), range))
+                        Err(e) => Err((format!("Failed to convert string to Float: {}", e), range).into())
                     }
                 };
                 range
@@ -589,7 +595,7 @@ pub fn match_string_methods_api(
                     match s {
                         "true" => Ok(true.into()),
                         "false" => Ok(false.into()),
-                        x => Err((format!("Failed to convert string to Boolean: '{x}' is neither equal to true nor false"), range))
+                        x => Err((format!("Failed to convert string to Boolean: '{x}' is neither equal to true nor false"), range).into())
                     }
                 };
                 range
@@ -615,7 +621,8 @@ pub fn match_string_methods_api(
                     fn_name
                 ),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }

@@ -38,7 +38,7 @@ pub fn parse_fn_call<'a>(
                             expr_start..expr_end,
                         );
                     } else {
-                        return Err(("unexpected token '.'".to_owned(), lexer.span()));
+                        return Err(("unexpected token '.'".to_owned(), lexer.span()).into());
                     }
                 }
                 PklToken::Comma if !is_comma => {
@@ -94,10 +94,10 @@ pub fn parse_fn_call<'a>(
                     values.push(AstPklValue::MultiLineString(s, lexer.span()).into());
                     is_comma = false;
                 }
-                _ => return Err(("unexpected token here".to_owned(), lexer.span())),
+                _ => return Err(("unexpected token here".to_owned(), lexer.span()).into()),
             },
-            Some(Err(e)) => return Err((e.to_string(), lexer.span())),
-            None => return Err(("Missing list close parenthesis".to_owned(), lexer.span())),
+            Some(Err(e)) => return Err((e.to_string(), lexer.span()).into()),
+            None => return Err(("Missing list close parenthesis".to_owned(), lexer.span()).into()),
         }
     }
 }

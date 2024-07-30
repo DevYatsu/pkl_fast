@@ -69,11 +69,11 @@ pub fn parse_expr<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklExpr<
             | Ok(PklToken::DocComment(_))
             | Ok(PklToken::LineComment(_))
             | Ok(PklToken::MultilineComment(_)) => continue,
-            Err(e) => return Err((e.to_string(), lexer.span())),
-            _ => return Err(("unexpected token here".to_owned(), lexer.span())),
+            Err(e) => return Err((e.to_string(), lexer.span()).into()),
+            _ => return Err(("unexpected token here".to_owned(), lexer.span()).into()),
         }
     }
-    Err(("empty expressions are not allowed".to_owned(), lexer.span()))
+    Err(("empty expressions are not allowed".to_owned(), lexer.span()).into())
 }
 
 impl<'a> From<AstPklValue<'a>> for PklExpr<'a> {

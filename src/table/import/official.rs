@@ -27,24 +27,27 @@ pub fn import_pkg(pkg_uri: &str, span: Span) -> PklResult<PklTable> {
         "pkl:test" => {}
         "pkl:xml" => {}
         "pkl:yaml" => {}
-        _ => return Err((format!("Unknow Pkl Package '{pkg_uri}'"), span)),
+        _ => return Err((format!("Unknow Pkl Package '{pkg_uri}'"), span).into()),
     };
 
     return Err((
         "Pkl official packages imports not yet supported!".to_owned(),
         span,
-    ));
+    )
+        .into());
 }
 
 pub fn amends_pkg(table: &mut PklTable, pkg_uri: &str, span: Span) -> PklResult<()> {
     return Err((
         "Pkl official packages amending not yet supported!".to_owned(),
         span,
-    ));
+    )
+        .into());
 }
 pub fn extends_pkg(table: &mut PklTable, pkg_uri: &str, span: Span) -> PklResult<()> {
     return Err((
         "Pkl official packages extending not yet supported!".to_owned(),
         span,
-    ));
+    )
+        .into());
 }

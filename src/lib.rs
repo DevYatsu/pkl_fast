@@ -3,12 +3,14 @@ use lexer::PklToken;
 use parser::{parse_pkl, statement::PklStatement};
 use table::{ast_to_table, PklTable};
 
+mod errors;
 mod lexer;
 mod parser;
 mod table;
 mod utils;
 
-pub use parser::PklResult;
+pub use errors::PklError;
+pub use errors::PklResult;
 pub use table::value::PklValue;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -116,8 +118,8 @@ impl Pkl {
     pub fn get_bool(&self, name: &str) -> PklResult<bool> {
         match self.table.get(name) {
             Some(PklValue::Bool(b)) => Ok(*b),
-            Some(_) => Err((format!("Variable `{}` is not a boolean", name), 0..0)),
-            None => Err((format!("Variable `{}` not found", name), 0..0)),
+            Some(_) => Err((format!("Variable `{}` is not a boolean", name), 0..0).into()),
+            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
         }
     }
 
@@ -133,8 +135,8 @@ impl Pkl {
     pub fn get_int(&self, name: &str) -> PklResult<i64> {
         match self.table.get(name) {
             Some(PklValue::Int(i)) => Ok(*i),
-            Some(_) => Err((format!("Variable `{}` is not an integer", name), 0..0)),
-            None => Err((format!("Variable `{}` not found", name), 0..0)),
+            Some(_) => Err((format!("Variable `{}` is not an integer", name), 0..0).into()),
+            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
         }
     }
 
@@ -150,8 +152,8 @@ impl Pkl {
     pub fn get_float(&self, name: &str) -> PklResult<f64> {
         match self.table.get(name) {
             Some(PklValue::Float(f)) => Ok(*f),
-            Some(_) => Err((format!("Variable `{}` is not a float", name), 0..0)),
-            None => Err((format!("Variable `{}` not found", name), 0..0)),
+            Some(_) => Err((format!("Variable `{}` is not a float", name), 0..0).into()),
+            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
         }
     }
 
@@ -167,8 +169,8 @@ impl Pkl {
     pub fn get_string(&self, name: &str) -> PklResult<String> {
         match self.table.get(name) {
             Some(PklValue::String(s)) => Ok(s.to_owned()),
-            Some(_) => Err((format!("Variable `{}` is not a string", name), 0..0)),
-            None => Err((format!("Variable `{}` not found", name), 0..0)),
+            Some(_) => Err((format!("Variable `{}` is not a string", name), 0..0).into()),
+            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
         }
     }
 
@@ -184,8 +186,8 @@ impl Pkl {
     pub fn get_object(&self, name: &str) -> PklResult<&HashMap<String, PklValue>> {
         match self.table.get(name) {
             Some(PklValue::Object(o)) => Ok(o),
-            Some(_) => Err((format!("Variable `{}` is not an object", name), 0..0)),
-            None => Err((format!("Variable `{}` not found", name), 0..0)),
+            Some(_) => Err((format!("Variable `{}` is not an object", name), 0..0).into()),
+            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
         }
     }
 }

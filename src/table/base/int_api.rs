@@ -36,9 +36,9 @@ pub fn match_int_props_api(int: i64, property: &str, range: Range<usize>) -> Pkl
         "isNaN" => return Ok(PklValue::Bool(false)),
         "isNonZero" => return Ok(PklValue::Bool(int != 0)),
         "inv" => return Ok(PklValue::Int(!int)),
-        "isEven" => return Ok(PklValue::Bool(int % 2 == 0)),
+        "isEven" => return Ok(PklValue::Bool(int % 2 == 0).into()),
         "isOdd" => return Ok(PklValue::Bool(int % 2 == 1)),
-        _ => return Err((format!("Int does not possess {} property", property), range)),
+        _ => return Err((format!("Int does not possess {} property", property), range).into()),
     }
 }
 
@@ -231,7 +231,7 @@ pub fn match_int_methods_api(
                 "toChar", &args;
                 {
                     if int > 0x10FFFF &&  int < 0 {
-                        return Err((format!("Cannot convert {int} to char, it is not a valid unicode code point"), range))
+                        return Err((format!("Cannot convert {int} to char, it is not a valid unicode code point"), range).into())
                     }
 
                     Ok((std::char::from_u32(int as u32).unwrap() as i64).into())
@@ -246,7 +246,8 @@ pub fn match_int_methods_api(
                     fn_name
                 ),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }

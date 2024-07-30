@@ -19,7 +19,8 @@ pub fn match_list_props_api(
                 return Err((
                     "Cannot get first element of an empty list!".to_owned(),
                     range,
-                ));
+                )
+                    .into());
             }
 
             return Ok(list.remove(0));
@@ -33,7 +34,7 @@ pub fn match_list_props_api(
         }
         "rest" => {
             if list.is_empty() {
-                return Err(("Cannot get the rest of an empty list!".to_owned(), range));
+                return Err(("Cannot get the rest of an empty list!".to_owned(), range).into());
             }
 
             return Ok(PklValue::List(list.split_at(1).1.to_vec()));
@@ -47,7 +48,7 @@ pub fn match_list_props_api(
         }
         "last" => {
             if list.is_empty() {
-                return Err(("Cannot get last element of empty list!".to_owned(), range));
+                return Err(("Cannot get last element of empty list!".to_owned(), range).into());
             }
 
             return Ok(list.last().unwrap().to_owned());
@@ -64,7 +65,8 @@ pub fn match_list_props_api(
                 return Err((
                     "Cannot get single element of a list with length != 1!".to_owned(),
                     range,
-                ));
+                )
+                    .into());
             }
 
             return Ok(list.remove(0));
@@ -85,19 +87,28 @@ pub fn match_list_props_api(
             return Ok(PklValue::Int((list.len() - 1) as i64));
         }
 
-        "min" => return Err((format!("min property is not yet implemented"), range)),
-        "minOrNull" => return Err((format!("minOrNull property is not yet implemented"), range)),
-        "max" => return Err((format!("max property is not yet implemented"), range)),
-        "maxOrNull" => return Err((format!("maxOrNull property is not yet implemented"), range)),
+        "min" => return Err((format!("min property is not yet implemented"), range).into()),
+        "minOrNull" => {
+            return Err((format!("minOrNull property is not yet implemented"), range).into())
+        }
+        "max" => return Err((format!("max property is not yet implemented"), range).into()),
+        "maxOrNull" => {
+            return Err((format!("maxOrNull property is not yet implemented"), range).into())
+        }
 
-        "isDistinct" => return Err((format!("isDistinct property is not yet implemented"), range)),
-        "distinct" => return Err((format!("distinct property is not yet implemented"), range)),
+        "isDistinct" => {
+            return Err((format!("isDistinct property is not yet implemented"), range).into())
+        }
+        "distinct" => {
+            return Err((format!("distinct property is not yet implemented"), range).into())
+        }
 
         _ => {
             return Err((
                 format!("List does not possess {} property", property),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }

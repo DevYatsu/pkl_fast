@@ -100,12 +100,12 @@ pub fn parse_type<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<AstPklTy
             | Ok(PklToken::DocComment(_))
             | Ok(PklToken::LineComment(_))
             | Ok(PklToken::MultilineComment(_)) => continue,
-            Err(e) => return Err((e.to_string(), lexer.span())),
-            _ => return Err(("unexpected token here".to_owned(), lexer.span())),
+            Err(e) => return Err((e.to_string(), lexer.span()).into()),
+            _ => return Err(("unexpected token here".to_owned(), lexer.span()).into()),
         }
     }
 
-    Err(("empty types are not allowed".to_owned(), lexer.span()))
+    Err(("empty types are not allowed".to_owned(), lexer.span()).into())
 }
 
 pub fn parse_type_until<'a>(
@@ -153,8 +153,8 @@ pub fn parse_type_until<'a>(
             | Ok(PklToken::DocComment(_))
             | Ok(PklToken::LineComment(_))
             | Ok(PklToken::MultilineComment(_)) => continue,
-            Err(e) => return Err((e.to_string(), lexer.span())),
-            _ => return Err(("unexpected token here".to_owned(), lexer.span())),
+            Err(e) => return Err((e.to_string(), lexer.span()).into()),
+            _ => return Err(("unexpected token here".to_owned(), lexer.span()).into()),
         }
     }
 
@@ -200,12 +200,13 @@ fn parse_attributes<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<As
             Some(Ok(PklToken::OperatorMoreThan)) => {
                 break;
             }
-            Some(Err(e)) => return Err((format!("Lexer error: {:?}", e), lexer.span())),
+            Some(Err(e)) => return Err((format!("Lexer error: {:?}", e), lexer.span()).into()),
             None => {
                 return Err((
                     "Unexpected end of input, did you mean to write ',' or '>'?".to_string(),
                     lexer.span(),
-                ));
+                )
+                    .into());
             }
             token => {
                 return Err((
@@ -213,7 +214,8 @@ fn parse_attributes<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<As
                         "Unexpected token '{token:?}' found, did you mean to write ',' or '>' ?"
                     ),
                     lexer.span(),
-                ))
+                )
+                    .into())
             }
         }
     }

@@ -105,7 +105,7 @@ fn parse_fields<'a>(
         let token = lexer.next();
 
         if token.is_none() {
-            return Err(("Unexpected end of input".to_owned(), lexer.span()));
+            return Err(("Unexpected end of input".to_owned(), lexer.span()).into());
         }
 
         match token.unwrap() {
@@ -145,8 +145,8 @@ fn parse_fields<'a>(
             | Ok(PklToken::DocComment(_))
             | Ok(PklToken::LineComment(_))
             | Ok(PklToken::MultilineComment(_)) => continue,
-            Err(e) => return Err((e.to_string(), lexer.span())),
-            _ => return Err(("unexpected token here".to_owned(), lexer.span())),
+            Err(e) => return Err((e.to_string(), lexer.span()).into()),
+            _ => return Err(("unexpected token here".to_owned(), lexer.span()).into()),
         }
     }
 

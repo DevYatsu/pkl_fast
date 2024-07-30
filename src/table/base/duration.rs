@@ -23,7 +23,8 @@ pub fn match_duration_props_api(
             return Err((
                 format!("Duration does not possess {} property", property),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }
@@ -66,7 +67,8 @@ pub fn match_duration_methods_api(
             return Err((
                 format!("Duration does not possess {} method", property),
                 range,
-            ))
+            )
+                .into())
         }
     }
 }

@@ -15,7 +15,7 @@ pub fn parse_long_expression_or<'a>(
         let next_token = lexer.next();
 
         if next_token.is_none() {
-            return Err((String::from("Unexpected end of input"), lexer.span()));
+            return Err((String::from("Unexpected end of input"), lexer.span()).into());
         }
 
         match next_token.unwrap() {
@@ -48,7 +48,8 @@ pub fn parse_long_expression_or<'a>(
                 return Err((
                     format!("Expected token '{or_token:?}' found '{t:?}'"),
                     lexer.span(),
-                ))
+                )
+                    .into())
             }
         };
     }

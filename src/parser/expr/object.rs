@@ -20,7 +20,8 @@ pub fn parse_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<ExprHa
                         "unexpected token here (context: object), expected newline or comma"
                             .to_owned(),
                         lexer.span(),
-                    ));
+                    )
+                        .into());
                 }
 
                 let value = parse_property_expr_without_type(lexer)?;
@@ -38,17 +39,18 @@ pub fn parse_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<ExprHa
                 let end = lexer.span().end;
                 return Ok((hashmap, start..end));
             }
-            Err(e) => return Err((e.to_string(), lexer.span())),
+            Err(e) => return Err((e.to_string(), lexer.span()).into()),
             _ => {
                 return Err((
                     "unexpected token here (context: object)".to_owned(),
                     lexer.span(),
-                ));
+                )
+                    .into());
             }
         }
     }
 
-    Err(("Missing object close brace".to_owned(), lexer.span()))
+    Err(("Missing object close brace".to_owned(), lexer.span()).into())
 }
 
 pub fn parse_amended_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<AstPklValue<'a>> {
@@ -62,15 +64,17 @@ pub fn parse_amended_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResul
                 return Err((
                     "expected close parenthesis (context: amended_object)".to_owned(),
                     lexer.span(),
-                ));
+                )
+                    .into());
             }
         }
-        Some(Err(e)) => return Err((e.to_string(), lexer.span())),
+        Some(Err(e)) => return Err((e.to_string(), lexer.span()).into()),
         _ => {
             return Err((
                 "expected identifier here (context: amended_object)".to_owned(),
                 lexer.span(),
-            ));
+            )
+                .into());
         }
     };
 
@@ -86,12 +90,13 @@ pub fn parse_amended_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResul
                     start..end,
                 ));
             }
-            Err(e) => return Err((e.to_string(), lexer.span())),
+            Err(e) => return Err((e.to_string(), lexer.span()).into()),
             _ => {
                 return Err((
                     "expected open brace here (context: amended_object)".to_owned(),
                     lexer.span(),
-                ));
+                )
+                    .into());
             }
         }
     }
@@ -99,5 +104,6 @@ pub fn parse_amended_object<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResul
     Err((
         "expected open brace (context: amended_object)".to_owned(),
         lexer.span(),
-    ))
+    )
+        .into())
 }

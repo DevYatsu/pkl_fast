@@ -68,16 +68,17 @@ pub fn parse_property_expr<'a>(
                 continue;
             }
             Some(Err(e)) => {
-                return Err((e.to_string(), lexer.span()));
+                return Err((e.to_string(), lexer.span()).into());
             }
             Some(_) => {
                 return Err((
                     "unexpected token here (context: property)".to_owned(),
                     lexer.span(),
-                ));
+                )
+                    .into());
             }
             None => {
-                return Err(("Expected '='".to_owned(), lexer.span()));
+                return Err(("Expected '='".to_owned(), lexer.span()).into());
             }
         }
     }
@@ -104,16 +105,17 @@ pub fn parse_property_expr_without_type<'a>(
                 continue;
             }
             Some(Err(e)) => {
-                return Err((e.to_string(), lexer.span()));
+                return Err((e.to_string(), lexer.span()).into());
             }
             Some(_) => {
                 return Err((
                     "unexpected token here (context: property)".to_owned(),
                     lexer.span(),
-                ));
+                )
+                    .into());
             }
             None => {
-                return Err(("Expected '='".to_owned(), lexer.span()));
+                return Err(("Expected '='".to_owned(), lexer.span()).into());
             }
         }
     }
