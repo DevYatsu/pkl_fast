@@ -1,7 +1,6 @@
 use super::PklTable;
+use crate::PklResult;
 use crate::{lexer::IsValidPkl, Pkl};
-use crate::{PklResult, PklValue};
-use hashbrown::{HashMap, HashSet};
 use logos::Span;
 use std::{fs, path::Path};
 
@@ -9,19 +8,9 @@ pub mod official;
 pub mod web;
 
 #[derive(Debug, Clone, Default)]
-pub struct Importer {
-    currently_importing: HashSet<String>,
-}
-
-pub type PklModule = HashMap<String, PklValue>;
+pub struct Importer;
 
 impl Importer {
-    pub fn new() -> Self {
-        Importer {
-            currently_importing: HashSet::new(),
-        }
-    }
-
     pub fn construct_name_from_uri(uri: &str, span: Span) -> PklResult<String> {
         let prefix_removed = uri
             .strip_prefix("http:|https:|pkl:|package:")
@@ -53,24 +42,13 @@ impl Importer {
     }
 
     pub fn import_file(&mut self, path_as_str: &str, span: Span) -> PklResult<PklTable> {
-        if self.currently_importing.iter().any(|p| {
-            Importer::are_same_file(p.as_str(), path_as_str, span.to_owned()).unwrap_or(false)
-        }) {
-            return Err((
-                format!("Circular import detected for file: {:?}", path_as_str),
-                span,
-            )
-                .into());
-        }
-
-        self.currently_importing.insert(path_as_str.to_owned());
+        // check for circular imports
 
         let content = self.file_content(&path_as_str, span.to_owned())?;
         let mut pkl = Pkl::new();
+
         pkl.parse(&content)?;
         let table = pkl.table;
-
-        self.currently_importing.remove(path_as_str);
 
         Ok(table)
     }

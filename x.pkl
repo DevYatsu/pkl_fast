@@ -2,5 +2,5 @@ open module X
 
 amends "test.pkl"
 
-w = 1
 local zero = 0
+w = zero

@@ -802,6 +802,8 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 local_name,
                 span,
             }) => {
+                // need to handle globbed import as well
+
                 if in_body {
                     return Err((
                         "Import statements must be before document body".to_owned(),
