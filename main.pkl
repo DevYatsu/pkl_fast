@@ -5,9 +5,6 @@ module com.animals.test
 
 extends "x.pkl"
 
-import "test.pkl" as test_import
-import "test.pkl"
-
 zero = 2
 
 typealias EmailAddress = String(matches(Regex(".+@.+")))

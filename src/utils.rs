@@ -132,20 +132,3 @@ macro_rules! generate_method {
     }};
 
 }
-
-pub trait PathUriName {
-    fn get_uri_name(self) -> String;
-}
-
-impl PathUriName for &str {
-    fn get_uri_name(self) -> String {
-        PathBuf::from(self)
-            .file_name()
-            .unwrap()
-            .to_string_lossy()
-            .to_string()
-            .split_terminator('.')
-            .take(1)
-            .collect::<String>()
-    }
-}

@@ -2,14 +2,19 @@ use crate::{
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
         statement::{
-            amends::Amends, class::ClassDeclaration, extends::Extends, import::Import,
-            module::Module, property::Property, typealias::TypeAlias, PklStatement,
+            amends::Amends,
+            class::ClassDeclaration,
+            extends::Extends,
+            import::Import,
+            module::Module,
+            property::{Property, PropertyKind},
+            typealias::TypeAlias,
+            PklStatement,
         },
         types::AstPklType,
         value::AstPklValue,
         ExprHash, Identifier, PklResult,
     },
-    utils::PathUriName,
     Pkl,
 };
 use base::{
@@ -23,6 +28,7 @@ use base::{
 };
 use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
+use import::Importer;
 use logos::Span;
 use std::fs;
 use types::PklType;
@@ -127,6 +133,8 @@ impl ModuleData {
 
 #[derive(Debug, Clone, Default)]
 pub struct PklTable {
+    pub importer: Importer,
+
     pub variables: HashMap<String, PklValue>,
     pub schemas: HashMap<String, ClassSchema>,
 
@@ -226,31 +234,15 @@ impl PklTable {
         local_name: Option<&str>,
         span: Span,
     ) -> PklResult<()> {
-        match module_uri {
-            uri if uri.starts_with("package://") => {
-                return import::web::import_pkg(self, uri, span)
-            }
-            uri if uri.starts_with("pkl:") => return import::official::import_pkg(self, uri, span),
-            uri if uri.starts_with("https://") => {
-                return import::web::import_https(self, uri, span)
-            }
-            file_path => {
-                let file_content = fs::read_to_string(file_path)
-                    .map_err(|e| (format!("Error reading {file_path}: {}", e), span))?;
+        let imported_table = self.importer.import(module_uri, span.to_owned())?;
 
-                let mut pkl = Pkl::new();
-                pkl.parse(&file_content)?;
-                let hash = pkl.table.variables;
+        if let Some(local) = local_name {
+            self.insert(local, imported_table.variables.into());
+            return Ok(());
+        }
 
-                if let Some(name) = local_name {
-                    self.insert(name, hash.into());
-                    return Ok(());
-                }
-
-                let name = file_path.get_uri_name();
-                self.insert(name, hash.into());
-            }
-        };
+        let name = Importer::construct_name_from_uri(module_uri, span)?;
+        self.insert(name, imported_table.variables.into());
 
         Ok(())
     }
@@ -264,7 +256,7 @@ impl PklTable {
             uri if uri.starts_with("https://") => return import::web::amends_http(self, uri, span),
             file_path => {
                 let file_content = fs::read_to_string(file_path)
-                    .map_err(|e| (format!("Error reading {file_path}: {}", e), span))?;
+                    .map_err(|e| (format!("Error reading {file_path}: {}", e), span.to_owned()))?;
 
                 let mut pkl = Pkl::new();
                 pkl.parse(&file_content)?;
@@ -282,8 +274,13 @@ impl PklTable {
                     .map(|s| s.to_owned())
                     .collect::<Vec<String>>();
 
+                let module_name = match pkl.table.module_name.to_owned() {
+                    Some(name) => name,
+                    None => Importer::construct_name_from_uri(file_path, span.to_owned())?,
+                };
+
                 self.module_data = ModuleData::Amended {
-                    module_name: file_path.get_uri_name(),
+                    module_name,
                     variables: amended,
                     schemas,
                 };
@@ -338,8 +335,13 @@ impl PklTable {
                     .map(|s| s.to_owned())
                     .collect::<Vec<String>>();
 
+                let module_name = match pkl.table.module_name.to_owned() {
+                    Some(name) => name,
+                    None => Importer::construct_name_from_uri(file_path, span)?,
+                };
+
                 self.module_data = ModuleData::Extended {
-                    module_name: file_path.get_uri_name(),
+                    module_name,
                     variables: extended,
                     schemas,
                 };
@@ -755,12 +757,9 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 extends_found = true;
             }
 
-            // handle definition of local variables as a different statement next
-            PklStatement::Property(Property {
-                name, value, _type, ..
-            }) => {
+            PklStatement::Property(declaration) => {
                 in_body = true;
-                handle_constant(&mut table, name, value, _type)?;
+                handle_constant(&mut table, declaration)?;
             }
             PklStatement::Class(declaration) => {
                 in_body = true;
@@ -795,9 +794,13 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
 fn handle_constant(
     table: &mut PklTable,
-    name: Identifier<'_>,
-    value: PklExpr<'_>,
-    _type: Option<AstPklType>,
+    Property {
+        name,
+        kind,
+        _type,
+        value,
+        span,
+    }: Property,
 ) -> PklResult<()> {
     let evaluated_value = table.evaluate_in_variable(value, _type.clone())?;
 
@@ -825,10 +828,10 @@ fn handle_constant(
         }
     }
 
-    // checks if adding variables to amending module
-    // that is not in amended module
+    // checks if user creates variables
+    // not present in amended module
     if let Some(amended_vars) = table.module_data.get_amended_variables() {
-        if !amended_vars.contains(&name.0.to_owned()) {
+        if !matches!(kind, PropertyKind::Local) && !amended_vars.contains(&name.0.to_owned()) {
             return Err((
                 format!(
                     "Cannot add variable '{}' to amended module '{}'",

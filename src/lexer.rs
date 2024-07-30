@@ -256,3 +256,37 @@ impl fmt::Display for LexingError {
         }
     }
 }
+
+pub trait IsValidPkl {
+    fn is_valid_pkl_id(self) -> bool;
+}
+
+impl IsValidPkl for &str {
+    fn is_valid_pkl_id(self) -> bool {
+        fn is_alpha(c: char) -> bool {
+            c.is_ascii_alphabetic()
+        }
+
+        fn is_alnum_or_underscore(c: char) -> bool {
+            c.is_ascii_alphanumeric() || c == '_'
+        }
+
+        fn is_alnum_or_underscore_or_dollar(c: char) -> bool {
+            c.is_ascii_alphanumeric() || c == '_' || c == '$'
+        }
+
+        if self.is_empty() {
+            return false;
+        }
+
+        let chars: Vec<char> = self.chars().collect();
+
+        if is_alpha(chars[0]) {
+            return chars.into_iter().skip(1).all(is_alnum_or_underscore);
+        } else if chars[0] == '_' || chars[0] == '$' {
+            return chars.into_iter().skip(1).all(is_alnum_or_underscore);
+        }
+
+        false
+    }
+}

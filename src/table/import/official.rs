@@ -1,13 +1,13 @@
 use crate::PklResult;
 use crate::PklTable;
-use std::ops::Range;
+use logos::Span;
 
 mod math;
 
 /// todo()!
 ///
 /// Official packages support is not yet completed
-pub fn import_pkg(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> PklResult<()> {
+pub fn import_pkg(pkg_uri: &str, span: Span) -> PklResult<PklTable> {
     match pkg_uri {
         "pkl:Benchmark" => {}
         "pkl:DocPackageInfo" => {}
@@ -27,24 +27,24 @@ pub fn import_pkg(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> Pkl
         "pkl:test" => {}
         "pkl:xml" => {}
         "pkl:yaml" => {}
-        _ => return Err((format!("Unknow Pkl Package '{pkg_uri}'"), rng)),
+        _ => return Err((format!("Unknow Pkl Package '{pkg_uri}'"), span)),
     };
 
     return Err((
         "Pkl official packages imports not yet supported!".to_owned(),
-        rng,
+        span,
     ));
 }
 
-pub fn amends_pkg(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> PklResult<()> {
+pub fn amends_pkg(table: &mut PklTable, pkg_uri: &str, span: Span) -> PklResult<()> {
     return Err((
         "Pkl official packages amending not yet supported!".to_owned(),
-        rng,
+        span,
     ));
 }
-pub fn extends_pkg(table: &mut PklTable, pkg_uri: &str, rng: Range<usize>) -> PklResult<()> {
+pub fn extends_pkg(table: &mut PklTable, pkg_uri: &str, span: Span) -> PklResult<()> {
     return Err((
         "Pkl official packages extending not yet supported!".to_owned(),
-        rng,
+        span,
     ));
 }

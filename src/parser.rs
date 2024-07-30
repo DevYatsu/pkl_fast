@@ -101,7 +101,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 )?;
             }
             Ok(PklToken::TypeAlias) if is_newline => {
-                // parses until newline here
+                // parses until newline here thus is_newline is set to true
                 let statement = parse_typealias(lexer)?;
                 statements.push(statement);
                 is_newline = true;
