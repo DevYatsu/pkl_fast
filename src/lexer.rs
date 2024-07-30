@@ -271,10 +271,6 @@ impl IsValidPkl for &str {
             c.is_ascii_alphanumeric() || c == '_'
         }
 
-        fn is_alnum_or_underscore_or_dollar(c: char) -> bool {
-            c.is_ascii_alphanumeric() || c == '_' || c == '$'
-        }
-
         if self.is_empty() {
             return false;
         }
