@@ -1,3 +1,5 @@
+use std::default;
+
 use super::{base::duration::Duration, types::PklType};
 use crate::values::Byte;
 use hashbrown::HashMap;
@@ -16,8 +18,9 @@ use hashbrown::HashMap;
 /// * `MultiLineString` - Represents a multiline string.
 /// * `Object` - Represents a nested object (Dynamic Object), which is a hashmap of key-value pairs.
 /// * `ClassInstance` - Represents an instance of a class (Typed Object), which includes the class name and its properties.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum PklValue {
+    #[default]
     Null,
 
     /// A boolean value.

@@ -9,6 +9,12 @@ pub struct Extends<'a> {
     pub span: Span,
 }
 
+impl<'a> Extends<'a> {
+    pub fn not_allowed_here_err(&self) -> String {
+        String::from("Keyword `extends` is not allowed here. (If you must use this name as identifier, enclose it in backticks.)")
+    }
+}
+
 /// Function called after 'import' keyword.
 pub fn parse_extends_clause<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,

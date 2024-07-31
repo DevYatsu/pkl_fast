@@ -16,6 +16,15 @@ pub struct ClassDeclaration<'a> {
     pub span: Span,
 }
 
+impl<'a> ClassDeclaration<'a> {
+    pub fn not_allowed_here_err(&self) -> String {
+        String::from("Keyword `class` is not allowed here. (If you must use this name as identifier, enclose it in backticks.)")
+    }
+    pub fn modifier_not_applicable_err(&self, modifier: &str) -> String {
+        format!("Modifier `{modifier}` is not applicable to classes.")
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum ClassKind {
     #[default]

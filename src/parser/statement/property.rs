@@ -10,7 +10,6 @@ use logos::{Lexer, Span};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Property<'a> {
     pub name: Identifier<'a>,
-    pub kind: PropertyKind,
     pub _type: Option<AstPklType<'a>>,
     pub value: PklExpr<'a>,
     pub span: Span,
@@ -29,7 +28,6 @@ pub enum PropertyKind {
 pub fn parse_property<'a>(
     lexer: &mut Lexer<'a, PklToken<'a>>,
     name: Identifier<'a>,
-    kind: PropertyKind,
 ) -> PklResult<PklStatement<'a>> {
     let start = name.1.start;
     let (_type, value) = parse_property_expr(lexer)?;
@@ -37,7 +35,6 @@ pub fn parse_property<'a>(
 
     Ok(PklStatement::Property(Property {
         name,
-        kind,
         _type,
         value,
         span: start..end,

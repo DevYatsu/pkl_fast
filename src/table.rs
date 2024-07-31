@@ -16,7 +16,7 @@ use crate::{
         value::AstPklValue,
         ExprHash, Identifier,
     },
-    Pkl, PklResult,
+    PklResult,
 };
 use base::{
     bool_api::match_bool_methods_api,
@@ -31,7 +31,6 @@ use class::{generate_class_schema, ClassSchema};
 use hashbrown::HashMap;
 use import::Importer;
 use logos::Span;
-use std::fs;
 use types::PklType;
 use utils::spelling::check_closest_word;
 use value::PklValue;
@@ -44,90 +43,123 @@ pub mod class;
 pub mod types;
 pub mod value;
 
-#[derive(Debug, Clone, Default)]
-pub enum ModuleData {
-    // we keep track of variables/classes
-    // to know which variables
-    // is the user allowed to
-    // redefine
-    Extended {
-        module_name: String,
-        variables: Vec<(PropertyKind, String)>,
-        schemas: Vec<String>,
+#[derive(Debug, Clone, PartialEq)]
+pub enum PklMember {
+    Value {
+        value: PklValue,
+        is_local: bool,
+        is_const: bool,
+        is_fixed: bool,
+        is_amended: bool,
+        is_extended: bool,
     },
-    Amended {
-        module_name: String,
-        variables: Vec<(PropertyKind, String)>,
-        schemas: Vec<String>,
+    Class {
+        value: ClassSchema,
+        is_local: bool,
+        is_amended: bool,
+        is_extended: bool,
     },
-    #[default]
-    None,
+    // Function {
+    //     value: ClassSchema,
+    //     is_local: bool,
+    // },
 }
 
-impl ModuleData {
-    pub fn name(&self) -> Option<&str> {
-        match self {
-            ModuleData::Extended { module_name, .. } => Some(module_name),
-            ModuleData::Amended { module_name, .. } => Some(module_name),
-            ModuleData::None => None,
+impl PklMember {
+    pub fn value(value: PklValue) -> Self {
+        Self::Value {
+            value,
+            is_local: false,
+            is_const: false,
+            is_fixed: false,
+            is_amended: false,
+            is_extended: false,
         }
+    }
+    pub fn schema(value: ClassSchema) -> Self {
+        Self::Class {
+            value,
+            is_local: false,
+            is_amended: false,
+            is_extended: false,
+        }
+    }
+    pub fn set_const(mut self) -> Self {
+        match &mut self {
+            PklMember::Value { is_const, .. } => *is_const = true,
+            PklMember::Class { .. } => (),
+        };
+        self
+    }
+    pub fn set_local(mut self) -> Self {
+        match &mut self {
+            PklMember::Value { is_local, .. } => *is_local = true,
+            PklMember::Class { is_local, .. } => *is_local = true,
+        };
+        self
+    }
+    pub fn set_fixed(mut self) -> Self {
+        match &mut self {
+            PklMember::Value { is_fixed, .. } => *is_fixed = true,
+            PklMember::Class { .. } => (),
+        };
+        self
+    }
+    pub fn set_amended(mut self) -> Self {
+        match &mut self {
+            PklMember::Value { is_amended, .. } => *is_amended = true,
+            PklMember::Class { is_amended, .. } => *is_amended = true,
+        };
+        self
+    }
+    pub fn set_extended(mut self) -> Self {
+        match &mut self {
+            PklMember::Value { is_extended, .. } => *is_extended = true,
+            PklMember::Class { is_extended, .. } => *is_extended = true,
+        };
+        self
     }
 
-    pub fn get_variables(&mut self) -> Option<&Vec<(PropertyKind, String)>> {
+    pub fn extract_value(self) -> Option<PklValue> {
         match self {
-            ModuleData::Extended { variables, .. } => Some(variables),
-            ModuleData::Amended { variables, .. } => Some(variables),
-            ModuleData::None => None,
+            PklMember::Value { value, .. } => Some(value),
+            PklMember::Class { .. } => None,
         }
     }
-    pub fn get_variables_mut(&mut self) -> Option<&mut Vec<(PropertyKind, String)>> {
+    pub fn extract_schema(self) -> Option<ClassSchema> {
         match self {
-            ModuleData::Extended { variables, .. } => Some(variables),
-            ModuleData::Amended { variables, .. } => Some(variables),
-            ModuleData::None => None,
+            PklMember::Value { .. } => None,
+            PklMember::Class { value, .. } => Some(value),
         }
     }
-    pub fn get_schemas(&mut self) -> Option<&Vec<String>> {
+    pub fn is_amended(&self) -> bool {
         match self {
-            ModuleData::Extended { schemas, .. } => Some(schemas),
-            ModuleData::Amended { schemas, .. } => Some(schemas),
-            ModuleData::None => None,
+            PklMember::Value { is_amended, .. } => *is_amended,
+            PklMember::Class { is_amended, .. } => *is_amended,
         }
     }
-    pub fn get_schemas_mut(&mut self) -> Option<&mut Vec<String>> {
+    pub fn is_extended(&self) -> bool {
         match self {
-            ModuleData::Extended { schemas, .. } => Some(schemas),
-            ModuleData::Amended { schemas, .. } => Some(schemas),
-            ModuleData::None => None,
+            PklMember::Value { is_extended, .. } => *is_extended,
+            PklMember::Class { is_extended, .. } => *is_extended,
         }
     }
-
-    pub fn get_amended_variables(&self) -> Option<&Vec<(PropertyKind, String)>> {
+    pub fn is_local(&self) -> bool {
         match self {
-            ModuleData::Extended { .. } => None,
-            ModuleData::Amended { variables, .. } => Some(variables),
-            ModuleData::None => None,
+            PklMember::Value { is_local, .. } => *is_local,
+            PklMember::Class { is_local, .. } => *is_local,
         }
     }
-    pub fn get_amended_variables_mut(&mut self) -> Option<&mut Vec<(PropertyKind, String)>> {
+    pub fn is_const(&self) -> bool {
         match self {
-            ModuleData::Extended { .. } => None,
-            ModuleData::Amended { variables, .. } => Some(variables),
-            ModuleData::None => None,
+            PklMember::Value { is_const, .. } => *is_const,
+            PklMember::Class { is_local, .. } => false,
         }
     }
-    pub fn get_amended_schemas(&self) -> Option<&Vec<String>> {
+    pub fn is_fixed(&self) -> bool {
         match self {
-            ModuleData::Amended { schemas, .. } => Some(schemas),
-            ModuleData::Extended { .. } => None,
-            ModuleData::None => None,
-        }
-    }
-    pub fn get_amended_schemas_mut(&mut self) -> Option<&mut Vec<String>> {
-        match self {
-            ModuleData::Amended { schemas, .. } => Some(schemas),
-            ModuleData::Extended { .. } => None,
-            ModuleData::None => None,
+            PklMember::Value { is_fixed, .. } => *is_fixed,
+            PklMember::Class { is_local, .. } => false,
         }
     }
 }
@@ -136,58 +168,41 @@ impl ModuleData {
 pub struct PklTable {
     pub importer: Importer,
 
-    pub variables: HashMap<String, (PropertyKind, PklValue)>,
-    pub schemas: HashMap<String, ClassSchema>,
-
-    pub module_data: ModuleData,
     pub module_name: Option<String>,
     pub is_open: bool,
+
+    pub members: HashMap<String, PklMember>,
 }
 
 impl PartialEq for PklTable {
     fn eq(&self, other: &Self) -> bool {
-        if self.variables.len() != other.variables.len() {
+        if self.members.len() != other.members.len() {
             return false;
         }
 
-        self.variables
+        self.members
             .iter()
-            .all(|(key, value)| other.variables.get(key).map_or(false, |v| *value == *v))
+            .all(|(key, value)| other.members.get(key).map_or(false, |v| *value == *v))
     }
 }
 
 impl PklTable {
     pub fn is_empty(&self) -> bool {
-        self.variables.is_empty() & self.schemas.is_empty() & self.module_name.is_none()
+        self.members.is_empty() & self.module_name.is_none()
     }
 
-    /// Inserts a variable with the given name and value into the context.
+    /// Inserts a member with the given name and value into the context.
     ///
     /// # Arguments
     ///
-    /// * `name` - The name of the variable to insert.
-    /// * `value` - The value of the variable to insert.
+    /// * `name` - The name of the member to insert.
+    /// * `value` - The value of the member to insert.
     ///
     /// # Returns
     ///
     /// An `Option` containing the previous value associated with the name, if any.
-    pub fn insert(
-        &mut self,
-        name: impl Into<String>,
-        value: (PropertyKind, PklValue),
-    ) -> Option<(PropertyKind, PklValue)> {
-        self.variables.insert(name.into(), value)
-    }
-
-    pub fn add_schema(
-        &mut self,
-        name: impl Into<String>,
-        schema: ClassSchema,
-    ) -> Option<ClassSchema> {
-        self.schemas.insert(name.into(), schema)
-    }
-    pub fn get_schema(&self, name: impl AsRef<str>) -> Option<&ClassSchema> {
-        self.schemas.get(name.as_ref())
+    pub fn insert(&mut self, name: impl Into<String>, value: PklMember) -> Option<PklMember> {
+        self.members.insert(name.into(), value)
     }
 
     /// Merges another `PklTable` into this table.
@@ -215,22 +230,32 @@ impl PklTable {
     /// assert_eq!(table1.get("var2"), Some(&PklValue::Int(2)));
     /// ```
     pub fn extend(&mut self, other_table: PklTable) {
-        self.variables.extend(other_table.variables);
-        self.schemas.extend(other_table.schemas);
+        self.members.extend(other_table.members);
     }
 
-    /// Retrieves the value of a variable with the given name from the context.
+    /// Retrieves the value of a member with the given name from the context.
     ///
     /// # Arguments
     ///
-    /// * `name` - The name of the variable to retrieve.
+    /// * `name` - The name of the member to retrieve.
     ///
     /// # Returns
     ///
     /// An `Option` containing a reference to the `PklValue` associated with the name,
     /// or `None` if the variable is not found.
-    pub fn get(&self, name: impl Into<String>) -> Option<&(PropertyKind, PklValue)> {
-        self.variables.get(&name.into())
+    pub fn get(&self, name: impl AsRef<str>) -> Option<&PklMember> {
+        self.members.get(name.as_ref())
+    }
+
+    pub fn get_schema(&self, name: impl AsRef<str>) -> Option<ClassSchema> {
+        self.get(name)
+            .map(|member| member.extract_schema())
+            .flatten()
+    }
+    pub fn get_value(&self, name: impl AsRef<str>) -> Option<PklValue> {
+        self.get(name)
+            .map(|member| member.extract_value())
+            .flatten()
     }
 
     pub fn import(
@@ -244,35 +269,23 @@ impl PklTable {
             .import(module_uri, span.to_owned())
             .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
 
-        fn transform_map(
-            original: HashMap<String, (PropertyKind, PklValue)>,
-        ) -> HashMap<String, PklValue> {
+        fn transform_map(original: HashMap<String, PklMember>) -> HashMap<String, PklValue> {
             original
                 .into_iter()
-                .map(|(key, (_, pkl_value))| (key, pkl_value))
+                .filter_map(|(key, member)| member.extract_value().map(|v| (key, v)))
                 .collect()
         }
 
+        let value = transform_map(imported_table.members);
+        let member = PklMember::value(value.into()).set_const().set_local();
+
         if let Some(local) = local_name {
-            self.insert(
-                local,
-                (
-                    PropertyKind::ConstLocal,
-                    transform_map(imported_table.variables).into(),
-                ),
-            );
+            self.insert(local, member);
             return Ok(());
         }
 
         let name = Importer::construct_name_from_uri(module_uri, span);
-
-        self.insert(
-            name,
-            (
-                PropertyKind::ConstLocal,
-                transform_map(imported_table.variables).into(),
-            ),
-        );
+        self.insert(name, member);
 
         Ok(())
     }
@@ -283,27 +296,11 @@ impl PklTable {
             .amends(module_uri, span.to_owned())
             .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
 
-        let amended = amended_table
-            .variables
-            .iter()
-            .map(|(k, (kind, _val))| (kind.to_owned(), k.to_owned()))
-            .collect::<Vec<(PropertyKind, String)>>();
-        let schemas = amended_table
-            .schemas
-            .keys()
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
+        // let module_name = match amended_table.module_name.to_owned() {
+        //     Some(name) => name,
+        //     None => Importer::construct_name_from_uri(module_uri, span.to_owned()),
+        // };
 
-        let module_name = match amended_table.module_name.to_owned() {
-            Some(name) => name,
-            None => Importer::construct_name_from_uri(module_uri, span.to_owned()),
-        };
-
-        self.module_data = ModuleData::Amended {
-            module_name,
-            variables: amended,
-            schemas,
-        };
         self.extend(amended_table);
 
         Ok(())
@@ -327,27 +324,11 @@ impl PklTable {
                 .into());
         }
 
-        let extended = extended_table
-            .variables
-            .iter()
-            .map(|(k, (kind, _val))| (kind.to_owned(), k.to_owned()))
-            .collect::<Vec<(PropertyKind, String)>>();
-        let schemas = extended_table
-            .schemas
-            .keys()
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
+        // let module_name = match extended_table.module_name.to_owned() {
+        //     Some(name) => name,
+        //     None => Importer::construct_name_from_uri(module_uri, span),
+        // };
 
-        let module_name = match extended_table.module_name.to_owned() {
-            Some(name) => name,
-            None => Importer::construct_name_from_uri(module_uri, span),
-        };
-
-        self.module_data = ModuleData::Extended {
-            module_name,
-            variables: extended,
-            schemas,
-        };
         self.extend(extended_table);
 
         Ok(())
@@ -367,8 +348,9 @@ impl PklTable {
             PklExpr::Identifier(Identifier(id, range)) => self
                 .get(id)
                 .cloned()
-                .map(|v| v.1)
-                .ok_or_else(|| (format!("unknown variable `{}`", id), range).into()),
+                .map(|v| v.extract_value())
+                .flatten()
+                .ok_or_else(|| (format!("unknown property `{}`", id), range).into()),
             PklExpr::Value(value) => self.evaluate_value(value),
             PklExpr::MemberExpression(base_expr, indexor, range) => {
                 let base = self.evaluate(*base_expr)?;
@@ -671,8 +653,8 @@ impl PklTable {
     }
 
     fn evaluate_amending_object(&self, a: &str, b: ExprHash, span: Span) -> PklResult<PklValue> {
-        let other_object = match self.get(a) {
-            Some((_kind, PklValue::Object(hash))) => hash,
+        let other_object = match self.get_value(a) {
+            Some(PklValue::Object(hash)) => hash,
             _ => return Err((format!("Unknown object `{}`", a), span).into()),
         };
 
@@ -773,21 +755,6 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 table.extends(name, span)?;
                 extends_found = true;
             }
-
-            PklStatement::Property(declaration) => {
-                in_body = true;
-                handle_property(&mut table, declaration)?;
-            }
-            PklStatement::Class(declaration) => {
-                in_body = true;
-                handle_class(&mut table, declaration)?;
-            }
-            PklStatement::TypeAlias(TypeAlias { .. }) => {
-                // need to interpret typealiases
-                // store somewhere in the PklTable
-                // the types
-                // todo!
-            }
             PklStatement::Import(Import {
                 name,
                 local_name,
@@ -797,7 +764,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
                 if in_body {
                     return Err((
-                        "Import statements must be before document body".to_owned(),
+                        "Keyword `import` is not allowed here, it should be before file body. (If you must use this name as identifier, enclose it in backticks.)".to_owned(),
                         span,
                     )
                         .into());
@@ -805,6 +772,154 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
 
                 table.import(name, local_name, span)?;
                 import_found = true;
+            }
+            PklStatement::TypeAlias(TypeAlias { .. }) => {
+                // need to interpret typealiases
+                // store somewhere in the PklTable
+                // the types
+                // todo!
+            }
+
+            PklStatement::Property(Property {
+                name,
+                _type,
+                value,
+                span,
+            }) => {
+                in_body = true;
+
+                let evaluated_value = table.evaluate_in_variable(value, _type)?;
+
+                // checks if type corresponds to value
+                if let Some(_type) = _type {
+                    let span = _type.span();
+                    let true_type: PklType = _type.into();
+                    if !evaluated_value.is_instance_of(&true_type) {
+                        return Err((
+                            format!(
+                                "Expected value of type `{}`, but got value '{}'",
+                                true_type, name.0
+                            ),
+                            span,
+                        )
+                            .into());
+                    }
+                }
+
+                if let Some(previous_prop) = table.insert(name.0, PklMember::value(evaluated_value))
+                {
+                    if !previous_prop.is_amended() || !previous_prop.is_extended() {
+                        return Err(
+                            (format!("Duplicate definition of member '{}'", name.0), span).into(),
+                        );
+                    }
+                }
+            }
+            PklStatement::Class(declaration) => {
+                in_body = true;
+                handle_class(&mut table, declaration)?;
+            }
+
+            // there three prefixes below can be before a Class,
+            // a TypeAlias, a Property or a function
+            // in any order
+            PklStatement::Local(stmt, span) => {
+                in_body = true;
+
+                match *stmt {
+                    PklStatement::Property(_) => todo!(),
+                    PklStatement::Class(_) => todo!(),
+                    PklStatement::TypeAlias(_) => todo!(),
+                    PklStatement::Const(_, _) => todo!(),
+                    PklStatement::Local(_, span) => todo!(),
+
+                    PklStatement::Fixed(_, span) => {
+                        return Err((
+                            format!("Modifier `fixed` is redundant here; just use `local`."),
+                            span,
+                        )
+                            .into())
+                    }
+                    PklStatement::ModuleClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::AmendsClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::ExtendsClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::Import(imp) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                }
+            }
+
+            PklStatement::Const(stmt, span) => {
+                in_body = true;
+
+                match *stmt {
+                    PklStatement::Property(_) => todo!(),
+                    PklStatement::Const(_, _) => todo!(),
+                    PklStatement::Fixed(_, span) => todo!(),
+                    PklStatement::Local(_, span) => todo!(),
+
+                    PklStatement::Class(stmt) => {
+                        return Err((stmt.modifier_not_applicable_err("const"), stmt.span).into())
+                    }
+                    PklStatement::TypeAlias(stmt) => {
+                        return Err((stmt.modifier_not_applicable_err("const"), stmt.span).into())
+                    }
+                    PklStatement::ModuleClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::AmendsClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::ExtendsClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::Import(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                }
+            }
+            PklStatement::Fixed(stmt, span) => {
+                in_body = true;
+
+                match *stmt {
+                    PklStatement::Property(_) => todo!(),
+
+                    PklStatement::Const(_, _) => todo!(),
+
+                    PklStatement::Class(stmt) => {
+                        return Err((stmt.modifier_not_applicable_err("fixed"), stmt.span).into())
+                    }
+                    PklStatement::TypeAlias(stmt) => {
+                        return Err((stmt.modifier_not_applicable_err("fixed"), stmt.span).into())
+                    }
+                    PklStatement::Fixed(_, span) => todo!(),
+                    PklStatement::Local(_, span) => {
+                        return Err((
+                            format!("Modifier `fixed` is redundant here; just use `local`."),
+                            span,
+                        )
+                            .into())
+                    }
+
+                    PklStatement::ModuleClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::AmendsClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::ExtendsClause(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                    PklStatement::Import(stmt) => {
+                        return Err((stmt.not_allowed_here_err(), stmt.span).into())
+                    }
+                }
             }
         }
     }
@@ -816,7 +931,6 @@ fn handle_property(
     table: &mut PklTable,
     Property {
         name,
-        kind,
         _type,
         value,
         span,

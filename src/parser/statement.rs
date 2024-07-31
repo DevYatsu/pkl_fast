@@ -1,14 +1,17 @@
-use super::expr::PklExpr;
-use amends::Amends;
-use class::ClassDeclaration;
-use extends::Extends;
-use import::Import;
-use logos::Span;
-use module::Module;
-use property::Property;
-use typealias::TypeAlias;
+use super::{expr::PklExpr, Identifier};
+use crate::{lexer::PklToken, PklResult};
+use amends::{parse_amends_clause, Amends};
+use boxed::{parse_const, parse_fixed, parse_local};
+use class::{parse_class_declaration, ClassDeclaration, ClassKind};
+use extends::{parse_extends_clause, Extends};
+use import::{parse_import, Import};
+use logos::{Lexer, Span};
+use module::{parse_module_clause, Module};
+use property::{parse_property, Property};
+use typealias::{parse_typealias, TypeAlias};
 
 pub mod amends;
+mod boxed;
 pub mod class;
 pub mod extends;
 pub mod import;
@@ -16,8 +19,7 @@ pub mod module;
 pub mod property;
 pub mod typealias;
 
-/* ANCHOR: statements */
-/// Represent any valid Pkl value.
+/// Represent any valid Pkl Statement.
 #[derive(Debug, PartialEq, Clone)]
 pub enum PklStatement<'a> {
     /// A constant/variable statement
@@ -46,8 +48,14 @@ pub enum PklStatement<'a> {
     /// not in a variable creating in the context
     /// containing the import values.
     ExtendsClause(Extends<'a>),
+
+    /// A local Statement
+    Local(Box<PklStatement<'a>>, Span),
+    /// A const Statement
+    Const(Box<PklStatement<'a>>, Span),
+    /// A fixed Statement
+    Fixed(Box<PklStatement<'a>>, Span),
 }
-/* ANCHOR_END: statements */
 
 impl<'a> PklStatement<'a> {
     pub fn span(&self) -> Span {
@@ -59,6 +67,26 @@ impl<'a> PklStatement<'a> {
             PklStatement::ModuleClause(Module { span, .. }) => span.clone(),
             PklStatement::AmendsClause(Amends { span, .. }) => span.clone(),
             PklStatement::ExtendsClause(Extends { span, .. }) => span.clone(),
+            PklStatement::Local(_, span) => span.clone(),
+            PklStatement::Const(_, span) => span.clone(),
+            PklStatement::Fixed(_, span) => span.clone(),
+        }
+    }
+
+    pub fn inner(&self) -> &Self {
+        match self {
+            PklStatement::Local(x, _) => x.inner(),
+            PklStatement::Const(x, _) => x.inner(),
+            PklStatement::Fixed(x, _) => x.inner(),
+            _ => self,
+        }
+    }
+    pub fn inner_mut(&mut self) -> &mut Self {
+        match self {
+            PklStatement::Local(x, _) => x.inner_mut(),
+            PklStatement::Const(x, _) => x.inner_mut(),
+            PklStatement::Fixed(x, _) => x.inner_mut(),
+            _ => self,
         }
     }
     pub fn is_import(&self) -> bool {
@@ -69,5 +97,45 @@ impl<'a> PklStatement<'a> {
     }
     pub fn is_class_declaration(&self) -> bool {
         matches!(self, &PklStatement::Class { .. })
+    }
+}
+
+/// Parses a `PklStatement`.
+pub fn parse_stmt<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklStatement<'a>> {
+    let token = lexer.next();
+
+    if token.is_none() {
+        return Err(("Unexpected end of input".to_owned(), lexer.span()).into());
+    }
+
+    match token.unwrap() {
+        Ok(PklToken::TypeAlias) => parse_typealias(lexer),
+        Ok(PklToken::Import) => parse_import(lexer),
+        Ok(PklToken::Extends) => parse_extends_clause(lexer),
+        Ok(PklToken::Amends) => parse_amends_clause(lexer),
+
+        Ok(PklToken::Class) => parse_class_declaration(lexer, ClassKind::default()),
+        Ok(PklToken::OpenClass) => parse_class_declaration(lexer, ClassKind::Open),
+        Ok(PklToken::AbstractClass) => parse_class_declaration(lexer, ClassKind::Abstract),
+
+        Ok(PklToken::Module) => parse_module_clause(lexer, false),
+        Ok(PklToken::OpenModule) => parse_module_clause(lexer, true),
+
+        Ok(PklToken::Fixed) => parse_fixed(lexer),
+        Ok(PklToken::Const) => parse_const(lexer),
+        Ok(PklToken::Local) => parse_local(lexer),
+
+        Ok(PklToken::Identifier(id)) | Ok(PklToken::IllegalIdentifier(id)) => {
+            parse_property(lexer, Identifier(id, lexer.span()))
+        }
+
+        Err(e) => return Err((e.to_string(), lexer.span()).into()),
+        _ => {
+            return Err((
+                "unexpected token here (context: global), expected statement".to_owned(),
+                lexer.span(),
+            )
+                .into());
+        }
     }
 }

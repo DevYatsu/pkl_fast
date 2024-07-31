@@ -3,18 +3,12 @@ use expr::{member_expr::parse_member_expr_member, object::parse_object, PklExpr}
 use hashbrown::HashMap;
 use logos::{Lexer, Source};
 use statement::{
-    amends::parse_amends_clause,
-    class::{parse_class_declaration, ClassKind},
-    extends::parse_extends_clause,
-    import::{parse_import, Import},
-    module::{parse_module_clause, Module},
-    property::{parse_property, Property, PropertyKind},
-    typealias::{parse_typealias, TypeAlias},
+    import::Import, module::Module, parse_stmt, property::Property, typealias::TypeAlias,
     PklStatement,
 };
 use std::ops::Range;
 use types::{parse_type, AstPklType};
-use utils::{parse_id, parse_id_or_local};
+use utils::parse_id;
 use value::AstPklValue;
 
 pub mod expr;
@@ -45,65 +39,19 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
 
     while let Some(token) = lexer.next() {
         match token {
-            Ok(token)
-                if matches!(
-                    token,
-                    PklToken::Identifier(_) | PklToken::IllegalIdentifier(_)
-                ) =>
-            {
-                handle_property_token(
-                    &mut is_newline,
-                    lexer,
-                    token,
-                    PropertyKind::Classical,
-                    statements.as_mut(),
-                )?;
+            // parses any statement
+            Ok(token) if is_newline => {
+                let stmt = parse_stmt(lexer)?;
+                statements.push(stmt);
+                is_newline = false;
             }
-            Ok(token) if matches!(token, PklToken::Local) => {
-                handle_property_token(
-                    &mut is_newline,
-                    lexer,
-                    token,
-                    PropertyKind::Local,
-                    statements.as_mut(),
-                )?;
-            }
-            Ok(token) if matches!(token, PklToken::Fixed) => {
-                handle_property_token(
-                    &mut is_newline,
-                    lexer,
-                    token,
-                    PropertyKind::Fixed,
-                    statements.as_mut(),
-                )?;
-            }
-            Ok(token) if matches!(token, PklToken::Const) => {
-                let token = parse_id_or_local(lexer)?;
-                let prop_kind = match token {
-                    PklToken::Local => PropertyKind::ConstLocal,
-                    _ => PropertyKind::Const,
-                };
 
-                handle_property_token(
-                    &mut is_newline,
-                    lexer,
-                    token,
-                    prop_kind,
-                    statements.as_mut(),
-                )?;
-            }
-            Ok(PklToken::TypeAlias) if is_newline => {
-                // parses until newline here thus is_newline is set to true
-                let statement = parse_typealias(lexer)?;
-                statements.push(statement);
-                is_newline = true;
-            }
             Ok(PklToken::Union) => {
                 if let Some(PklStatement::TypeAlias(TypeAlias {
                     refering_type,
                     span,
                     ..
-                })) = statements.last_mut()
+                })) = statements.last_mut().map(PklStatement::inner_mut)
                 {
                     let second_type = parse_type(lexer)?;
 
@@ -122,36 +70,11 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                         .into());
                 }
             }
-            Ok(PklToken::OpenModule) if is_newline => {
-                let statement = parse_module_clause(lexer, true)?;
-                statements.push(statement);
-                is_newline = false;
-            }
-            Ok(PklToken::Module) if is_newline => {
-                let statement = parse_module_clause(lexer, false)?;
-                statements.push(statement);
-                is_newline = false;
-            }
-            Ok(PklToken::Amends) if is_newline => {
-                let statement = parse_amends_clause(lexer)?;
-                statements.push(statement);
-                is_newline = false;
-            }
-            Ok(PklToken::Extends) if is_newline => {
-                let statement = parse_extends_clause(lexer)?;
-                statements.push(statement);
-                is_newline = false;
-            }
-            Ok(PklToken::Import) if is_newline => {
-                let statement = parse_import(lexer)?;
-                statements.push(statement);
-                is_newline = false;
-            }
 
             Ok(PklToken::As) => {
                 if let Some(PklStatement::Import(Import {
                     local_name, span, ..
-                })) = statements.last_mut()
+                })) = statements.last_mut().map(PklStatement::inner_mut)
                 {
                     if local_name.is_none() {
                         let Identifier(other_name, other_rng) = parse_id(lexer)?;
@@ -173,21 +96,10 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                         .into());
                 }
             }
-            Ok(PklToken::AbstractClass) if is_newline => {
-                let stmt = parse_class_declaration(lexer, ClassKind::Abstract)?;
-                statements.push(stmt)
-            }
-            Ok(PklToken::OpenClass) if is_newline => {
-                let stmt = parse_class_declaration(lexer, ClassKind::Open)?;
-                statements.push(stmt)
-            }
-            Ok(PklToken::Class) if is_newline => {
-                let stmt = parse_class_declaration(lexer, ClassKind::default())?;
-                statements.push(stmt)
-            }
 
             Ok(PklToken::Dot) => {
-                if let Some(PklStatement::Property(Property { value, .. })) = statements.last_mut()
+                if let Some(PklStatement::Property(Property { value, .. })) =
+                    statements.last_mut().map(PklStatement::inner_mut)
                 {
                     let expr_member = parse_member_expr_member(lexer)?;
                     let expr_start = value.span().start;
@@ -200,7 +112,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                     );
                 } else if let Some(PklStatement::ModuleClause(Module {
                     full_name, span, ..
-                })) = statements.last_mut()
+                })) = statements.last_mut().map(PklStatement::inner_mut)
                 {
                     let other_component = parse_id(lexer)?;
                     let new_span = full_name.1.start..other_component.1.end;
@@ -219,7 +131,7 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
             }
             Ok(PklToken::OpenBrace) => {
                 if let Some(PklStatement::Property(Property { value, span, .. })) =
-                    statements.last_mut()
+                    statements.last_mut().map(PklStatement::inner_mut)
                 {
                     match value {
                         PklExpr::Value(AstPklValue::Object(_))
@@ -273,30 +185,4 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
     }
 
     Ok(statements)
-}
-
-fn handle_property_token<'a>(
-    is_newline: &mut bool,
-    lexer: &mut Lexer<'a, PklToken<'a>>,
-    prop_initial_token: PklToken<'a>,
-    property_kind: PropertyKind,
-    statements: &mut Vec<PklStatement<'a>>,
-) -> PklResult<()> {
-    if !*is_newline {
-        return Err((
-            "unexpected token here (context: global), expected newline".to_owned(),
-            lexer.span(),
-        )
-            .into());
-    }
-
-    let id = match prop_initial_token {
-        PklToken::Identifier(id) | PklToken::IllegalIdentifier(id) => Identifier(id, lexer.span()),
-        _ => parse_id(lexer)?,
-    };
-
-    let statement = parse_property(lexer, id, property_kind)?;
-    statements.push(statement);
-    *is_newline = false;
-    Ok(())
 }

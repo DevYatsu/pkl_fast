@@ -1,0 +1,9 @@
+local class Hey {
+    msg = "hey"
+}
+
+hey = 2
+
+const test = 3
+
+typealias Test = Int

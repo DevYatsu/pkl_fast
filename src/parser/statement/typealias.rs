@@ -1,5 +1,5 @@
 use crate::parser::statement::PklStatement;
-use crate::parser::types::{parse_type_until, AstPklType};
+use crate::parser::types::{parse_type, AstPklType};
 use crate::parser::utils::{parse_equal, parse_id};
 use crate::parser::Identifier;
 use crate::{lexer::PklToken, PklResult};
@@ -13,6 +13,15 @@ pub struct TypeAlias<'a> {
     pub span: Span,
 }
 
+impl<'a> TypeAlias<'a> {
+    pub fn not_allowed_here_err(&self) -> String {
+        String::from("Keyword `typealias` is not allowed here. (If you must use this name as identifier, enclose it in backticks.)")
+    }
+    pub fn modifier_not_applicable_err(&self, modifier: &str) -> String {
+        format!("Modifier `{modifier}` is not applicable to type aliases.")
+    }
+}
+
 /// Function called after 'typealias' keyword.
 pub fn parse_typealias<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklStatement<'a>> {
     let start = lexer.span().start;
@@ -20,7 +29,7 @@ pub fn parse_typealias<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Pkl
 
     parse_equal(lexer)?;
 
-    let refering_type = parse_type_until(lexer, PklToken::NewLine)?;
+    let refering_type = parse_type(lexer)?;
 
     let span = start..lexer.span().end;
 

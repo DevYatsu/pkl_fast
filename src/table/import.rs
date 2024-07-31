@@ -1,7 +1,6 @@
-use super::PklTable;
-use crate::parser::statement::property::{Property, PropertyKind};
+use super::{PklMember, PklTable};
+use crate::PklResult;
 use crate::{lexer::IsValidPkl, Pkl};
-use crate::{PklResult, PklValue};
 use hashbrown::HashMap;
 use logos::Span;
 use std::{fs, path::Path};
@@ -39,7 +38,7 @@ impl Importer {
             file_path => self.read_file_as_table(file_path, span)?,
         };
 
-        imported_table.variables = Importer::filter_rm_local(imported_table.variables);
+        imported_table.members = Importer::filter_rm_local(imported_table.members);
 
         Ok(imported_table)
     }
@@ -52,7 +51,7 @@ impl Importer {
             file_path => self.read_file_as_table(file_path, span)?,
         };
 
-        amended_table.variables = Importer::filter_rm_local(amended_table.variables);
+        amended_table.members = Importer::filter_rm_local(amended_table.members);
 
         Ok(amended_table)
     }
@@ -64,7 +63,7 @@ impl Importer {
             file_path => self.read_file_as_table(file_path, span)?,
         };
 
-        extended_table.variables = Importer::filter_rm_local(extended_table.variables);
+        extended_table.members = Importer::filter_rm_local(extended_table.members);
 
         Ok(extended_table)
     }
@@ -81,12 +80,10 @@ impl Importer {
         Ok(table)
     }
 
-    fn filter_rm_local(
-        properties: HashMap<String, (PropertyKind, PklValue)>,
-    ) -> HashMap<String, (PropertyKind, PklValue)> {
+    fn filter_rm_local(properties: HashMap<String, PklMember>) -> HashMap<String, PklMember> {
         properties
             .into_iter()
-            .filter(|(_key, (kind, _value))| kind != &PropertyKind::Local)
+            .filter(|(_name, member)| !member.is_local())
             .collect()
     }
 
