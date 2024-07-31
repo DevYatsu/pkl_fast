@@ -11,7 +11,6 @@ macro_rules! count_args {
 macro_rules! generate_method {
     ($name:expr,$args:expr; $($arg_index:tt : $arg_type:ident),+; $action:expr; $range:expr) => {{
         use crate::count_args;
-        use crate::errors::PklError;
 
         let name: &str = $name;
         let number_of_args: usize = count_args!($($arg_index),+);

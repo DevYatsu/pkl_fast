@@ -1,8 +1,5 @@
 module com.animals.test
 
-// amends "x.pkl"
-// amends "test.pkl"
-
 extends "x.pkl"
 
 zero = 2

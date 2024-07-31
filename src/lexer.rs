@@ -70,12 +70,10 @@ pub enum PklToken<'a> {
     Hidden,
     #[token("local")]
     Local,
-    #[token("const")]
-    Const,
     #[token("fixed")]
     Fixed,
-    #[regex(r"const\s+local")]
-    ConstLocal,
+    #[token("const")]
+    Const,
 
     #[token("module")]
     Module,

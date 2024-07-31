@@ -48,6 +48,13 @@ pub fn parse_open_brace<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Pk
     parse_multispaces_until!(lexer, PklToken::OpenBrace)
 }
 
+pub fn parse_id_or_local<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
+    parse_multispaces_until!(
+        lexer,
+        PklToken::Identifier(_) | PklToken::IllegalIdentifier(_) | PklToken::Local
+    )
+}
+
 fn id_token<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
     parse_multispaces_until!(
         lexer,

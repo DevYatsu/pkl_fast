@@ -13,7 +13,7 @@ pub mod web;
 pub struct Importer;
 
 impl Importer {
-    pub fn construct_name_from_uri(uri: &str, span: Span) -> PklResult<String> {
+    pub fn construct_name_from_uri(uri: &str, span: Span) -> String {
         let prefix_removed = uri
             .strip_prefix("http:|https:|pkl:|package:")
             .unwrap_or(uri);
@@ -21,17 +21,14 @@ impl Importer {
             .strip_suffix(".pkl")
             .unwrap_or(prefix_removed);
 
-        let name = suffix_removed.split('/').last().unwrap();
+        let mut name = String::from(suffix_removed.split('/').last().unwrap());
 
         if !name.is_valid_pkl_id() {
-            return Err((
-                format!("Cannot extract a valid name out of uri '{uri}'"),
-                span,
-            )
-                .into());
+            name = name + "`";
+            name.push('`');
         }
 
-        Ok(name.to_owned())
+        name
     }
 
     pub fn import(&mut self, module_uri: &str, span: Span) -> PklResult<PklTable> {

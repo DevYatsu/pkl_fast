@@ -14,7 +14,7 @@ use statement::{
 };
 use std::ops::Range;
 use types::{parse_type, AstPklType};
-use utils::parse_id;
+use utils::{parse_id, parse_id_or_local};
 use value::AstPklValue;
 
 pub mod expr;
@@ -78,20 +78,17 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
                 )?;
             }
             Ok(token) if matches!(token, PklToken::Const) => {
+                let token = parse_id_or_local(lexer)?;
+                let prop_kind = match token {
+                    PklToken::Local => PropertyKind::ConstLocal,
+                    _ => PropertyKind::Const,
+                };
+
                 handle_property_token(
                     &mut is_newline,
                     lexer,
                     token,
-                    PropertyKind::Const,
-                    statements.as_mut(),
-                )?;
-            }
-            Ok(token) if matches!(token, PklToken::ConstLocal) => {
-                handle_property_token(
-                    &mut is_newline,
-                    lexer,
-                    token,
-                    PropertyKind::ConstLocal,
+                    prop_kind,
                     statements.as_mut(),
                 )?;
             }

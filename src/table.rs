@@ -52,12 +52,12 @@ pub enum ModuleData {
     // redefine
     Extended {
         module_name: String,
-        variables: Vec<String>,
+        variables: Vec<(PropertyKind, String)>,
         schemas: Vec<String>,
     },
     Amended {
         module_name: String,
-        variables: Vec<String>,
+        variables: Vec<(PropertyKind, String)>,
         schemas: Vec<String>,
     },
     #[default]
@@ -73,14 +73,14 @@ impl ModuleData {
         }
     }
 
-    pub fn get_variables(&mut self) -> Option<&Vec<String>> {
+    pub fn get_variables(&mut self) -> Option<&Vec<(PropertyKind, String)>> {
         match self {
             ModuleData::Extended { variables, .. } => Some(variables),
             ModuleData::Amended { variables, .. } => Some(variables),
             ModuleData::None => None,
         }
     }
-    pub fn get_variables_mut(&mut self) -> Option<&mut Vec<String>> {
+    pub fn get_variables_mut(&mut self) -> Option<&mut Vec<(PropertyKind, String)>> {
         match self {
             ModuleData::Extended { variables, .. } => Some(variables),
             ModuleData::Amended { variables, .. } => Some(variables),
@@ -102,14 +102,14 @@ impl ModuleData {
         }
     }
 
-    pub fn get_amended_variables(&self) -> Option<&Vec<String>> {
+    pub fn get_amended_variables(&self) -> Option<&Vec<(PropertyKind, String)>> {
         match self {
             ModuleData::Extended { .. } => None,
             ModuleData::Amended { variables, .. } => Some(variables),
             ModuleData::None => None,
         }
     }
-    pub fn get_amended_variables_mut(&mut self) -> Option<&mut Vec<String>> {
+    pub fn get_amended_variables_mut(&mut self) -> Option<&mut Vec<(PropertyKind, String)>> {
         match self {
             ModuleData::Extended { .. } => None,
             ModuleData::Amended { variables, .. } => Some(variables),
@@ -264,8 +264,7 @@ impl PklTable {
             return Ok(());
         }
 
-        let name = Importer::construct_name_from_uri(module_uri, span)
-            .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
+        let name = Importer::construct_name_from_uri(module_uri, span);
 
         self.insert(
             name,
@@ -286,9 +285,9 @@ impl PklTable {
 
         let amended = amended_table
             .variables
-            .keys()
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
+            .iter()
+            .map(|(k, (kind, _val))| (kind.to_owned(), k.to_owned()))
+            .collect::<Vec<(PropertyKind, String)>>();
         let schemas = amended_table
             .schemas
             .keys()
@@ -297,7 +296,7 @@ impl PklTable {
 
         let module_name = match amended_table.module_name.to_owned() {
             Some(name) => name,
-            None => Importer::construct_name_from_uri(module_uri, span.to_owned())?,
+            None => Importer::construct_name_from_uri(module_uri, span.to_owned()),
         };
 
         self.module_data = ModuleData::Amended {
@@ -330,9 +329,9 @@ impl PklTable {
 
         let extended = extended_table
             .variables
-            .keys()
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
+            .iter()
+            .map(|(k, (kind, _val))| (kind.to_owned(), k.to_owned()))
+            .collect::<Vec<(PropertyKind, String)>>();
         let schemas = extended_table
             .schemas
             .keys()
@@ -341,7 +340,7 @@ impl PklTable {
 
         let module_name = match extended_table.module_name.to_owned() {
             Some(name) => name,
-            None => Importer::construct_name_from_uri(module_uri, span)?,
+            None => Importer::construct_name_from_uri(module_uri, span),
         };
 
         self.module_data = ModuleData::Extended {
@@ -829,8 +828,13 @@ fn handle_property(
     if let Some(vars) = table.module_data.get_variables() {
         let vars = vars
             .iter()
-            .filter(|x| x != &name.0)
-            .map(String::as_str)
+            .filter_map(|x| {
+                if x.1.as_str() != name.0 {
+                    Some(x.1.as_str())
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<&str>>();
 
         if !vars.is_empty() && name.0.len() > 2 {
@@ -853,7 +857,9 @@ fn handle_property(
     // checks if user creates variables
     // not present in amended module
     if let Some(amended_vars) = table.module_data.get_amended_variables() {
-        if !matches!(kind, PropertyKind::Local) && !amended_vars.contains(&name.0.to_owned()) {
+        if !matches!(kind, PropertyKind::Local)
+            && !amended_vars.iter().any(|x| x.1.as_str() == name.0)
+        {
             return Err((
                 format!(
                     "Cannot add variable '{}' to amended module '{}'",
@@ -885,17 +891,37 @@ fn handle_property(
     // if var is amended/extended then allows
     // assignment in new module
     // otherwise throws an Error
-    if let Some(_) = table.insert(name.0, (kind, evaluated_value)) {
-        // variables can be either amended or extended
+    if let Some((prop_kind, prop_name)) = table.insert(name.0, (kind, evaluated_value)) {
+        if matches!(prop_kind, PropertyKind::Fixed) {
+            return Err((
+                format!("cannot assign to fixed property '{}'", name.0),
+                span,
+            )
+                .into());
+        }
+        if matches!(prop_kind, PropertyKind::Const) {
+            return Err((
+                format!("cannot assign to const property '{}'", name.0),
+                span,
+            )
+                .into());
+        }
+        if matches!(prop_kind, PropertyKind::ConstLocal) {
+            return Err((
+                format!("cannot assign to const local property '{}'", name.0),
+                span,
+            )
+                .into());
+        }
         match table.module_data.get_variables_mut() {
             Some(vars) => {
-                if let Some(pos) = vars.iter().position(|x| x == &name.0) {
+                if let Some(pos) = vars.iter().position(|x| x.1.as_str() == name.0) {
                     vars.remove(pos);
                 } else {
-                    return Err((format!("Cannot reassign variable '{}'", name.0), name.1).into());
+                    return Err((format!("cannot add new property '{}'", name.0), span).into());
                 }
             }
-            None => return Err((format!("Cannot reassign variable '{}'", name.0), name.1).into()),
+            None => return Err((format!("cannot add new property '{}'", name.0), span).into()),
         }
     }
 
