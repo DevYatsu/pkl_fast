@@ -2,7 +2,8 @@ use hashbrown::HashMap;
 use lexer::PklToken;
 use parser::statement::property::PropertyKind;
 use parser::{parse_pkl, statement::PklStatement};
-use table::{ast_to_table, PklTable};
+use table::class::ClassSchema;
+use table::{ast_to_table, PklMember, PklTable};
 
 mod errors;
 mod lexer;
@@ -76,8 +77,28 @@ impl Pkl {
     ///
     /// An `Option` containing a reference to the `PklValue` associated with the name,
     /// or `None` if the variable is not found.
-    pub fn get(&self, name: &str) -> Option<&PklValue> {
-        self.table.get(name).map(|v| &v.1)
+    pub fn get_value(&self, name: &str) -> Option<PklValue> {
+        self.table
+            .get(name)
+            .map(|v| v.to_owned().extract_value())
+            .flatten()
+    }
+
+    /// Retrieves a class schema from the context by name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the class to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// An `Option` containing a reference to the `ClassSchema` associated with the name,
+    /// or `None` if the variable is not found.
+    pub fn get_schema(&self, name: &str) -> Option<ClassSchema> {
+        self.table
+            .get(name)
+            .map(|v| v.to_owned().extract_schema())
+            .flatten()
     }
 
     /// Sets or modifies a value in the context by name.
@@ -92,11 +113,12 @@ impl Pkl {
     /// An `Option` containing the previous value associated with the name, if any.
     pub fn set(&mut self, name: &str, value: PklValue) -> Option<PklValue> {
         self.table
-            .insert(name, (PropertyKind::Classical, value))
-            .map(|v| v.1)
+            .insert(name, PklMember::value(value))
+            .map(PklMember::extract_value)
+            .flatten()
     }
 
-    /// Removes a value from the context by name.
+    /// Removes a value or a schema from the context by name.
     ///
     /// # Arguments
     ///
@@ -105,8 +127,8 @@ impl Pkl {
     /// # Returns
     ///
     /// An `Option` containing the removed value, if any.
-    pub fn remove(&mut self, name: impl AsRef<str>) -> Option<PklValue> {
-        self.table.variables.remove(name.as_ref()).map(|v| v.1)
+    pub fn remove(&mut self, name: impl AsRef<str>) -> Option<PklMember> {
+        self.table.remove(name.as_ref())
     }
 
     /// Retrieves a boolean value from the context.
@@ -119,10 +141,24 @@ impl Pkl {
     ///
     /// A `PklResult` containing the boolean value or an error message if not found or wrong type.
     pub fn get_bool(&self, name: &str) -> PklResult<bool> {
-        match self.table.get(name) {
-            Some((_, PklValue::Bool(b))) => Ok(*b),
-            Some(_) => Err((format!("Variable `{}` is not a boolean", name), 0..0).into()),
-            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
+        if let Some(v) = self
+            .table
+            .get(name)
+            .map(|v| v.to_owned().extract_value())
+            .flatten()
+        {
+            match v {
+                PklValue::Bool(b) => return Ok(b),
+                _ => Err(PklError::WithoutContext(
+                    format!("Property `{}` is not a boolean", name),
+                    None,
+                )),
+            }
+        } else {
+            Err(PklError::WithoutContext(
+                format!("Property `{}` not found", name),
+                None,
+            ))
         }
     }
 
@@ -136,10 +172,24 @@ impl Pkl {
     ///
     /// A `PklResult` containing the integer value or an error message if not found or wrong type.
     pub fn get_int(&self, name: &str) -> PklResult<i64> {
-        match self.table.get(name) {
-            Some((_, PklValue::Int(i))) => Ok(*i),
-            Some(_) => Err((format!("Variable `{}` is not an integer", name), 0..0).into()),
-            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
+        if let Some(v) = self
+            .table
+            .get(name)
+            .map(|v| v.to_owned().extract_value())
+            .flatten()
+        {
+            match v {
+                PklValue::Int(b) => return Ok(b),
+                _ => Err(PklError::WithoutContext(
+                    format!("Property `{}` is not an int", name),
+                    None,
+                )),
+            }
+        } else {
+            Err(PklError::WithoutContext(
+                format!("Property `{}` not found", name),
+                None,
+            ))
         }
     }
 
@@ -153,10 +203,24 @@ impl Pkl {
     ///
     /// A `PklResult` containing the floating-point value or an error message if not found or wrong type.
     pub fn get_float(&self, name: &str) -> PklResult<f64> {
-        match self.table.get(name) {
-            Some((_, PklValue::Float(f))) => Ok(*f),
-            Some(_) => Err((format!("Variable `{}` is not a float", name), 0..0).into()),
-            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
+        if let Some(v) = self
+            .table
+            .get(name)
+            .map(|v| v.to_owned().extract_value())
+            .flatten()
+        {
+            match v {
+                PklValue::Float(b) => return Ok(b),
+                _ => Err(PklError::WithoutContext(
+                    format!("Property `{}` is not a float", name),
+                    None,
+                )),
+            }
+        } else {
+            Err(PklError::WithoutContext(
+                format!("Property `{}` not found", name),
+                None,
+            ))
         }
     }
 
@@ -170,10 +234,24 @@ impl Pkl {
     ///
     /// A `PklResult` containing the string value or an error message if not found or wrong type.
     pub fn get_string(&self, name: &str) -> PklResult<String> {
-        match self.table.get(name) {
-            Some((_, PklValue::String(s))) => Ok(s.to_owned()),
-            Some(_) => Err((format!("Variable `{}` is not a string", name), 0..0).into()),
-            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
+        if let Some(v) = self
+            .table
+            .get(name)
+            .map(|v| v.to_owned().extract_value())
+            .flatten()
+        {
+            match v {
+                PklValue::String(b) => return Ok(b),
+                _ => Err(PklError::WithoutContext(
+                    format!("Property `{}` is not a string", name),
+                    None,
+                )),
+            }
+        } else {
+            Err(PklError::WithoutContext(
+                format!("Property `{}` not found", name),
+                None,
+            ))
         }
     }
 
@@ -186,11 +264,25 @@ impl Pkl {
     /// # Returns
     ///
     /// A `PklResult` containing the object value or an error message if not found or wrong type.
-    pub fn get_object(&self, name: &str) -> PklResult<&HashMap<String, PklValue>> {
-        match self.table.get(name) {
-            Some((_, PklValue::Object(o))) => Ok(o),
-            Some(_) => Err((format!("Variable `{}` is not an object", name), 0..0).into()),
-            None => Err((format!("Variable `{}` not found", name), 0..0).into()),
+    pub fn get_object(&self, name: &str) -> PklResult<HashMap<String, PklValue>> {
+        if let Some(v) = self
+            .table
+            .get(name)
+            .map(|v| v.to_owned().extract_value())
+            .flatten()
+        {
+            match v {
+                PklValue::Object(b) => return Ok(b),
+                _ => Err(PklError::WithoutContext(
+                    format!("Property `{}` is not an object", name),
+                    None,
+                )),
+            }
+        } else {
+            Err(PklError::WithoutContext(
+                format!("Property `{}` not found", name),
+                None,
+            ))
         }
     }
 }

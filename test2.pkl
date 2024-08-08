@@ -2,8 +2,8 @@ local class Hey {
     msg = "hey"
 }
 
-hey = 2
+fixed hey = 2
 
-const test = 3
+local test = 3
 
 typealias Test = Int

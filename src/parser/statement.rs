@@ -1,4 +1,6 @@
-use super::{expr::PklExpr, Identifier};
+use std::thread::current;
+
+use super::{expr::PklExpr, utils::parse_any_token, Identifier};
 use crate::{lexer::PklToken, PklResult};
 use amends::{parse_amends_clause, Amends};
 use boxed::{parse_const, parse_fixed, parse_local};
@@ -101,35 +103,36 @@ impl<'a> PklStatement<'a> {
 }
 
 /// Parses a `PklStatement`.
-pub fn parse_stmt<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklStatement<'a>> {
-    let token = lexer.next();
+pub fn parse_stmt<'a>(
+    lexer: &mut Lexer<'a, PklToken<'a>>,
+    current_token: Option<PklToken<'a>>,
+) -> PklResult<PklStatement<'a>> {
+    let token = match current_token {
+        Some(t) => t,
+        None => parse_any_token(lexer)?,
+    };
 
-    if token.is_none() {
-        return Err(("Unexpected end of input".to_owned(), lexer.span()).into());
-    }
+    match token {
+        PklToken::TypeAlias => parse_typealias(lexer),
+        PklToken::Import => parse_import(lexer),
+        PklToken::Extends => parse_extends_clause(lexer),
+        PklToken::Amends => parse_amends_clause(lexer),
 
-    match token.unwrap() {
-        Ok(PklToken::TypeAlias) => parse_typealias(lexer),
-        Ok(PklToken::Import) => parse_import(lexer),
-        Ok(PklToken::Extends) => parse_extends_clause(lexer),
-        Ok(PklToken::Amends) => parse_amends_clause(lexer),
+        PklToken::Class => parse_class_declaration(lexer, ClassKind::default()),
+        PklToken::OpenClass => parse_class_declaration(lexer, ClassKind::Open),
+        PklToken::AbstractClass => parse_class_declaration(lexer, ClassKind::Abstract),
 
-        Ok(PklToken::Class) => parse_class_declaration(lexer, ClassKind::default()),
-        Ok(PklToken::OpenClass) => parse_class_declaration(lexer, ClassKind::Open),
-        Ok(PklToken::AbstractClass) => parse_class_declaration(lexer, ClassKind::Abstract),
+        PklToken::Module => parse_module_clause(lexer, false),
+        PklToken::OpenModule => parse_module_clause(lexer, true),
 
-        Ok(PklToken::Module) => parse_module_clause(lexer, false),
-        Ok(PklToken::OpenModule) => parse_module_clause(lexer, true),
+        PklToken::Fixed => parse_fixed(lexer),
+        PklToken::Const => parse_const(lexer),
+        PklToken::Local => parse_local(lexer),
 
-        Ok(PklToken::Fixed) => parse_fixed(lexer),
-        Ok(PklToken::Const) => parse_const(lexer),
-        Ok(PklToken::Local) => parse_local(lexer),
-
-        Ok(PklToken::Identifier(id)) | Ok(PklToken::IllegalIdentifier(id)) => {
+        PklToken::Identifier(id) | PklToken::IllegalIdentifier(id) => {
             parse_property(lexer, Identifier(id, lexer.span()))
         }
 
-        Err(e) => return Err((e.to_string(), lexer.span()).into()),
         _ => {
             return Err((
                 "unexpected token here (context: global), expected statement".to_owned(),

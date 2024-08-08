@@ -12,7 +12,7 @@ pub mod web;
 pub struct Importer;
 
 impl Importer {
-    pub fn construct_name_from_uri(uri: &str, span: Span) -> String {
+    pub fn construct_name_from_uri(uri: &str) -> String {
         let prefix_removed = uri
             .strip_prefix("http:|https:|pkl:|package:")
             .unwrap_or(uri);
@@ -38,11 +38,14 @@ impl Importer {
             file_path => self.read_file_as_table(file_path, span)?,
         };
 
-        imported_table.members = Importer::filter_rm_local(imported_table.members);
+        imported_table.members.retain(|_, v| !v.is_local());
 
         Ok(imported_table)
     }
 
+    /// Generates the amended table
+    /// - removes the parsed local items
+    /// - set all items as amended
     pub fn amends(&mut self, module_uri: &str, span: Span) -> PklResult<PklTable> {
         let mut amended_table = match module_uri {
             uri if uri.starts_with("package://") => web::amends_pkg(uri, span)?,
@@ -51,10 +54,17 @@ impl Importer {
             file_path => self.read_file_as_table(file_path, span)?,
         };
 
-        amended_table.members = Importer::filter_rm_local(amended_table.members);
+        amended_table.members.retain(|_, v| {
+            v.set_amended();
+            !v.is_local()
+        });
 
         Ok(amended_table)
     }
+
+    /// Generates the extended table
+    /// - removes the parsed local items
+    /// - set all items as extended
     pub fn extends(&mut self, module_uri: &str, span: Span) -> PklResult<PklTable> {
         let mut extended_table = match module_uri {
             uri if uri.starts_with("package://") => web::extends_pkg(uri, span)?,
@@ -63,7 +73,10 @@ impl Importer {
             file_path => self.read_file_as_table(file_path, span)?,
         };
 
-        extended_table.members = Importer::filter_rm_local(extended_table.members);
+        extended_table.members.retain(|_, v| {
+            v.set_extended();
+            !v.is_local()
+        });
 
         Ok(extended_table)
     }
@@ -78,13 +91,6 @@ impl Importer {
         let table = pkl.table;
 
         Ok(table)
-    }
-
-    fn filter_rm_local(properties: HashMap<String, PklMember>) -> HashMap<String, PklMember> {
-        properties
-            .into_iter()
-            .filter(|(_name, member)| !member.is_local())
-            .collect()
     }
 
     fn file_content(&self, file_path: impl AsRef<Path>, span: Span) -> PklResult<String> {

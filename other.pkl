@@ -1,0 +1,3 @@
+amends "test2.pkl"
+
+test = 3

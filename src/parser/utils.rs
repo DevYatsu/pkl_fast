@@ -19,7 +19,7 @@ macro_rules! parse_multispaces_until {
 
         while let Some(token) = lexer.next() {
             match token {
-                Ok(token) if $(matches!(token, $until_token))||+ => {
+                Ok(token) if $(matches!(&token, $until_token))||+ => {
                     let token: PklToken<'_> = token;
                     return Ok(token);
                 }
@@ -37,10 +37,36 @@ macro_rules! parse_multispaces_until {
 
         Err(("Unexpected end of input".to_owned(), lexer.span()).into())
     }};
+    ($lexer:expr) => {{
+        let lexer: &mut Lexer<'_, PklToken<'_>> = $lexer;
+
+        while let Some(token) = lexer.next() {
+            match token {
+                Ok(PklToken::Space)
+                | Ok(PklToken::DocComment(_))
+                | Ok(PklToken::LineComment(_))
+                | Ok(PklToken::MultilineComment(_))
+                | Ok(PklToken::NewLine) => {
+                    continue;
+                }
+                Ok(token) => {
+                    let token: PklToken<'_> = token;
+                    return Ok(token);
+                }
+                Err(e) => return Err((e.to_string(), lexer.span()).into()),
+                _ => return Err(("unexpected token here".to_owned(), lexer.span()).into()),
+            }
+        }
+
+        Err(("Unexpected end of input".to_owned(), lexer.span()).into())
+    }};
 }
 
 pub(super) use parse_multispaces_until;
 
+pub fn parse_any_token<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
+    parse_multispaces_until!(lexer)
+}
 pub fn parse_equal<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<PklToken<'a>> {
     parse_multispaces_until!(lexer, PklToken::EqualSign)
 }

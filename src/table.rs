@@ -3,14 +3,8 @@ use crate::{
     parser::{
         expr::{class::ClassInstance, fn_call::FuncCall, member_expr::ExprMember, PklExpr},
         statement::{
-            amends::Amends,
-            class::ClassDeclaration,
-            extends::Extends,
-            import::Import,
-            module::Module,
-            property::{Property, PropertyKind},
-            typealias::TypeAlias,
-            PklStatement,
+            amends::Amends, class::ClassDeclaration, extends::Extends, import::Import,
+            module::Module, property::Property, typealias::TypeAlias, PklStatement,
         },
         types::AstPklType,
         value::AstPklValue,
@@ -60,7 +54,7 @@ pub enum PklMember {
         is_extended: bool,
     },
     // Function {
-    //     value: ClassSchema,
+    //     value: Function,
     //     is_local: bool,
     // },
 }
@@ -84,36 +78,55 @@ impl PklMember {
             is_extended: false,
         }
     }
-    pub fn set_const(mut self) -> Self {
-        match &mut self {
+    pub fn set_stmt_builder(
+        &mut self,
+        StatementBuilder {
+            fixed_found,
+            const_found,
+            local_found,
+        }: StatementBuilder,
+    ) -> &mut Self {
+        if fixed_found {
+            self.set_fixed();
+        }
+        if const_found {
+            self.set_const();
+        }
+        if local_found {
+            self.set_local();
+        }
+        self
+    }
+    pub fn set_const(&mut self) -> &mut Self {
+        match self {
             PklMember::Value { is_const, .. } => *is_const = true,
             PklMember::Class { .. } => (),
         };
         self
     }
-    pub fn set_local(mut self) -> Self {
-        match &mut self {
+    pub fn set_local(&mut self) -> &mut Self {
+        match self {
             PklMember::Value { is_local, .. } => *is_local = true,
             PklMember::Class { is_local, .. } => *is_local = true,
         };
         self
     }
-    pub fn set_fixed(mut self) -> Self {
-        match &mut self {
+    pub fn set_fixed(&mut self) -> &mut Self {
+        match self {
             PklMember::Value { is_fixed, .. } => *is_fixed = true,
             PklMember::Class { .. } => (),
         };
         self
     }
-    pub fn set_amended(mut self) -> Self {
-        match &mut self {
+    pub fn set_amended(&mut self) -> &mut Self {
+        match self {
             PklMember::Value { is_amended, .. } => *is_amended = true,
             PklMember::Class { is_amended, .. } => *is_amended = true,
         };
         self
     }
-    pub fn set_extended(mut self) -> Self {
-        match &mut self {
+    pub fn set_extended(&mut self) -> &mut Self {
+        match self {
             PklMember::Value { is_extended, .. } => *is_extended = true,
             PklMember::Class { is_extended, .. } => *is_extended = true,
         };
@@ -132,6 +145,13 @@ impl PklMember {
             PklMember::Class { value, .. } => Some(value),
         }
     }
+    pub fn is_class(&self) -> bool {
+        matches!(self, PklMember::Class { .. })
+    }
+    pub fn is_value(&self) -> bool {
+        matches!(self, PklMember::Value { .. })
+    }
+
     pub fn is_amended(&self) -> bool {
         match self {
             PklMember::Value { is_amended, .. } => *is_amended,
@@ -172,6 +192,13 @@ pub struct PklTable {
     pub is_open: bool,
 
     pub members: HashMap<String, PklMember>,
+
+    // only these fields can help us keep
+    // track of weither or not the file
+    // amends/extends another module
+    amended_or_extended_module_name: Option<String>,
+    is_amended: bool,
+    is_extended: bool,
 }
 
 impl PartialEq for PklTable {
@@ -203,6 +230,10 @@ impl PklTable {
     /// An `Option` containing the previous value associated with the name, if any.
     pub fn insert(&mut self, name: impl Into<String>, value: PklMember) -> Option<PklMember> {
         self.members.insert(name.into(), value)
+    }
+
+    pub fn remove(&mut self, name: impl AsRef<str>) -> Option<PklMember> {
+        self.members.remove(name.as_ref())
     }
 
     /// Merges another `PklTable` into this table.
@@ -249,13 +280,50 @@ impl PklTable {
 
     pub fn get_schema(&self, name: impl AsRef<str>) -> Option<ClassSchema> {
         self.get(name)
-            .map(|member| member.extract_schema())
+            .map(|member| member.to_owned().extract_schema())
             .flatten()
     }
     pub fn get_value(&self, name: impl AsRef<str>) -> Option<PklValue> {
         self.get(name)
-            .map(|member| member.extract_value())
+            .map(|member| member.to_owned().extract_value())
             .flatten()
+    }
+
+    pub fn get_values(&self) -> Vec<&str> {
+        self.members
+            .iter()
+            .filter_map(|(k, v)| if v.is_value() { Some(k.as_str()) } else { None })
+            .collect()
+    }
+    pub fn get_schemas(&self) -> Vec<&str> {
+        self.members
+            .iter()
+            .filter_map(|(k, v)| if v.is_class() { Some(k.as_str()) } else { None })
+            .collect()
+    }
+    pub fn get_amended_schemas(&self) -> Vec<&str> {
+        self.members
+            .iter()
+            .filter_map(|(k, v)| {
+                if v.is_class() && v.is_amended() {
+                    Some(k.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+    pub fn get_amended_values(&self) -> Vec<&str> {
+        self.members
+            .iter()
+            .filter_map(|(k, v)| {
+                if v.is_value() && v.is_amended() {
+                    Some(k.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     pub fn import(
@@ -277,14 +345,15 @@ impl PklTable {
         }
 
         let value = transform_map(imported_table.members);
-        let member = PklMember::value(value.into()).set_const().set_local();
+        let mut member = PklMember::value(value.into());
+        member.set_const().set_local();
 
         if let Some(local) = local_name {
             self.insert(local, member);
             return Ok(());
         }
 
-        let name = Importer::construct_name_from_uri(module_uri, span);
+        let name = Importer::construct_name_from_uri(module_uri);
         self.insert(name, member);
 
         Ok(())
@@ -296,11 +365,10 @@ impl PklTable {
             .amends(module_uri, span.to_owned())
             .map_err(|e| e.with_file_name(module_uri.to_owned()))?;
 
-        // let module_name = match amended_table.module_name.to_owned() {
-        //     Some(name) => name,
-        //     None => Importer::construct_name_from_uri(module_uri, span.to_owned()),
-        // };
+        let amended_mod_name = Importer::construct_name_from_uri(module_uri);
 
+        self.is_amended = true;
+        self.amended_or_extended_module_name = Some(amended_mod_name);
         self.extend(amended_table);
 
         Ok(())
@@ -324,11 +392,9 @@ impl PklTable {
                 .into());
         }
 
-        // let module_name = match extended_table.module_name.to_owned() {
-        //     Some(name) => name,
-        //     None => Importer::construct_name_from_uri(module_uri, span),
-        // };
+        let extended_mod_name = Importer::construct_name_from_uri(module_uri);
 
+        self.amended_or_extended_module_name = Some(extended_mod_name);
         self.extend(extended_table);
 
         Ok(())
@@ -681,16 +747,33 @@ impl PklTable {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy)]
+pub struct StatementBuilder {
+    pub fixed_found: bool,
+    pub const_found: bool,
+    pub local_found: bool,
+}
+
+impl StatementBuilder {
+    fn reset(&mut self) {
+        self.fixed_found = false;
+        self.const_found = false;
+        self.local_found = false;
+    }
+}
+
 pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
     let mut table = PklTable::default();
 
-    // encountered a body statement
-    // == no more import stmt
+    // if encountered a body statement
+    // == no more import stmt allowed
     let mut in_body = false;
     let mut module_clause_found = false;
     let mut amends_found = false;
     let mut extends_found = false;
     let mut import_found = false;
+
+    let mut stmt_builder = StatementBuilder::default();
 
     for statement in ast {
         match statement {
@@ -780,40 +863,9 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 // todo!
             }
 
-            PklStatement::Property(Property {
-                name,
-                _type,
-                value,
-                span,
-            }) => {
+            PklStatement::Property(property) => {
                 in_body = true;
-
-                let evaluated_value = table.evaluate_in_variable(value, _type)?;
-
-                // checks if type corresponds to value
-                if let Some(_type) = _type {
-                    let span = _type.span();
-                    let true_type: PklType = _type.into();
-                    if !evaluated_value.is_instance_of(&true_type) {
-                        return Err((
-                            format!(
-                                "Expected value of type `{}`, but got value '{}'",
-                                true_type, name.0
-                            ),
-                            span,
-                        )
-                            .into());
-                    }
-                }
-
-                if let Some(previous_prop) = table.insert(name.0, PklMember::value(evaluated_value))
-                {
-                    if !previous_prop.is_amended() || !previous_prop.is_extended() {
-                        return Err(
-                            (format!("Duplicate definition of member '{}'", name.0), span).into(),
-                        );
-                    }
-                }
+                handle_property(&mut table, property, stmt_builder)?;
             }
             PklStatement::Class(declaration) => {
                 in_body = true;
@@ -825,9 +877,16 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
             // in any order
             PklStatement::Local(stmt, span) => {
                 in_body = true;
+                stmt_builder.local_found = true;
+
+                // create a local_handler function
+                // that recursively handles the statements
+                // starting from a local statement
+                //
+                // and do the same for const and fixed stmts
 
                 match *stmt {
-                    PklStatement::Property(_) => todo!(),
+                    PklStatement::Property(prop) => handle_property(&mut table, prop, stmt_builder),
                     PklStatement::Class(_) => todo!(),
                     PklStatement::TypeAlias(_) => todo!(),
                     PklStatement::Const(_, _) => todo!(),
@@ -849,10 +908,10 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                     PklStatement::ExtendsClause(stmt) => {
                         return Err((stmt.not_allowed_here_err(), stmt.span).into())
                     }
-                    PklStatement::Import(imp) => {
+                    PklStatement::Import(stmt) => {
                         return Err((stmt.not_allowed_here_err(), stmt.span).into())
                     }
-                }
+                };
             }
 
             PklStatement::Const(stmt, span) => {
@@ -922,6 +981,7 @@ pub fn ast_to_table(ast: Vec<PklStatement>) -> PklResult<PklTable> {
                 }
             }
         }
+        stmt_builder.reset();
     }
 
     Ok(table)
@@ -935,52 +995,48 @@ fn handle_property(
         value,
         span,
     }: Property,
+    stmt_builder: StatementBuilder,
 ) -> PklResult<()> {
     let evaluated_value = table.evaluate_in_variable(value, _type.clone())?;
 
     // checks for spelling errors
-    if let Some(vars) = table.module_data.get_variables() {
-        let vars = vars
-            .iter()
-            .filter_map(|x| {
-                if x.1.as_str() != name.0 {
-                    Some(x.1.as_str())
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<&str>>();
+    let vars = table
+        .get_values()
+        .into_iter()
+        .filter(|x| *x != name.0)
+        .collect::<Vec<&str>>();
 
-        if !vars.is_empty() && name.0.len() > 2 {
-            match check_closest_word(name.0, vars.as_slice(), 1) {
-                Some(closest) => {
-                    return Err((
-                        format!(
-                            "Did you mean to write '{}' instead of '{}'?",
-                            closest, name.0
-                        ),
-                        name.1,
-                    )
-                        .into())
-                }
-                None => (),
-            };
-        }
+    if !vars.is_empty() && name.0.len() > 2 {
+        match check_closest_word(name.0, vars.as_slice(), 1) {
+            Some(closest) => {
+                return Err((
+                    format!(
+                        "Did you mean to write '{}' instead of '{}'?",
+                        closest, name.0
+                    ),
+                    name.1,
+                )
+                    .into())
+            }
+            None => (),
+        };
     }
 
     // checks if user creates variables
     // not present in amended module
-    if let Some(amended_vars) = table.module_data.get_amended_variables() {
-        if !matches!(kind, PropertyKind::Local)
-            && !amended_vars.iter().any(|x| x.1.as_str() == name.0)
-        {
+    if table.is_amended {
+        let amended_mod_name = table.amended_or_extended_module_name.as_ref().unwrap();
+        let amended_values = table.get_amended_values();
+
+        if !stmt_builder.local_found && !amended_values.contains(&name.0) {
             return Err((
                 format!(
-                    "Cannot add variable '{}' to amended module '{}'",
-                    name.0,
-                    table.module_data.name().unwrap(/* safe: if amended_variables.is_some() then name is too */)
+                    "Cannot find property `{}` in module `{}`",
+                    name.0, amended_mod_name
                 ),
-                name.1).into());
+                name.1,
+            )
+                .into());
         }
     }
 
@@ -1005,37 +1061,41 @@ fn handle_property(
     // if var is amended/extended then allows
     // assignment in new module
     // otherwise throws an Error
-    if let Some((prop_kind, prop_name)) = table.insert(name.0, (kind, evaluated_value)) {
-        if matches!(prop_kind, PropertyKind::Fixed) {
+    let mut member = PklMember::value(evaluated_value);
+    member.set_stmt_builder(stmt_builder);
+    if let Some(prev_member) = table.insert(name.0, member) {
+        if !prev_member.is_amended() && !prev_member.is_extended() {
             return Err((
-                format!("cannot assign to fixed property '{}'", name.0),
-                span,
+                format!("Duplicate definition of member `{}`", name.0),
+                name.1,
             )
                 .into());
         }
-        if matches!(prop_kind, PropertyKind::Const) {
+
+        if prev_member.is_local() && !stmt_builder.local_found {
+            let amended_mod_name = table.amended_or_extended_module_name.as_ref().unwrap();
             return Err((
-                format!("cannot assign to const property '{}'", name.0),
-                span,
+                format!(
+                    "Cannot find property `{}` in module `{}`",
+                    name.0, amended_mod_name,
+                ),
+                name.1,
             )
                 .into());
         }
-        if matches!(prop_kind, PropertyKind::ConstLocal) {
+        if prev_member.is_const() {
             return Err((
-                format!("cannot assign to const local property '{}'", name.0),
-                span,
+                format!("Cannot assign to const property `{}`", name.0),
+                name.1,
             )
                 .into());
         }
-        match table.module_data.get_variables_mut() {
-            Some(vars) => {
-                if let Some(pos) = vars.iter().position(|x| x.1.as_str() == name.0) {
-                    vars.remove(pos);
-                } else {
-                    return Err((format!("cannot add new property '{}'", name.0), span).into());
-                }
-            }
-            None => return Err((format!("cannot add new property '{}'", name.0), span).into()),
+        if prev_member.is_fixed() {
+            return Err((
+                format!("Cannot assign to fixed property `{}`", name.0),
+                name.1,
+            )
+                .into());
         }
     }
 
@@ -1046,41 +1106,43 @@ fn handle_class(table: &mut PklTable, declaration: ClassDeclaration) -> PklResul
     let (name, schema) = generate_class_schema(declaration);
 
     // checks for spelling errors
-    if let Some(vars) = table.module_data.get_schemas() {
-        let vars = vars
-            .iter()
-            .filter(|x| x != &name.0)
-            .map(String::as_str)
-            .collect::<Vec<&str>>();
+    let vars = table
+        .get_schemas()
+        .into_iter()
+        .filter(|x| *x != name.0)
+        .collect::<Vec<&str>>();
 
-        if !vars.is_empty() {
-            match check_closest_word(name.0, vars.as_slice(), 1) {
-                Some(closest) => {
-                    return Err((
-                        format!(
-                            "Did you mean to write '{}' instead of '{}'?",
-                            closest, name.0
-                        ),
-                        name.1,
-                    )
-                        .into())
-                }
-                None => (),
-            };
-        }
+    if !vars.is_empty() && name.0.len() > 2 {
+        match check_closest_word(name.0, vars.as_slice(), 1) {
+            Some(closest) => {
+                return Err((
+                    format!(
+                        "Did you mean to write '{}' instead of '{}'?",
+                        closest, name.0
+                    ),
+                    name.1,
+                )
+                    .into())
+            }
+            None => (),
+        };
     }
 
     // checks if adding variables to amending module
     // that is not in amended module
-    if let Some(amended_schemas) = table.module_data.get_amended_schemas() {
-        if !amended_schemas.contains(&name.0.to_owned()) {
+    if table.is_amended {
+        let amended_mod_name = table.amended_or_extended_module_name.as_ref().unwrap();
+        let amended_schemas = table.get_amended_schemas();
+
+        if !amended_schemas.contains(&name.0) {
             return Err((
                 format!(
-                    "Cannot define class '{}', class is not defined inside of amended module '{}'",
-                    name.0,
-                    table.module_data.name().unwrap(/* safe: if amended_variables.is_some() then name is too */)
+                    "Cannot find property `{}` in module `{}`",
+                    name.0, amended_mod_name
                 ),
-                name.1).into());
+                name.1,
+            )
+                .into());
         }
     }
 
@@ -1089,17 +1151,39 @@ fn handle_class(table: &mut PklTable, declaration: ClassDeclaration) -> PklResul
     // if schema is amended/extended then allows
     // assignment in new module
     // otherwise throws an Error
-    if let Some(_) = table.add_schema(name.0, schema) {
-        // variables can be either amended or extended
-        match table.module_data.get_schemas_mut() {
-            Some(vars) => {
-                if let Some(pos) = vars.iter().position(|x| x == &name.0) {
-                    vars.remove(pos);
-                } else {
-                    return Err((format!("Cannot reassign variable '{}'", name.0), name.1).into());
-                }
-            }
-            None => return Err((format!("Cannot reassign variable '{}'", name.0), name.1).into()),
+    if let Some(prev_member) = table.insert(name.0, PklMember::schema(schema)) {
+        if !prev_member.is_amended() && !prev_member.is_extended() {
+            return Err((
+                format!("Duplicate definition of member `{}`", name.0),
+                name.1,
+            )
+                .into());
+        }
+
+        if prev_member.is_local() {
+            return Err((
+                format!(
+                    "Cannot find property `{}` in module `{}`",
+                    name.0,
+                    table.amended_or_extended_module_name.as_ref().unwrap(),
+                ),
+                name.1,
+            )
+                .into());
+        }
+        if prev_member.is_const() {
+            return Err((
+                format!("Cannot assign to const property `{}`", name.0),
+                name.1,
+            )
+                .into());
+        }
+        if prev_member.is_fixed() {
+            return Err((
+                format!("Cannot assign to fixed property `{}`", name.0),
+                name.1,
+            )
+                .into());
         }
     }
 

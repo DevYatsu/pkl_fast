@@ -39,13 +39,6 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
 
     while let Some(token) = lexer.next() {
         match token {
-            // parses any statement
-            Ok(token) if is_newline => {
-                let stmt = parse_stmt(lexer)?;
-                statements.push(stmt);
-                is_newline = false;
-            }
-
             Ok(PklToken::Union) => {
                 if let Some(PklStatement::TypeAlias(TypeAlias {
                     refering_type,
@@ -172,6 +165,12 @@ pub fn parse_pkl<'a>(lexer: &mut Lexer<'a, PklToken<'a>>) -> PklResult<Vec<PklSt
             Ok(PklToken::NewLine) => {
                 is_newline = true;
                 continue;
+            }
+            // parses any statement
+            Ok(token) if is_newline => {
+                let stmt = parse_stmt(lexer, Some(token))?;
+                statements.push(stmt);
+                is_newline = false;
             }
             Err(e) => return Err((e.to_string(), lexer.span()).into()),
             _ => {

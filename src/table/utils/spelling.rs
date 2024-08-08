@@ -47,6 +47,15 @@ pub fn check_closest_word<'a>(
     threshold: usize,
 ) -> Option<&'a str> {
     let (closest, distance) = closest_word(word, word_list);
+
+    if word == &closest[..closest.len() - 1]
+        || &word[..word.len() - 1] == closest
+        || word == &closest[1..]
+        || &word[1..] == closest
+    {
+        return None;
+    }
+
     if distance <= threshold {
         Some(closest)
     } else {
