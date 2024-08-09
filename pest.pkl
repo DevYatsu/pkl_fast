@@ -62,3 +62,8 @@ amended = (obj) {
     x = 1
 }
 function say(a: Int) = "Pkl is great!"
+
+class Bird {
+  name: String
+  hidden taxonomy: Taxonomy
+}

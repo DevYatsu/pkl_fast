@@ -1,12 +1,15 @@
 file = { SOI ~ stmt* ~ EOI}
 
-stmt = { typealias | module | import | extends | amends | function | property_stmt | expr }
+stmt = { typealias | module | import | extends | amends | function | class | property_stmt | expr }
 expr = !{ (WHITESPACE|COMMENT)* ~ (dot_expr | value | fn_call | ident | amended_object) }
 
 WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
 SPACE = _{ " " | "\t" }
 
 END_NEWLINE = @{(SPACE | COMMENT)* ~ "\n"}
+
+EQUAL = !{(SPACE | COMMENT)* ~ "="}
+COLON = !{(SPACE | COMMENT)* ~ ":"}
 
 line_comment = { "//" ~ (!"\n" ~ ANY)* }
 doc_comment = { "///" ~ (!"\n" ~ ANY)* }
@@ -90,13 +93,13 @@ amended_object = { "(" ~ ident ~ ")" ~ WHITESPACE* ~ object }
 //  *****
 // ********
 
-property_keyword = @{ ("local" | "fixed" | "const") ~ WHITESPACE+}
-property = ${ (property_keyword)* ~ ident ~ WHITESPACE* ~ (object | ((":" ~ WHITESPACE* ~ TYPE ~ WHITESPACE*)? ~ "=" ~ expr))}
+property_keyword = @{"local" | "fixed" | "const"}
+property = ${ (property_keyword ~ WHITESPACE+)* ~ ident ~ WHITESPACE* ~ (object | ((COLON ~ TYPE)? ~ EQUAL ~ expr))}
 // stmt just has a END_NEWLINE at the end
 property_stmt = ${ property ~ END_NEWLINE }
 
 typealias_params = !{WHITESPACE* ~ ident ~ ("," ~ ident)* ~ WHITESPACE* }
-typealias = ${ "typealias" ~ WHITESPACE+  ~ ident ~ ("<" ~ typealias_params ~ ">")? ~ WHITESPACE* ~ "=" ~ WHITESPACE* ~ TYPE ~ END_NEWLINE }
+typealias = ${ "typealias" ~ WHITESPACE+  ~ ident ~ ("<" ~ typealias_params ~ ">")? ~ EQUAL ~ WHITESPACE* ~ TYPE ~ END_NEWLINE }
 
 module_keyword = @{ ("open" ~ WHITESPACE+)? ~ "module"}
 module_src = {ident ~ ("." ~ ident)*}
@@ -110,12 +113,16 @@ extends = ${ "extends" ~ WHITESPACE+ ~ src ~ END_NEWLINE}
 import_as = {ident}
 import = ${ "import" ~ WHITESPACE+ ~ src ~ (WHITESPACE+ ~ "as" ~ WHITESPACE+ ~ import_as)? ~ END_NEWLINE }
 
-arg = !{ ident ~ ":" ~ TYPE }
+arg = !{ ident ~ COLON ~ TYPE }
 function_args = !{ WHITESPACE* ~ arg ~ ("," ~ arg)* ~ ("," ~ WHITESPACE*)? }
-return_type_annotation = !{":" ~ TYPE}
+return_type_annotation = !{COLON ~ TYPE}
 function_name = {ident}
-function = ${ "function" ~ WHITESPACE+ ~ function_name ~ WHITESPACE* ~ "(" ~ function_args? ~  ")" ~ (WHITESPACE* ~ return_type_annotation)? ~ WHITESPACE* ~ "=" ~ expr ~ END_NEWLINE}
+function = ${ "function" ~ WHITESPACE+ ~ function_name ~ WHITESPACE* ~ "(" ~ function_args? ~  ")" ~ return_type_annotation? ~ EQUAL ~ expr ~ END_NEWLINE}
 
+class_field_keyword = @{"local" | "hidden" | "const"}
+class_type_field = { (class_field_keyword ~ WHITESPACE+)* ~ ident ~ COLON ~ TYPE }
+class_body = ${ (class_type_field|property|function) ~ (END_NEWLINE ~ WHITESPACE* ~ (class_type_field|property|function))* }
+class = {"class" ~ ident ~ "{" ~ class_body? ~ "}"}
 
 // ********
 //  *****
@@ -124,7 +131,7 @@ function = ${ "function" ~ WHITESPACE+ ~ function_name ~ WHITESPACE* ~ "(" ~ fun
 // ********
 
 // do not use 'type' cause it's a rust keyword
-TYPE = !{ union | basic_type }
+TYPE = !{ (WHITESPACE|COMMENT)* ~ (union | basic_type) }
 
 basic_type = {type_with_restraints | type_with_attr | ident}
 type_with_attr = { ident ~ "<" ~ TYPE ~ ("," ~ TYPE)* ~ ">"}
