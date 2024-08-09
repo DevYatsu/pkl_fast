@@ -21,3 +21,5 @@ id_3test_ // test doc comment
 test \n \t efefd \u{F233}  \(22)
 """
 ##" delimited string yes "\# \n "##
+
+call(arg1, arg2, 22)
