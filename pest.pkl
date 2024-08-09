@@ -35,12 +35,8 @@ test()
     .`hey`
     .x()
 
-local const x: Int = 222
-fixed const y: Float = 2.3
-local z: List<Number>(length) = List(2, 3.4e2)
-
 typealias Test = List<Number>
-typealias StringMap<Value, Other> = Map<String, Value>
+typealias StringMap<Value,Other> = Map<String,Value>
 
 module parrot
 module com.x.y
@@ -49,8 +45,20 @@ extends "pigeon.pkl"
 
 import "other.pkl" as test
 
+local const x: Int = 222
+fixed const y: Float = 2.3
+local z: List<Number>(length) = // List(2, 3.4e2)
+22
 name = "Parrot"
 diet = "Berries"
 extinct = false
 
+obj {
+    test = 222
+    x = 3
+}
+amended = (obj) {
+    test = 2
+    x = 1
+}
 function say(a: Int) = "Pkl is great!"

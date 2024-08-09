@@ -1,12 +1,12 @@
 file = { SOI ~ stmt* ~ EOI}
 
-stmt = { typealias | module | import | extends | amends | function | property | expr }
-expr = { dot_expr | value | fn_call | ident }
+stmt = { typealias | module | import | extends | amends | function | property_stmt | expr }
+expr = { (WHITESPACE|COMMENT)* ~ (dot_expr | value | fn_call | ident | amended_object) }
 
-WHITESPACE = _{ " " | "\t" | "\n" }
+WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
 SPACE = _{ " " | "\t" }
 
-END_NEWLINE = _{SPACE* ~ !"\n"}
+END_NEWLINE = @{(SPACE | COMMENT)* ~ "\n"}
 
 line_comment = { "//" ~ (!"\n" ~ ANY)* }
 doc_comment = { "///" ~ (!"\n" ~ ANY)* }
@@ -65,10 +65,9 @@ raw_string_interior = {
     )*
 }
 
-
 string = { multiline_string | basic_string | custom_string }
 
-
+// Numbers
 hex_int = @{ "0x" ~ ASCII_HEX_DIGIT+ ~ ("_" ~ ASCII_HEX_DIGIT+)* }
 octal_int = @{ "0o" ~ ASCII_OCT_DIGIT+ ~ ("_" ~ ASCII_OCT_DIGIT+)* }
 binary_int = @{  "0b" ~ ASCII_BIN_DIGIT+ ~ ("_" ~ ASCII_BIN_DIGIT+)* }
@@ -78,6 +77,12 @@ int = { "-"? ~ (hex_int | octal_int | binary_int | basic_int) }
 exponent = { ("e" | "E") ~ ("+" | "-")? ~ basic_int+ }
 float = @{ "NaN" | ("-"? ~ ("Infinity" | (basic_int? ~ "." ~ basic_int+ ~ exponent? )))}
 
+// do we need to enforce the
+// input of a newline after a prop here ?
+obj_fields = { property ~ (END_NEWLINE ~ WHITESPACE* ~ property)* }
+object = ${ "{" ~ WHITESPACE* ~ obj_fields? ~ WHITESPACE* ~ "}"}
+
+amended_object = { "(" ~ ident ~ ")" ~ WHITESPACE* ~ object }
 
 // ********
 //  *****
@@ -86,29 +91,29 @@ float = @{ "NaN" | ("-"? ~ ("Infinity" | (basic_int? ~ "." ~ basic_int+ ~ expone
 // ********
 
 property_keyword = @{ ("local" | "fixed" | "const") ~ WHITESPACE+}
-property = { (property_keyword)* ~ ident ~ (":" ~ TYPE)? ~ "=" ~ expr ~ END_NEWLINE}
+property = ${ (property_keyword)* ~ ident ~ WHITESPACE* ~ (object | ((":" ~ WHITESPACE* ~ TYPE ~ WHITESPACE*)? ~ "=" ~ WHITESPACE* ~ expr))}
+// stmt just has a END_NEWLINE at the end
+property_stmt = ${ property ~ END_NEWLINE }
 
-typealias_keyword = @{ "typealias" ~ WHITESPACE+}
-typealias_params = { ident ~ ("," ~ ident)* }
-typealias = { typealias_keyword ~ ident ~ ("<" ~ typealias_params ~ ">")? ~ "=" ~ TYPE ~ END_NEWLINE}
+typealias_params = {WHITESPACE* ~ ident ~ (WHITESPACE* ~ "," ~ WHITESPACE* ~ ident)* ~ WHITESPACE* }
+typealias = ${ "typealias" ~ WHITESPACE+  ~ ident ~ ("<" ~ typealias_params ~ ">")? ~ WHITESPACE* ~ "=" ~ WHITESPACE* ~ TYPE ~ END_NEWLINE }
 
 module_keyword = @{ ("open" ~ WHITESPACE+)? ~ "module"}
 module_src = {ident ~ ("." ~ ident)*}
-module = ${ module_keyword ~ WHITESPACE+ ~ module_src}
+module = ${ module_keyword ~ WHITESPACE+ ~ module_src ~ END_NEWLINE}
 
 src = {"\"" ~ (!"\"" ~ ANY)+ ~ "\""}
 
-amends = ${ "amends" ~ WHITESPACE+ ~ src}
-extends = ${ "extends" ~ WHITESPACE+ ~ src}
+amends = ${ "amends" ~ WHITESPACE+ ~ src ~ END_NEWLINE}
+extends = ${ "extends" ~ WHITESPACE+ ~ src ~ END_NEWLINE}
 
 import_as = {ident}
-import = ${ "import" ~ WHITESPACE+ ~ src ~ (WHITESPACE+ ~ "as" ~ WHITESPACE+ ~ import_as)? }
+import = ${ "import" ~ WHITESPACE+ ~ src ~ (WHITESPACE+ ~ "as" ~ WHITESPACE+ ~ import_as)? ~ END_NEWLINE }
 
-function_keyword = @{"function" ~ WHITESPACE+}
-arg = {ident ~ ":" ~ TYPE}
-function_args = { (arg ~ ("," ~ arg)* ~ ","?)? }
+arg = { ident ~ WHITESPACE* ~ ":" ~ WHITESPACE* ~ TYPE }
+function_args = { WHITESPACE* ~ arg ~ (WHITESPACE* ~ "," ~ WHITESPACE* ~ arg)* ~ WHITESPACE* ~ ("," ~ WHITESPACE*)? }
 return_type = {TYPE}
-function = { function_keyword ~ ident ~ "(" ~ function_args ~  ")" ~ (":" ~ return_type)? ~ "=" ~ expr }
+function = ${ "function" ~ WHITESPACE+ ~ ident ~ WHITESPACE* ~ "(" ~ function_args? ~  ")" ~ (WHITESPACE* ~ ":" ~ WHITESPACE* ~ return_type)? ~ WHITESPACE* ~ "=" ~ WHITESPACE* ~ expr ~ END_NEWLINE}
 
 
 // ********
