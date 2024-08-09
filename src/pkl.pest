@@ -92,7 +92,8 @@ typealias_keyword = @{ "typealias" ~ WHITESPACE+}
 typealias = { typealias_keyword ~ ident ~ "=" ~ TYPE ~ END_NEWLINE}
 
 module_keyword = @{ ("open" ~ WHITESPACE+)? ~ "module"}
-module = ${ module_keyword ~ WHITESPACE+ ~ ident}
+module_src = {ident ~ ("." ~ ident)*}
+module = ${ module_keyword ~ WHITESPACE+ ~ module_src}
 
 src = {"\"" ~ (!"\"" ~ ANY)+ ~ "\""}
 
