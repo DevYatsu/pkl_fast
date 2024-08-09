@@ -15,8 +15,9 @@ illegal_ident = { "`" ~ (!"`" ~ ANY)* ~ "`" }
 // blank_ident = { _ }
 ident = @{ basic_ident | illegal_ident }
 
-value = { bool | float | int | string }
+value = { bool | null | float | int | string }
 
+null = _{ "null" }
 bool = @{ "true" | "false" }
 
 // Strings
