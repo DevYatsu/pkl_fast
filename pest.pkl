@@ -11,6 +11,9 @@ false
 .0e+4
 1_2.2_1e-4
 1_33333_3333
+NaN
+Infinity
+-Infinity
 ident
 $i
 _i007
@@ -25,3 +28,15 @@ test \n \t efefd \u{F233}  \(22)
 call(arg1, arg2, 22)
 
 test().call.a().`hey`.x()
+
+test()
+    .call
+    .a() //a
+    .`hey`
+    .x()
+
+local const x: Int = 222
+fixed const y: Float = 2.3
+local z: List<Number>(length) = List(2, 3.4e2)
+
+typealias Test = List<Number>

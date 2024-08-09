@@ -1,15 +1,24 @@
-file = { SOI ~ "\n"* ~ (stmt ~ "\n"*) * ~ stmt? ~ EOI}
+file = { SOI ~ stmt* ~ EOI}
 
-stmt = { expr }
+stmt = { typealias | property | expr }
 expr = { dot_expr | value | fn_call | ident }
 
-WHITESPACE = _{ " " | "\t" }
+WHITESPACE = _{ " " | "\t" | "\n" }
+SPACE = _{ " " | "\t" }
+
+END_NEWLINE = _{SPACE* ~ !"\n"}
 
 line_comment = { "//" ~ (!"\n" ~ ANY)* }
 doc_comment = { "///" ~ (!"\n" ~ ANY)* }
 multiline_comment = { "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 COMMENT = _{ line_comment | doc_comment | multiline_comment }
 
+
+// ********
+//  *****
+//  exprs
+//  *****
+// ********
 
 ident_with_start_symbol = { ("_" | "$") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")+ }
 ident_without_start_symbol = { ASCII_ALPHA+ ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
@@ -37,8 +46,8 @@ basic_string = {"\"" ~ basic_string_true_content ~ "\""}
 
 
 multiline_content = { (!multiline_end ~ (interpolation | escape_sequences | ANY))* }
-multiline_end = { "\n" ~ WHITESPACE* ~ "\"\"\"" }
-multiline_start = { "\"\"\"" ~ WHITESPACE? ~ "\n" }
+multiline_end = { "\n" ~ SPACE* ~ "\"\"\"" }
+multiline_start = { "\"\"\"" ~ SPACE? ~ "\n" }
 multiline_string = { multiline_start ~ multiline_content ~ multiline_end}
 
 custom_escaped = @{ "\\#" | escape_sequences }
@@ -68,3 +77,31 @@ int = { "-"? ~ (hex_int | octal_int | binary_int | basic_int) }
 
 exponent = { ("e" | "E") ~ ("+" | "-")? ~ basic_int+ }
 float = @{ "NaN" | ("-"? ~ ("Infinity" | (basic_int? ~ "." ~ basic_int+ ~ exponent? )))}
+
+
+// ********
+//  *****
+//  stmts
+//  *****
+// ********
+
+property_keyword = @{ ("local" | "fixed" | "const") ~ WHITESPACE+}
+property = { (property_keyword)* ~ ident ~ (":" ~ TYPE)? ~ "=" ~ expr ~ END_NEWLINE}
+
+typealias_keyword = @{ "typealias" ~ WHITESPACE+}
+typealias = { typealias_keyword ~ ident ~ "=" ~ TYPE ~ END_NEWLINE}
+
+// ********
+//  *****
+//  types
+//  *****
+// ********
+
+// do not use 'type' cause it's a rust keyword
+TYPE = { union | basic_type }
+
+basic_type = {type_with_restraints | type_with_attr | ident}
+type_with_attr = { ident ~ "<" ~ TYPE ~ ("," ~ TYPE)* ~ ">"}
+type_with_restraints = { (type_with_attr | ident) ~ "(" ~ expr ~ ")"}
+
+union = { basic_type ~ ("|" ~ basic_type)+}
