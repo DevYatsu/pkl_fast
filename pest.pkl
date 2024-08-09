@@ -36,7 +36,7 @@ test()
     .x()
 
 typealias Test = List<Number>
-typealias StringMap<Value,Other> = Map<String,Value>
+typealias StringMap< Value, Other> = Map<String, Value>
 
 module parrot
 module com.x.y
