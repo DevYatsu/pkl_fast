@@ -1,0 +1,63 @@
+file = { SOI ~ "\n"* ~ (stmt ~ "\n"*) * ~ stmt? ~ EOI}
+
+stmt = { expr }
+expr = { value | ident }
+
+WHITESPACE = _{ " " | "\t" }
+
+line_comment = { "//" ~ (!"\n" ~ ANY)* }
+doc_comment = { "///" ~ (!"\n" ~ ANY)* }
+multiline_comment = { "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+COMMENT = _{ line_comment | doc_comment | multiline_comment }
+
+basic_ident = { ("_" | "$" | ASCII_ALPHA) ~ (ASCII_ALPHA | ASCII_DIGIT | "_")+ }
+illegal_ident = { "`" ~ (!"`" ~ ANY)* ~ "`" }
+// blank_ident = { _ }
+ident = @{ basic_ident | illegal_ident }
+
+value = { bool | float | int | string }
+
+bool = @{ "true" | "false" }
+
+// Strings
+unicode_digits = @{  ASCII_HEX_DIGIT{1, 6}  }
+escape_sequences = {"\\t" | "\\n" | "\\r" | "\\\"" | "\\\\" | ("\\u" ~ "{" ~ unicode_digits ~ "}") }
+
+interpolation = { "\\(" ~ expr ~ ")"  }
+
+basic_string_true_content = { (!"\"" ~ (interpolation | escape_sequences | ANY))* }
+basic_string = {"\"" ~ basic_string_true_content ~ "\""}
+
+
+multiline_content = { (!multiline_end ~ (interpolation | escape_sequences | ANY))* }
+multiline_end = { "\n" ~ WHITESPACE* ~ "\"\"\"" }
+multiline_start = { "\"\"\"" ~ WHITESPACE? ~ "\n" }
+multiline_string = { multiline_start ~ multiline_content ~ multiline_end}
+
+custom_escaped = @{ "\\#" | escape_sequences }
+custom_string = {
+    PUSH("#"*) ~ "\""
+        ~ raw_string_interior
+        ~ "\"" ~ POP
+}
+raw_string_interior = {
+    (
+        !("\"" ~ PEEK)    // unless the next character is a quotation mark
+                          // followed by the correct amount of number signs,
+                          // consume content
+        ~ (interpolation | custom_escaped | ANY)
+    )*
+}
+
+
+string = { multiline_string | basic_string | custom_string }
+
+
+hex_int = @{ "0x" ~ ASCII_HEX_DIGIT+ ~ ("_" ~ ASCII_HEX_DIGIT+)* }
+octal_int = @{ "0o" ~ ASCII_OCT_DIGIT+ ~ ("_" ~ ASCII_OCT_DIGIT+)* }
+binary_int = @{  "0b" ~ ASCII_BIN_DIGIT+ ~ ("_" ~ ASCII_BIN_DIGIT+)* }
+basic_int = @ { ASCII_DIGIT+ ~ ("_" ~ ASCII_DIGIT+)* }
+int = { "-"? ~ (hex_int | octal_int | binary_int | basic_int) }
+
+exponent = { ("e" | "E") ~ ("+" | "-")? ~ basic_int+ }
+float = @{ "NaN" | ("-"? ~ ("Infinity" | (basic_int? ~ "." ~ basic_int+ ~ exponent? )))}

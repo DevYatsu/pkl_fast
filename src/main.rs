@@ -1,39 +1,65 @@
-use new_pkl::{Pkl, PklError};
-use std::{fs, time::Instant};
+use ::pest::Parser;
+use new_pkl::{
+    pest::{self, Rule},
+    Pkl, PklError,
+};
+use std::{env::args, fs, time::Instant};
 
 fn main() -> Result<(), (String, String, Option<String>)> {
-    let src = fs::read_to_string("main.pkl").unwrap();
+    let args = args().into_iter().collect::<Vec<_>>();
 
-    let src = src.repeat(1000);
-    let time = Instant::now();
+    match args.get(1) {
+        Some(_) => {
+            let src = fs::read_to_string("main.pkl").unwrap();
 
-    let mut pkl = Pkl::new();
-    let ast = pkl.generate_ast(&src).map_err(|e: PklError| {
-        (
-            e.msg().to_owned(),
-            src[e.span().unwrap(/* safe */)].to_owned(),
-            e.file_name().to_owned(),
-        )
-    })?;
-    // pkl.parse(&src).map_err(|e: PklError| {
-    //     (
-    //         e.msg().to_owned(),
-    //         src[e.span().unwrap(/* safe */)].to_owned(),
-    //         e.file_name().to_owned(),
-    //     )
-    // })?;
+            let src = src.repeat(1000);
+            let time = Instant::now();
 
-    // for stmt in pkl.generate_ast(&src).unwrap() {
-    //     println!("{stmt:?}",);
-    // }
+            let mut pkl = Pkl::new();
 
-    println!(
-        "{}ms to parse {} chars",
-        time.elapsed().as_millis(),
-        src.len()
-    );
+            let ast = pkl.generate_ast(&src).map_err(|e: PklError| {
+                (
+                    e.msg().to_owned(),
+                    src[e.span().unwrap(/* safe */)].to_owned(),
+                    e.file_name().to_owned(),
+                )
+            })?;
+            // pkl.parse(&src).map_err(|e: PklError| {
+            //     (
+            //         e.msg().to_owned(),
+            //         src[e.span().unwrap(/* safe */)].to_owned(),
+            //         e.file_name().to_owned(),
+            //     )
+            // })?;
 
-    println!("{:?}", pkl);
+            // for stmt in pkl.generate_ast(&src).unwrap() {
+            //     println!("{stmt:?}",);
+            // }
+
+            println!(
+                "{}ms to parse {} chars",
+                time.elapsed().as_millis(),
+                src.len()
+            );
+
+            println!("{:?}", pkl);
+        }
+        None => {
+            let src = fs::read_to_string("pest.pkl").unwrap();
+
+            let src = src.repeat(1);
+            let time = Instant::now();
+
+            let result = pest::PklParser::parse(Rule::file, &src);
+
+            println!(
+                "{}ms to parse {} chars",
+                time.elapsed().as_millis(),
+                src.len()
+            );
+            println!("{result:?}");
+        }
+    };
 
     Ok(())
 }

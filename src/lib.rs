@@ -1,6 +1,5 @@
 use hashbrown::HashMap;
 use lexer::PklToken;
-use parser::statement::property::PropertyKind;
 use parser::{parse_pkl, statement::PklStatement};
 use table::class::ClassSchema;
 use table::{ast_to_table, PklMember, PklTable};
@@ -8,6 +7,7 @@ use table::{ast_to_table, PklMember, PklTable};
 mod errors;
 mod lexer;
 mod parser;
+pub mod pest;
 mod table;
 mod utils;
 
