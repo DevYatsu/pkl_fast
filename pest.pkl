@@ -40,3 +40,15 @@ fixed const y: Float = 2.3
 local z: List<Number>(length) = List(2, 3.4e2)
 
 typealias Test = List<Number>
+
+module parrot
+
+extends "pigeon.pkl"
+
+import "other.pkl" as test
+
+name = "Parrot"
+diet = "Berries"
+extinct = false
+
+function say(a: Int) = "Pkl is great!"

@@ -1,6 +1,6 @@
 file = { SOI ~ stmt* ~ EOI}
 
-stmt = { typealias | property | expr }
+stmt = { typealias | module | import | extends | amends | function | property | expr }
 expr = { dot_expr | value | fn_call | ident }
 
 WHITESPACE = _{ " " | "\t" | "\n" }
@@ -90,6 +90,24 @@ property = { (property_keyword)* ~ ident ~ (":" ~ TYPE)? ~ "=" ~ expr ~ END_NEWL
 
 typealias_keyword = @{ "typealias" ~ WHITESPACE+}
 typealias = { typealias_keyword ~ ident ~ "=" ~ TYPE ~ END_NEWLINE}
+
+module_keyword = @{ ("open" ~ WHITESPACE+)? ~ "module"}
+module = ${ module_keyword ~ WHITESPACE+ ~ ident}
+
+src = {"\"" ~ (!"\"" ~ ANY)+ ~ "\""}
+
+amends = ${ "amends" ~ WHITESPACE+ ~ src}
+extends = ${ "extends" ~ WHITESPACE+ ~ src}
+
+import_as = {ident}
+import = ${ "import" ~ WHITESPACE+ ~ src ~ (WHITESPACE+ ~ "as" ~ WHITESPACE+ ~ import_as)? }
+
+function_keyword = @{"function" ~ WHITESPACE+}
+arg = {ident ~ ":" ~ TYPE}
+function_args = { (arg ~ ("," ~ arg)* ~ ","?)? }
+return_type = {TYPE}
+function = { function_keyword ~ ident ~ "(" ~ function_args ~  ")" ~ (":" ~ return_type)? ~ "=" ~ expr }
+
 
 // ********
 //  *****
