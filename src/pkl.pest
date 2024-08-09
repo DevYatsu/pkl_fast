@@ -89,7 +89,8 @@ property_keyword = @{ ("local" | "fixed" | "const") ~ WHITESPACE+}
 property = { (property_keyword)* ~ ident ~ (":" ~ TYPE)? ~ "=" ~ expr ~ END_NEWLINE}
 
 typealias_keyword = @{ "typealias" ~ WHITESPACE+}
-typealias = { typealias_keyword ~ ident ~ "=" ~ TYPE ~ END_NEWLINE}
+typealias_params = { ident ~ ("," ~ ident)* }
+typealias = { typealias_keyword ~ ident ~ ("<" ~ typealias_params ~ ">")? ~ "=" ~ TYPE ~ END_NEWLINE}
 
 module_keyword = @{ ("open" ~ WHITESPACE+)? ~ "module"}
 module_src = {ident ~ ("." ~ ident)*}
