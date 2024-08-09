@@ -23,3 +23,5 @@ test \n \t efefd \u{F233}  \(22)
 ##" delimited string yes "\# \n "##
 
 call(arg1, arg2, 22)
+
+test().call.a().`hey`.x()
