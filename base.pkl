@@ -1,0 +1,2 @@
+/// Members of this module are automatically available in every Pkl module.
+module pkl.base

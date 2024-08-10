@@ -1,9 +1,34 @@
+@SourceCode { language = "Go" prefix = "2"}
+module MyModule
+
 local class Hey {
     msg = "hey"
 }
 
+class tttt
+
+function x() = 2
 fixed hey = 2
 
 local test = 3
 
 typealias Test = Int
+
+/// A bird living on Earth.
+///
+/// Has [name] and [lifespan] properties and an [isOlderThan()] method.
+class Bird {
+  /// The name of this bird.
+  name: String
+
+  /// The lifespan of this bird.
+  lifespan: UInt8  function isOlderThan(bird: Bird): Boolean = lifespan > bird.lifespan
+}
+
+/// An adult [Bird].
+typealias Adult = Bird(lifespan >= 2)
+
+/// A common [Bird] found in large cities.
+pigeon: Bird = new {
+  name = "Pigeon" lifespan = 8
+}

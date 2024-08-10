@@ -1,6 +1,5 @@
-use ::pest::Parser;
 use new_pkl::{
-    pest::{self, Rule},
+    pest::{parse, Rule},
     Pkl, PklError,
 };
 use std::{env::args, fs, time::Instant};
@@ -45,19 +44,48 @@ fn main() -> Result<(), (String, String, Option<String>)> {
             println!("{:?}", pkl);
         }
         None => {
-            let src = fs::read_to_string("pest.pkl").unwrap();
+            let src = fs::read_to_string("base.pkl").unwrap();
 
             let src = src.repeat(1);
             let time = Instant::now();
 
-            let result = pest::PklParser::parse(Rule::file, &src);
+            let mut result = parse(&src).unwrap();
+
+            let file = result.next().unwrap().into_inner();
+            for record in file {
+                match record.as_rule() {
+                    Rule::stmt => {
+                        for stmt in record.into_inner() {
+                            match stmt.as_rule() {
+                                Rule::amends => {}
+                                Rule::import => {}
+                                Rule::extends => {}
+                                Rule::module => {}
+                                Rule::typealias => {}
+                                Rule::with_annotation => {
+                                    println!("{:?}", stmt.as_str())
+                                }
+                                Rule::with_doc_comment => {
+                                    println!("{:?}", stmt.as_str())
+                                }
+                                Rule::function => {}
+                                Rule::class => {}
+                                Rule::property => {}
+                                Rule::expr => {}
+                                _ => unreachable!(),
+                            }
+                        }
+                    }
+                    Rule::EOI => (),
+                    _ => unreachable!(),
+                }
+            }
 
             println!(
                 "{}ms to parse {} chars",
                 time.elapsed().as_millis(),
                 src.len()
             );
-            println!("{result:?}");
         }
     };
 

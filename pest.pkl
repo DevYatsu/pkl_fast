@@ -1,3 +1,5 @@
+@SourceCode { language = "Go" prefix = "2"}
+
 2.5e2
 22
 0o1010
@@ -63,7 +65,48 @@ amended = (obj) {
 }
 function say(a: Int) = "Pkl is great!"
 
-class Bird {
+abstract class Bird {
   name: String
   hidden taxonomy: Taxonomy
 }
+
+class ParentBird extends Bird {
+  kids: List<String>
+}
+
+name = "Pigeon"
+nameNonNull = name!!
+
+name2 = null
+name2NonNull = name2!!
+
+birds = new Listing {
+  new {
+    name = "Pigeon"
+    diet = "Seed"
+  }
+  new {
+    name = "Parrot"
+    diet = "Berries"
+  }
+}
+
+firstBirdName = birds[0].name
+secondBirdDiet = birds[1].diet
+
+listing = new Listing {
+  "Pigeon"
+  3.min
+  new Listing {
+    "Barn owl"
+  }
+}
+
+listing = new Listing {
+  local pigeon = "Pigeon"
+  pigeon
+  "A " + pigeon + " is a bird \( pigeon ) \t "
+}
+
+if (bar) bar
+else foo
