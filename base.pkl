@@ -1,23 +1,68 @@
-test1 = 42 is Int
-test2 = 42 is Number
-test3 = 42 is Any
-test4 = !(42 is String)
+//===----------------------------------------------------------------------===//
+// Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//===----------------------------------------------------------------------===//
 
-open class Base
-class Derived extends Base
+/// Fundamental properties, methods, and classes for writing Pkl programs.
+///
+/// Members of this module are automatically available in every Pkl module.
+@ModuleInfo { minPklVersion = "0.26.0" }
+module pkl.base
 
-base = new Base {}
+import "pkl:jsonnet"
+import "pkl:xml"
+import "pkl:protobuf"
 
-test5 = base is Base
-test6 = base is Any
-test7 = !(base is Derived)
+/// The top type of the type hierarchy.
+///
+/// Every type is a subtype of [Any].
+///
+/// The following operators are supported for all values:
+/// ```
+/// value1 == value2 // equality
+/// value1 != value2 // inequality
+/// value.member     // member access
+/// value?.member    // conditional member access; returns `value.member` if `value` is non-null and `null` otherwise
+/// value ?? default // null coalescing; returns `value` if `value` is non-null and `default` otherwise
+/// value is String  // type test
+/// value as String  // type cast; throws an error unless `value is String`
+/// ```
+abstract external class Any {
+  /// Returns the class of [this].
+  external function getClass(): Class
 
-derived = new Derived {}
+  /// Returns a string representation of [this].
+  ///
+  /// This method is used to convert the values of string interpolation expressions to strings.
+  external function toString(): String
 
-test8 = derived is Derived
-test9 = derived is Base
-test10 = derived is Any
+  /// Returns `this |> transform` if [this] is non-null, and [null] otherwise.
+  ///
+  /// This method is the complement of the `??` operator and the equivalent of an `Option` type's `map` and `flatMap` methods.
+  external function ifNonNull<Result>(transform: (NonNull) -> Result): Result?
+}
 
-test1 = email is String(contains("@"))
-test2 = map is Map<Int, Base>
-test3 = name is "Pigeon"|"Barn owl"|"Parrot"
+/// The type of [null] and null values created with [Null()].
+///
+/// All null values are pairwise equal according to `==`.
+external class Null extends Any
+
+/// A non-null value.
+typealias NonNull = Any(!(this is Null))
+
+/// The runtime representation of a class.
+external class Class<out Type> extends Any {
+  /// The unqualified name of this class.
+  external simpleName: String
+}

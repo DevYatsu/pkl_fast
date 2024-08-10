@@ -27,8 +27,8 @@ COMMENT = _{ line_comment | multiline_comment }
 //  *****
 // ********
 
-expr = !{ prefix? ~ primary_expr ~ postfix? ~ ((infix ~ prefix? ~ primary_expr ~ postfix?)|(type_op~TYPE))* }
-primary_expr = { if_else_expr | let_expr | listing | class_instance | dot_expr | index_expr | fn_call | ident | value | amended_object | parenthesized }
+expr = !{ (prefix? ~ primary_expr ~ postfix? ~ ((infix ~ prefix? ~ primary_expr ~ postfix?)|(type_op~TYPE))*) }
+primary_expr = { if_else_expr | let_expr | function_expr | listing | class_instance | dot_expr | index_expr | fn_call | ident | value | amended_object | parenthesized }
 
 null_propagation = {(dot_expr | parenthesized | value | fn_call | ident) ~ "?." ~ ident}
 parenthesized = !{"(" ~ expr ~ ")"}
@@ -44,9 +44,10 @@ let_expr = {"let" ~ "(" ~ ident ~ (COLON ~ TYPE)? ~ EQUAL ~ let_value ~ ")" ~ ex
 listing = ${"new" ~ WHITESPACE_COMMENT+ ~ "Listing" ~ WHITESPACE_COMMENT* ~ "{" ~ WHITESPACE_COMMENT* ~ ((property|expr) ~ WHITESPACE_COMMENT*)* ~ "}"}
 class_instance = ${"new" ~ WHITESPACE_COMMENT+ ~ ident ~ WHITESPACE_COMMENT* ~ "{" ~ WHITESPACE_COMMENT* ~ ((class_type_field|property) ~ WHITESPACE_COMMENT*)* ~ "}"}
 
+function_expr_arg = { ident ~ (COLON ~ TYPE)? }
+function_expr = !{"(" ~ (function_expr_arg ~ ("," ~ function_expr_arg)* ~ ","?)* ~ ")" ~ "->" ~ expr}
 
-// operators such as: && || ?? + - * / is as
-// let expressions
+fn_call = !{ ident ~ "(" ~ (expr ~ ("," ~ expr)* ~ ","?)? ~ ")"}
 
 // operations
 infix  = _{ add | sub | mul | div | div_r | pow | modulo | comp_equal | comp_greater | comp_greater_equal | comp_less | comp_less_equal | null_coalescing  }
@@ -87,11 +88,10 @@ illegal_ident = { "`" ~ (!"`" ~ ANY)+ ~ "`" }
 // blank_ident = { _ }
 ident = @{ basic_ident | illegal_ident }
 
-fn_call = !{ ident ~ "(" ~ (expr ~ ("," ~ expr)* ~ ","?)? ~ ")"}
-dot_expr = { (non_null | value | fn_call | index_expr | ident) ~ ("." ~ (fn_call | ident))+ }
 
+dot_expr = { (non_null | parenthesized | class_instance | value | fn_call | index_expr | ident | amended_object) ~ ("." ~ (fn_call | index_expr | ident))+ }
 // index_expr => listing[index]
-index_expr = !{ (non_null | parenthesized | value | fn_call | ident) ~ "[" ~ expr ~ "]" }
+index_expr = !{ (non_null | parenthesized | listing | value | fn_call | ident) ~ "[" ~ expr ~ "]" }
 
 value = { bool | null | float | int | string }
 
@@ -158,7 +158,7 @@ annotation = {"@" ~ ident ~ "{" ~ (ident ~ EQUAL ~ expr)* ~ "}"}
 with_annotation = { annotation ~ stmt }
 
 // a stmt with a doc comment
-doc_comment = @{ "/" ~ (!"\n" ~ ANY)* }
+doc_comment = @{ "///" ~ (!("\n"~!(SPACE*~"///")) ~ ANY)* }
 with_doc_comment = { doc_comment ~ stmt }
 
 property_keyword = @{"local" | "fixed" | "const" | "external"}
@@ -193,7 +193,9 @@ class_kind = @{"local" | "const" | "external" | "abstract" | "open"}
 class_field_keyword = @{"local" | "hidden" | "const"}
 class_extends = ${"extends" ~ WHITESPACE_COMMENT+ ~ ident }
 class_type_field = ${ (class_field_keyword ~ WHITESPACE_COMMENT+)* ~ ident ~ COLON ~ WHITESPACE_COMMENT* ~ TYPE }
-class_body = !{ (class_type_field|property|function)* }
+class_field_with_annotation = !{annotation ~ (class_type_field|property|function)}
+class_field_with_doc_comment = !{doc_comment ~ (class_type_field|property|function)}
+class_body = !{ (class_field_with_annotation|class_field_with_doc_comment|class_type_field|property|function)* }
 class = ${(class_kind ~ WHITESPACE_COMMENT+)* ~ "class" ~ WHITESPACE_COMMENT+ ~ ident ~ class_attribute? ~ (WHITESPACE_COMMENT+ ~ class_extends)? ~ (WHITESPACE_COMMENT* ~ "{" ~ WHITESPACE_COMMENT* ~ class_body ~ WHITESPACE_COMMENT* ~ "}")?}
 
 // ********
