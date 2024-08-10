@@ -1,2 +1,23 @@
-/// Members of this module are automatically available in every Pkl module.
-module pkl.base
+test1 = 42 is Int
+test2 = 42 is Number
+test3 = 42 is Any
+test4 = !(42 is String)
+
+open class Base
+class Derived extends Base
+
+base = new Base {}
+
+test5 = base is Base
+test6 = base is Any
+test7 = !(base is Derived)
+
+derived = new Derived {}
+
+test8 = derived is Derived
+test9 = derived is Base
+test10 = derived is Any
+
+test1 = email is String(contains("@"))
+test2 = map is Map<Int, Base>
+test3 = name is "Pigeon"|"Barn owl"|"Parrot"

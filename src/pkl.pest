@@ -27,8 +27,8 @@ COMMENT = _{ line_comment | multiline_comment }
 //  *****
 // ********
 
-expr = !{ prefix? ~ primary_expr ~ postfix? ~ (infix ~ prefix? ~ primary_expr ~ postfix? )* }
-primary_expr = { if_else_expr | let_expr | listing | class_instance | dot_expr | index_expr | value | fn_call | ident | amended_object | parenthesized }
+expr = !{ prefix? ~ primary_expr ~ postfix? ~ ((infix ~ prefix? ~ primary_expr ~ postfix?)|(type_op~TYPE))* }
+primary_expr = { if_else_expr | let_expr | listing | class_instance | dot_expr | index_expr | fn_call | ident | value | amended_object | parenthesized }
 
 null_propagation = {(dot_expr | parenthesized | value | fn_call | ident) ~ "?." ~ ident}
 parenthesized = !{"(" ~ expr ~ ")"}
@@ -49,9 +49,11 @@ class_instance = ${"new" ~ WHITESPACE_COMMENT+ ~ ident ~ WHITESPACE_COMMENT* ~ "
 // let expressions
 
 // operations
-infix  = _{ add | sub | mul | div | div_r | pow | modulo | comp_equal | comp_greater | comp_greater_equal | comp_less | comp_less_equal | is_op | as_op | null_coalescing }
+infix  = _{ add | sub | mul | div | div_r | pow | modulo | comp_equal | comp_greater | comp_greater_equal | comp_less | comp_less_equal | null_coalescing  }
 prefix = _{ neg | logical_not }
-postfix = _{ non_null }
+postfix = { non_null }
+
+type_op = {is_op | as_op}
 
 non_null = { "!!" } // non null operator
 neg    =  { "-" } // Negation
@@ -211,4 +213,5 @@ type_with_restraints = !{ (type_with_attr | ident) ~ "(" ~ expr ~ ")"}
 
 function_type = !{"(" ~ (TYPE ~ ("," ~ TYPE)* ~ ","?)* ~ ")" ~ "->" ~ TYPE}
 
-union = !{ basic_type ~ ("|" ~ basic_type)+}
+union_member = {(basic_type | string | function_type) ~ nullable?}
+union = !{ union_member ~ ("|" ~ union_member)+}
