@@ -55,7 +55,7 @@ listing_body = !{ "{" ~ (property|expr)* ~ "}"}
 listing = ${"new" ~ WHITESPACE_COMMENT+ ~ "Listing" ~ WHITESPACE_COMMENT* ~ listing_body}
 class_instance = ${"new" ~ (WHITESPACE_COMMENT+ ~ ident_with_opt_dots)? ~ WHITESPACE_COMMENT* ~ "{" ~ WHITESPACE_COMMENT* ~ (property ~ WHITESPACE_COMMENT*)* ~ "}"}
 
-function_expr_arg = { ident ~ (COLON ~ TYPE)? }
+function_expr_arg = { (ident|blank_ident) ~ (COLON ~ TYPE)? }
 function_expr = !{"(" ~ (function_expr_arg ~ ("," ~ function_expr_arg)* ~ ","?)* ~ ")" ~ "->" ~ expr}
 
 nullable_read = _{"read?"}
@@ -64,7 +64,7 @@ globbed_import = _{"import*"}
 fn_call = !{ (nullable_read|globbed_read|globbed_import|ident) ~ "(" ~ (expr ~ ("," ~ expr)* ~ ","?)? ~ ")"}
 
 // operations
-infix  = _{ add | sub | mul | div | div_r | pow | modulo | comp_equal | comp_greater | comp_greater_equal | comp_less | comp_less_equal | null_coalescing  }
+infix  = _{ add | sub | mul | div | div_r | pow | modulo | comp_equal | comp_not_equal | comp_greater | comp_greater_equal | comp_less | comp_less_equal | null_coalescing  }
 prefix = _{ neg | logical_not }
 postfix = { non_null }
 
@@ -82,6 +82,7 @@ pow    =   { "**" } // Exponentiation
 modulo =   { "%"  } // Modulo
 
 comp_equal         = { "==" }
+comp_not_equal     = { "!=" }
 comp_greater       = { ">" }
 comp_greater_equal = { ">=" }
 comp_less          = { "<" }
@@ -90,8 +91,8 @@ comp_less_equal    = { "<=" }
 is_op     =   _{ "is" }
 as_op     =   _{ "as" }
 
-logical_not = {"!"}
-null_coalescing = { "??" }
+logical_not = _{"!"}
+null_coalescing = _{ "??" }
 
 
 
@@ -100,7 +101,7 @@ ident_with_start_symbol = { ("_" | "$") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")+ }
 ident_without_start_symbol = { ASCII_ALPHA+ ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
 basic_ident = @{ ident_without_start_symbol | ident_with_start_symbol }
 illegal_ident = { "`" ~ (!"`" ~ ANY)+ ~ "`" }
-// blank_ident = { _ }
+blank_ident = _{ "_" }
 ident = @{ basic_ident | illegal_ident }
 
 
@@ -186,15 +187,15 @@ arg = !{ ident ~ COLON ~ TYPE }
 function_args = !{ WHITESPACE_COMMENT* ~ arg ~ ("," ~ arg)* ~ ("," ~ WHITESPACE_COMMENT*)? }
 return_type_annotation = !{COLON ~ TYPE}
 function_name = {ident}
-function = ${ (PREFIX_KEYWORD ~ WHITESPACE_COMMENT+)* ~ "function" ~ WHITESPACE_COMMENT+ ~ function_name ~ WHITESPACE_COMMENT* ~ (type_attribute ~ WHITESPACE_COMMENT*)? ~ "(" ~ function_args? ~  ")" ~ ((return_type_annotation? ~ EQUAL ~ WHITESPACE_COMMENT* ~ expr)|return_type_annotation) }
+function = ${ (PREFIX_KEYWORD ~ WHITESPACE_COMMENT+)* ~ "function" ~ WHITESPACE_COMMENT+ ~ function_name ~ WHITESPACE_COMMENT* ~ (type_attribute ~ WHITESPACE_COMMENT*)? ~ "(" ~ function_args? ~  ")" ~ return_type_annotation? ~ (EQUAL ~ WHITESPACE_COMMENT* ~ expr)? }
 
 out_type = ${"out" ~ WHITESPACE_COMMENT+ ~ TYPE}
 in_type = ${"in" ~ WHITESPACE_COMMENT+ ~ TYPE}
-class_attribute = {"<" ~ (out_type|in_type) ~ ("," ~ out_type)* ~ ">"}
+class_attribute = !{"<" ~ (out_type|in_type|TYPE) ~ ("," ~ (out_type|in_type|TYPE))* ~ ">"}
 
-class_extends = ${"extends" ~ WHITESPACE_COMMENT+ ~ ident }
+class_extends = ${"extends" ~ WHITESPACE_COMMENT+ ~ TYPE }
 class_body = !{ ((property|function))* }
-class = ${(PREFIX_KEYWORD ~ WHITESPACE_COMMENT+)* ~ "class" ~ WHITESPACE_COMMENT+ ~ ident ~ class_attribute? ~ (WHITESPACE_COMMENT+ ~ class_extends)? ~ (WHITESPACE_COMMENT* ~ "{" ~ WHITESPACE_COMMENT* ~ class_body ~ WHITESPACE_COMMENT* ~ "}")?}
+class = ${(PREFIX_KEYWORD ~ WHITESPACE_COMMENT+)* ~ "class" ~ WHITESPACE_COMMENT+ ~ ident ~ class_attribute? ~ (WHITESPACE_COMMENT* ~ class_extends)? ~ (WHITESPACE_COMMENT* ~ "{" ~ WHITESPACE_COMMENT* ~ class_body ~ WHITESPACE_COMMENT* ~ "}")?}
 
 // ********
 //  *****
