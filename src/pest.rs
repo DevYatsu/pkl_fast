@@ -19,6 +19,8 @@ pub fn pratt() -> PrattParser<Rule> {
     PrattParser::new()
         .op(Op::infix(Rule::null_coalescing, Assoc::Left))
         .op(Op::infix(Rule::comp_equal, Assoc::Left)
+            | Op::infix(Rule::and, Assoc::Left)
+            | Op::infix(Rule::or, Assoc::Left)
             | Op::infix(Rule::comp_not_equal, Assoc::Left)
             | Op::infix(Rule::comp_greater, Assoc::Left)
             | Op::infix(Rule::comp_greater_equal, Assoc::Left)

@@ -14,183 +14,219 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 
-/// Template for _doc-package-info.pkl_, the descriptor for a package.
+/// A template for writing and running benchmarks.
 ///
-/// _NOTE_: A doc package is a way to generate documentation for modules that are not published
-/// via the [Project.Package] mechanism.
-/// Packages published via the [Project.Package] mechanism can have their documentation
-/// generated directly by passing the resulting Package URI into Pkldoc.
+/// To write benchmarks, amend this module and define [microbenchmarks],
+/// [outputBenchmarks], and/or [parserBenchmarks].
+/// To run benchmarks, evaluate the amended module.
 ///
-/// A documentation package is a set of related modules that are versioned together.
-/// Each package must have a descriptor that
-/// * amends this template
-/// * is named _doc-package-info.pkl_
-/// * is passed to the _pkldoc_ command together with the modules to generate documentation for.
+/// Each benchmark run consists of *m* [iterations] of *n* repetitions.
+/// The number of repetitions is controlled indirectly via [iterationTime].
 ///
-/// Each module to generate documentation must declare a module name that starts with a package [name].
-/// For example, the following are valid module declarations for package _com.example_:
-/// * `module com.example.Birds`
-/// * `module com.example.Birds.Parrot`
+/// The reported metric is time per repetition.
+/// It is calculated as measured iteration time divided by number of repetitions.
 ///
-/// The part of the module name that comes after the package name
-/// must match the module's relative path in its source code repository.
-/// For example, module _com.example.Birds.Parrot_
-/// is expected to exist at path _Birds/Parrot.pkl_ within the package root.
+/// Benchmarks are warmed up for approximately the same time they are measured.
+/// The goal is to measure steady state performance.
 ///
-/// A typical descriptor for a package looks as follows:
+/// The benchmark [report] details benchmark [results][BenchmarkResult]
+/// and the [platform][_platform.Platform] that benchmarks were run on.
+/// By default, the report is rendered in *Pcf*.
+/// To render the report in a different format, override `output.renderer`.
 ///
-/// ```
-/// /// The overview documentation for this package.
-/// /// The first paragraph is the mandatory _summary_.
-/// /// Try to keep the summary short; a single sentence is common.
-/// ///
-/// /// Subsequent paragraphs are separated by an empty line and collapsed by default.
-/// /// They can use *Markdown syntax* and Pkldoc links such as [String].
-/// amends "pkl:DocPackageInfo"
-///
-/// name = "com.example.Birds"
-/// importUri = "https://example.com/Birds"
-/// authors { "pigeon@example.com" }
-/// sourceCode = "https://github.com/apple/birds/"
-/// sourceCodeUrlScheme = "https://github.com/apple/birds/blob/\(version)%{path}#L%{line}-%{endLine}"
-/// issueTracker = "https://github.com/apple/birds/issues"
-/// version = "1.7.0"
-/// ```
-///
-/// To deprecate a package, deprecate its descriptor:
-///
-/// ```
-/// @Deprecated { message = "Use `com.example.Birds.Parrot` instead" }
-/// amends "pkl:PackageInfo"
-/// ```
+/// Warning: Although this module is ready for initial use,
+/// benchmark results may be inaccurate or inconsistent.
 @ModuleInfo { minPklVersion = "0.26.0" }
-module pkl.DocPackageInfo
+module pkl.Benchmark
 
-import "pkl:reflect"
-import "pkl:semver"
-// used by doc comments
-import "pkl:Project"
-import "pkl:DocPackageInfo"
+import "pkl:platform" as _platform
 
-/// The name of this package.
-name: PackageName
-
-/// The version of this package.
+/// The number of benchmark iterations to run.
 ///
-/// Use `"0.0.0"` for unversioned packages.
-version: PackageVersion
+/// This value can be [overridden][Benchmark.iterations] per benchmark.
+iterations: UInt32 = 15
 
-/// The import base URI for modules in this package.
+/// The approximate time to spend on each benchmark iteration.
 ///
-/// Module import URIs are constructed from this URI as follows:
-/// `"\(importUri)\(modulePath)"` where `modulePath` is
-/// `moduleName.removePrefix(name).replaceAll(".", "/")`.
-/// For example, if package name is `foo.bar` and module name is `foo.bar.baz.qux`,
-/// then `modulePath` is `baz/qux`.
-importUri: Uri(endsWith("/"))
-
-/// The URI representing the package itself, if exists.
-uri: Uri?
-
-/// The authors' emails for this package.
+/// This value indirectly controls the number of repetitions per iteration.
 ///
-/// Email addresses must adhere to
-/// [RFC5322 mailbox](https://www.rfc-editor.org/rfc/rfc5322#section-3.4) specification.
+/// This value can be [overridden][Benchmark.iterationTime] per benchmark.
+iterationTime: Duration = 100.ms
+
+/// Whether to report detailed results such as [BenchmarkResult.samples].
 ///
-/// Example:
-/// ```
-/// email { "Johnny Appleseed <johnny.appleseed@example.com>" }
-/// ```
-authors: Listing<String>
+/// This value can be [overridden][Benchmark.isVerbose] per benchmark.
+isVerbose: Boolean = false
 
-/// The source code repository for this package.
+/// Benchmarks that measure the time taken to evaluate an expression.
 ///
-/// Example:
-/// ```
-/// sourceCode = "https://github.com/myorg/myproject"
-/// ```
-sourceCode: Uri?
-
-/// The web URL of the source code for this package *version*.
-///
-/// The following placeholders are available:
-///
-/// - `%{path}`
-///   absolute file path of the file to open
-/// - `%{line}`
-///   start line number to navigate to
-/// - `%{endLine}`
-///   end line number to navigate to
-///
-/// The `%{path}` placeholder is derived from the module's name relative to the package name.
-/// The module's name is expected to be prefixed by the package name.
-/// In Pkl terms, `path` can be thought of as
-/// `"/" + moduleName.replaceFirst(packageName).replaceAll(".", "/") + ".pkl"`.
-///
-/// For example, if package name is `foo.bar` and module name is `foo.bar.baz.qux`,
-/// then `%{path}` is `/baz/qux.pkl`.
-///
-/// Example:
-///
-/// ```
-/// sourceCodeUrlScheme = "https://github.com/user/repo/blob/v\(version)%{path}#L%{line}-L%{endLine}"`
-/// ```
-sourceCodeUrlScheme: String?
-
-/// The web URL of the issue tracker for this package.
-issueTracker: Uri
-
-/// The packages depended on by this package.
-///
-/// Used to display package dependencies and to create documentation links.
-/// Set automatically for packages that are part of a docsite.
-dependencies: Listing<PackageDependency>(isDistinctBy((it) -> it.name))
-
-/// Any extra attributes to add to the documentation.
-extraAttributes: Mapping<String, String>
-
-/// A package depended on by this package.
-class PackageDependency {
-  /// The name of the depended-on package.
-  name: PackageName
-
-  /// The version of the depended-on package.
-  ///
-  /// Use `"0.0.0"` for unversioned packages.
-  version: PackageVersion
-
-  /// The source code repository of the depended-upon package.
-  sourceCode: Uri(endsWith("/"))
-
-  /// The source code scheme with placeholders.
-  ///
-  /// See [DocPackageInfo.sourceCodeUrlScheme] for more details.
-  sourceCodeUrlScheme: String?
-
-  /// The web URL of the Pkldoc page for the depended-on package *version*,
-  /// Only needs to be set if the depended-on package belongs to a different Pkldoc website.
-  documentation: Uri(endsWith("/"))?
+/// Mapping keys are the benchmarks' descriptive names.
+microbenchmarks: Mapping<String, Microbenchmark> = new {
+  default {
+    iterations = module.iterations
+    iterationTime = module.iterationTime
+    isVerbose = module.isVerbose
+  }
 }
 
-/// A package name.
-typealias PackageName =
-  String(!contains("/"))
+/// Benchmarks that measure the time taken to render a module's output.
+///
+/// Mapping keys are the benchmarks' descriptive names.
+outputBenchmarks: Mapping<String, OutputBenchmark> = new {
+  default {
+    iterations = module.iterations
+    iterationTime = module.iterationTime
+    isVerbose = module.isVerbose
+  }
+}
 
-/// A package version.
-typealias PackageVersion =
-  String(semver.isValid(this))
+/// Benchmarks that measure the time taken to parse a module's source code into an abstract syntax tree.
+///
+/// Mapping keys are the benchmarks' descriptive names.
+parserBenchmarks: Mapping<String, ParserBenchmark> = new {
+  default {
+    iterations = module.iterations
+    iterationTime = module.iterationTime
+    isVerbose = module.isVerbose
+  }
+}
 
-@Unlisted
-fixed overview: String(!isBlank) = moduleMirror.docComment ??
-    throw("""
-      Missing overview documentation for package `\(name)`.
-      To fix this problem, add a doc comment to `doc-package-info.pkl` (above `amends "pkl:DocPackageInfo"`).
-      """)
+/// The report containing benchmark results. Typically not configured from user code.
+report: BenchmarkReport = new {
+  platform = _platform.current
 
-@Unlisted
-fixed overviewImports: Map<String, Uri> = moduleMirror.imports
+  when (!module.microbenchmarks.isEmpty) {
+    microbenchmarks {
+      for (name, benchmark in module.microbenchmarks) {
+        [name] = benchmark.run()
+      }
+    }
+  }
 
-@Unlisted
-fixed annotations: List<Annotation> = moduleMirror.annotations
+  when (!module.outputBenchmarks.isEmpty) {
+    outputBenchmarks {
+      for (name, benchmark in module.outputBenchmarks) {
+        [name] = benchmark.run()
+      }
+    }
+  }
 
-local moduleMirror = reflect.Module(this)
+  when (!module.parserBenchmarks.isEmpty) {
+    parserBenchmarks {
+      for (name, benchmark in module.parserBenchmarks) {
+        [name] = benchmark.run()
+      }
+    }
+  }
+}
+
+/// Common base class for benchmarks.
+abstract class Benchmark {
+  /// The number of benchmark iterations to run.
+  iterations: UInt32
+
+  /// The approximate time to spend on each benchmark iteration.
+  ///
+  /// This value indirectly controls the number of repetitions per iteration.
+  iterationTime: Duration
+
+  /// Whether to report detailed results such as [BenchmarkResult.samples].
+  isVerbose: Boolean
+
+  /// Runs this benchmark. Typically not called from user code.
+  abstract function run(): BenchmarkResult
+}
+
+/// The result of running a benchmark.
+class BenchmarkResult {
+  /// The number of iterations run.
+  iterations: UInt32
+
+  /// The number of repetitions run per iteration.
+  repetitions: UInt
+
+  /// The average time that a repetition took to complete in each iteration,
+  /// calculated as measured iteration time divided by number of repetitions.
+  ///
+  /// This property is only set if [Benchmark.isVerbose] is [true].
+  samples: List<Duration>(length == iterations)?
+
+  /// The minimum of [samples].
+  min: Duration
+
+  /// The maximum of [samples].
+  max: Duration
+
+  /// The mean of [samples].
+  mean: Duration
+
+  /// The standard deviation of [samples].
+  stdev: Duration
+
+  /// The margin of error for [mean] at 99% confidence level.
+  error: Duration
+}
+
+/// A benchmark that measures the time taken to evaluate an expression.
+class Microbenchmark extends Benchmark {
+  /// The expression to evaluate.
+  expression: Any
+
+  external function run(): BenchmarkResult
+}
+
+/// A benchmark that measures the time taken to render a module's output.
+class OutputBenchmark extends Benchmark {
+  /// The module to evaluate.
+  sourceModule: Module
+
+  external function run(): BenchmarkResult
+}
+
+/// A benchmark that measures the time taken to parse a module's source code.
+class ParserBenchmark extends Benchmark {
+  /// The module source code to parse.
+  @SourceCode { language = "Pkl" }
+  sourceText: String
+
+  /// The effective URI of [sourceText].
+  ///
+  /// If [sourceText] contains relative imports, set [sourceUri] so that these imports may be
+  /// resolved.
+  sourceUri: String = "repl:text"
+
+  external function run(): BenchmarkResult
+}
+
+/// The results of running a module's benchmarks.
+class BenchmarkReport {
+  /// The results of the microbenchmarks that were run.
+  ///
+  /// Mapping keys are the benchmarks' descriptive names.
+  microbenchmarks: Mapping<String, BenchmarkResult>?
+
+  /// The results of the output benchmarks that were run.
+  ///
+  /// Mapping keys are the benchmarks' descriptive names.
+  outputBenchmarks: Mapping<String, BenchmarkResult>?
+
+  /// The results of the parser benchmarks that were run.
+  ///
+  /// Mapping keys are the benchmarks' descriptive names.
+  parserBenchmarks: Mapping<String, BenchmarkResult>?
+
+  /// The platform that benchmarks were run on.
+  platform: _platform.Platform
+}
+
+output {
+  value = report
+
+  renderer = new PcfRenderer {
+    omitNullProperties = true
+    converters {
+      // round durations to two decimal places
+      [Duration] = (it: Duration) -> it.value.toFixed(2).toFloat().toDuration(it.unit)
+    }
+  }
+}

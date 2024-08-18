@@ -1,17 +1,24 @@
 file = { SOI ~ stmt* ~ EOI}
 
-stmt = { typealias | module | import | extends | amends | function | class | property | expr }
+// add support for:
+// when stmt
+// for stmt
+// things like that...
+//
+// the only file in the pkl stdlib not
+// working is Benchmark.pkl
+stmt = { typealias|module|import|extends|amends|function|class|property|expr }
 
-KEYWORDS = {"typealias" | "module" | "import" | "extends" | "amends" | "function" | "in" | "let" | "is" |
-    "local" | "fixed" | "const" | "hidden" | "open" | "true" | "false" | "null" | "Infinity" | "NaN" |
-    "extends" | "abstract" | "class" | "new" | "this"
+KEYWORDS = {"typealias"|"module"|"import"|"extends"|"amends"|"function"|"in"|"let"|"is" |
+    "local"|"fixed"|"const"|"hidden"|"open"|"true"|"false"|"null"|"Infinity"|"NaN" |
+    "extends"|"abstract"|"class"|"new"|"this"
 }
 
-WHITESPACE = _{ " " | "\t" | "\n" | "\r" | ";" }
-SPACE = _{ " " | "\t" }
+WHITESPACE = _{ " "|"\t"|"\n"|"\r"|";" }
+SPACE = _{ " "|"\t" }
 
-WHITESPACE_COMMENT = {WHITESPACE | COMMENT | ";"}
-SPACE_COMMENT = {(SPACE | COMMENT)*}
+WHITESPACE_COMMENT = {WHITESPACE|COMMENT|";"}
+SPACE_COMMENT = {(SPACE|COMMENT)*}
 
 EQUAL = !{WHITESPACE_COMMENT* ~ "="}
 COLON = !{WHITESPACE_COMMENT* ~ ":"}
@@ -21,14 +28,14 @@ doc_comment = @{ "///" ~ (!("\n"~!(SPACE*~"///")) ~ ANY)* }
 multiline_comment = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 annotation = !{"@" ~ ident ~ ("{" ~ (property)* ~ "}")?}
 
-COMMENT = { doc_comment | line_comment | multiline_comment | annotation }
+COMMENT = { doc_comment|line_comment|multiline_comment|annotation }
 
 // a stmt with a doc comment
 
 // we accept all of them before any stmt and
 // we should check later if they are allowed
 // before a given statement
-PREFIX_KEYWORD = @{"local" | "fixed" | "const" | "external" | "hidden" | "abstract" | "open"}
+PREFIX_KEYWORD = @{"local"|"fixed"|"const"|"external"|"hidden"|"abstract"|"open"}
 
 
 // ********
@@ -38,9 +45,8 @@ PREFIX_KEYWORD = @{"local" | "fixed" | "const" | "external" | "hidden" | "abstra
 // ********
 
 expr = !{ (prefix? ~ primary_expr ~ postfix? ~ ((infix ~ prefix? ~ primary_expr ~ postfix?)|(type_op~TYPE))*) }
-primary_expr = { if_else_expr | let_expr | function_expr | listing | class_instance | dot_expr | index_expr | fn_call | ident | value | amended_object | parenthesized }
+primary_expr = {if_else_expr|let_expr|function_expr|listing|class_instance|indexing_expr|fn_call|ident|value|amended_object|parenthesized}
 
-null_propagation = {(dot_expr | parenthesized | value | fn_call | ident) ~ "?." ~ ident}
 parenthesized = !{"(" ~ expr ~ ")"}
 
 condition = {expr}
@@ -64,8 +70,8 @@ globbed_import = _{"import*"}
 fn_call = !{ (nullable_read|globbed_read|globbed_import|ident) ~ "(" ~ (expr ~ ("," ~ expr)* ~ ","?)? ~ ")"}
 
 // operations
-infix  = _{ add | sub | mul | div | div_r | pow | modulo | comp_equal | comp_not_equal | comp_greater | comp_greater_equal | comp_less | comp_less_equal | null_coalescing  }
-prefix = _{ neg | logical_not }
+infix  = _{ add|sub|mul|div|div_r|pow|modulo|and|or|comp_equal|comp_not_equal|comp_greater|comp_greater_equal|comp_less|comp_less_equal|null_coalescing  }
+prefix = _{ neg|logical_not }
 postfix = { non_null }
 
 type_op = ${(is_op|as_op)~WHITESPACE_COMMENT+}
@@ -88,6 +94,9 @@ comp_greater_equal = { ">=" }
 comp_less          = { "<" }
 comp_less_equal    = { "<=" }
 
+and         = { "&&" }
+or          = { "||" }
+
 is_op     =   _{ "is" }
 as_op     =   _{ "as" }
 
@@ -97,39 +106,45 @@ null_coalescing = _{ "??" }
 
 
 ident_with_opt_dots = {ident ~ ("." ~ ident)*}
-ident_with_start_symbol = { ("_" | "$") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")+ }
-ident_without_start_symbol = { ASCII_ALPHA+ ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
-basic_ident = @{ ident_without_start_symbol | ident_with_start_symbol }
+ident_with_start_symbol = { ("_"|"$") ~ (ASCII_ALPHA|ASCII_DIGIT|"_")+ }
+ident_without_start_symbol = { ASCII_ALPHA+ ~ (ASCII_ALPHA|ASCII_DIGIT|"_")* }
+basic_ident = @{ ident_without_start_symbol|ident_with_start_symbol }
 illegal_ident = { "`" ~ (!"`" ~ ANY)+ ~ "`" }
 blank_ident = _{ "_" }
-ident = @{ basic_ident | illegal_ident }
+ident = @{ basic_ident|illegal_ident }
 
+// either
+// a[anything]
+// a.anything
+// a?.anything
+indexing_expr = !{(non_null|class_instance|value|index_expr|fn_call|ident|amended_object|parenthesized) ~ (null_propagation|dot_expr|index_expr)+ }
+null_propagation = { "?." ~ (fn_call|index_expr|ident) }
 
-dot_expr = { (non_null | parenthesized | class_instance | value | fn_call | index_expr | ident | amended_object) ~ ("." ~ (fn_call | index_expr | ident))+ }
+dot_expr = { "." ~ (fn_call|index_expr|ident) }
 // index_expr => listing[index]
-index_expr = !{ (non_null | parenthesized | listing | value | fn_call | ident) ~ "[" ~ expr ~ "]" }
+index_expr = { "[" ~ expr ~ "]" }
 
-value = { bool | null | float | int | string }
+value = { bool|null|float|int|string }
 
 null = _{ "null" }
-bool = @{ "true" | "false" }
+bool = @{ "true"|"false" }
 
 // Strings
 unicode_digits = @{  ASCII_HEX_DIGIT{1, 6}  }
-escape_sequences = {"\\t" | "\\n" | "\\r" | "\\\"" | "\\\\" | ("\\u" ~ "{" ~ unicode_digits ~ "}") }
+escape_sequences = {"\\t"|"\\n"|"\\r"|"\\\""|"\\\\"|("\\u" ~ "{" ~ unicode_digits ~ "}") }
 
 interpolation = !{ "\\(" ~ expr ~ ")" }
 
-basic_string_true_content = { (!"\"" ~ (interpolation | escape_sequences | ANY))* }
+basic_string_true_content = { (!"\"" ~ (interpolation|escape_sequences|ANY))* }
 basic_string = ${"\"" ~ basic_string_true_content ~ "\""}
 
 
-multiline_content = { (!multiline_end ~ (interpolation | escape_sequences | ANY))* }
+multiline_content = { (!multiline_end ~ (interpolation|escape_sequences|ANY))* }
 multiline_end = { "\n" ~ SPACE* ~ "\"\"\"" }
 multiline_start = { "\"\"\"" ~ SPACE? ~ "\n" }
 multiline_string = ${ multiline_start ~ multiline_content ~ multiline_end}
 
-custom_escaped = @{ "\\#" | escape_sequences }
+custom_escaped = @{ "\\#"|escape_sequences }
 custom_string = ${
     PUSH("#"*) ~ "\""
         ~ raw_string_interior
@@ -140,26 +155,27 @@ raw_string_interior = {
         !("\"" ~ PEEK)    // unless the next character is a quotation mark
                           // followed by the correct amount of number signs,
                           // consume content
-        ~ (interpolation | custom_escaped | ANY)
+        ~ (interpolation|custom_escaped|ANY)
     )*
 }
 
-string = { multiline_string | basic_string | custom_string }
+string = { multiline_string|basic_string|custom_string }
 
 // Numbers
 hex_int = @{ "0x" ~ ASCII_HEX_DIGIT+ ~ ("_" ~ ASCII_HEX_DIGIT+)* }
 octal_int = @{ "0o" ~ ASCII_OCT_DIGIT+ ~ ("_" ~ ASCII_OCT_DIGIT+)* }
 binary_int = @{  "0b" ~ ASCII_BIN_DIGIT+ ~ ("_" ~ ASCII_BIN_DIGIT+)* }
 basic_int = @ { ASCII_DIGIT+ ~ ("_" ~ ASCII_DIGIT+)* }
-int = { hex_int | octal_int | binary_int | basic_int }
+int = { hex_int|octal_int|binary_int|basic_int }
 
-exponent = { ("e" | "E") ~ ("+" | "-")? ~ basic_int+ }
-float = @{ "NaN" | ("Infinity" | (basic_int? ~ "." ~ basic_int+ ~ exponent? ))}
+exponent = { ("e"|"E") ~ ("+"|"-")? ~ basic_int+ }
+float = @{ "NaN"|("Infinity"|(basic_int? ~ "." ~ basic_int+ ~ exponent? ))}
 
 obj_body = { "{" ~ property* ~ "}" }
 object = !{ obj_body|listing_body }
 
-amended_object = { "(" ~ ident ~ ")" ~ WHITESPACE* ~ object }
+// add support for objects amended with {} {} syntax
+amended_object = { "(" ~ ident_with_opt_dots ~ ")" ~ WHITESPACE* ~ object }
 
 // ********
 //  *****
@@ -167,7 +183,7 @@ amended_object = { "(" ~ ident ~ ")" ~ WHITESPACE* ~ object }
 //  *****
 // ********
 
-property = ${ (PREFIX_KEYWORD ~ WHITESPACE_COMMENT+)* ~ ident ~ WHITESPACE_COMMENT* ~ (object | ((COLON ~ WHITESPACE_COMMENT* ~ TYPE)? ~ EQUAL ~ WHITESPACE_COMMENT* ~ expr) | (COLON ~ WHITESPACE_COMMENT* ~ TYPE))}
+property = ${ (PREFIX_KEYWORD ~ WHITESPACE_COMMENT+)* ~ ident ~ WHITESPACE_COMMENT* ~ (object|((COLON ~ WHITESPACE_COMMENT* ~ TYPE)? ~ EQUAL ~ WHITESPACE_COMMENT* ~ expr)|(COLON ~ WHITESPACE_COMMENT* ~ TYPE))}
 
 typealias_params = !{WHITESPACE* ~ ident ~ ("," ~ ident)* ~ WHITESPACE* }
 typealias = ${ "typealias" ~ WHITESPACE_COMMENT+  ~ ident ~ ("<" ~ typealias_params ~ ">")? ~ EQUAL ~ WHITESPACE_COMMENT* ~ TYPE }
@@ -204,12 +220,15 @@ class = ${(PREFIX_KEYWORD ~ WHITESPACE_COMMENT+)* ~ "class" ~ WHITESPACE_COMMENT
 // ********
 
 // do not use 'type' cause it's a rust keyword
-TYPE = !{ (default_prefix? ~ (basic_type|string|function_type) ~ nullable?) ~ ("|"~(default_prefix? ~ (basic_type|string|function_type) ~ nullable?))* }
+TYPE = !{ (default_prefix? ~ (imported_type|basic_type|string|function_type) ~ nullable?) ~ ("|"~(default_prefix? ~ (imported_type|basic_type|string|function_type) ~ nullable?))* }
 nullable = _{"?"}
 default_prefix = _{"*"}
-basic_type = {type_with_restraints | type_with_attr | ident}
+basic_type = {type_with_restraints|type_with_attr|ident}
 type_attribute = {"<" ~ TYPE ~ ("," ~ TYPE)* ~ ">"}
 type_with_attr = !{ ident ~ type_attribute }
-type_with_restraints = !{ (type_with_attr | ident) ~ "(" ~ expr ~ ")"}
+type_with_restraints = !{ (type_with_attr|ident) ~ "(" ~ expr ~ ")"}
 
 function_type = !{"(" ~ (TYPE ~ ("," ~ TYPE)* ~ ","?)* ~ ")" ~ "->" ~ TYPE}
+
+// ex: semver.Version
+imported_type = {(ident ~ ".")* ~ basic_type}
