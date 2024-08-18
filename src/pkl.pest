@@ -19,7 +19,7 @@ COLON = !{WHITESPACE_COMMENT* ~ ":"}
 line_comment = _{ "//" ~ (!"\n" ~ ANY)* }
 doc_comment = @{ "///" ~ (!("\n"~!(SPACE*~"///")) ~ ANY)* }
 multiline_comment = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
-annotation = !{"@" ~ ident ~ "{" ~ (property)* ~ "}"}
+annotation = !{"@" ~ ident ~ ("{" ~ (property)* ~ "}")?}
 
 COMMENT = { doc_comment | line_comment | multiline_comment | annotation }
 
