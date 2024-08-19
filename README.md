@@ -1,38 +1,21 @@
-# pkl_fast
+# pkl-parser
 
-Fastest pkl-parsing crate out there!
+This crate exports a parser for Apple's Pkl language.
 
 ## Features
 
-- Parse Pkl string into a structured representation (hashmap) in rust
-- Parse Pkl string into an AST
-- Support for strings, integers (decimal, octal, hex, binary), floats, boolean, objects (amends syntax as well), class instances
-- Boolean API supported
-- String API (mostly) supported
-- Int/Float/Duration/DataSize properties and methods supported
-
-## Currently Not Supported
-
-- Multiline String containing <<">> not preceded by a backlash, String interpolation and Strings with custom delimiters
-- Lists methods API, only properties are supported
-- Listings, Mappings, Maps
-- functions -> thus also functions and methods taking functions as parameters
-- Packages (official or not) imports not supported
-- Globbed imports + dynamic imports + amends expresions
-- type annotations
-- Classes declarations
-- If expressions
+All the Pkl syntax is supported.
 
 ## Installation
 
-When in your rust project, simply run: `cargo add new-pkl` (for the moment use new-pkl crate, new stable release coming to pkl_fast really soon)
+When in your rust project, simply run: `cargo add pkl-parser`
 
 ## Usage
 
 Here's an example of how to parse a PKL string and retrieve values from the context:
 
 ```rust
-use new_pkl::{Pkl, PklResult, PklValue};
+use pkl_parser::{Pkl, PklResult, PklValue};
 
 fn main() -> PklResult<()> {
     let source = r#"
