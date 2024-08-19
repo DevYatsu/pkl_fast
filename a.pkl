@@ -1,3 +1,81 @@
+birds = new Listing {
+  new {
+    name = "Pigeon"
+    diet = "Seed"
+  }
+  new {
+    name = "Parrot"
+    diet = "Berries"
+  }
+}
+firstBirdName = birds[0].name
+secondBirdDiet = birds[1].diet
+listing = new Listing {
+  "Pigeon"
+  3.min
+  new Listing {
+    "Barn owl"
+  }
+}
+listing = new Listing {
+  local pigeon = "Pigeon"
+  pigeon
+  "A " + pigeon + " is a bird"
+}
+birds = new Listing {
+  new {
+    name = "Pigeon"
+    diet = "Seeds"
+  }
+  new {
+    name = "Parrot"
+    diet = "Berries"
+  }
+}
+birds2 = (birds) {
+  new {
+    name = "Barn owl"
+    diet = "Mice"
+  }
+  [0] {
+    diet = "Worms"
+  }
+  [1] = new {
+    name = "Albatross"
+    diet = "Fish"
+  }
+}
+birds = new Listing {
+  new {
+    name = "Pigeon"
+    diet = "Seeds"
+  }
+  (this[0]) {
+    name = "Parrot"
+  }
+}
+newBirds = (birds) {
+  [0] {
+    diet = "Worms"
+  }
+}
+
+secondBirdDiet = newBirds[1].diet
+birds = new Listing {
+  new {
+    name = "Pigeon"
+    diet = "Seeds"
+  }
+  new {
+    name = "Parrot"
+    diet = "Berries"
+  }
+}
+reversedbirds = birds
+  .toList()
+  .reverse()
+  .toListing()
+
 mapping = new Mapping {
   ["number"] = 42
   ["list"] = List("Pigeon", "Parrot")
@@ -82,5 +160,21 @@ result = birds
     }
     ["Parrot"] {
       lifespan = 20
+    }
+  }
+  birds2 = (birds) {
+    default {
+      lifespan = 8
+      diet = "Seeds"
+    }
+  }
+  birds2 = new Mapping {
+    ["Pigeon"] {
+      lifespan = 8
+      diet = "Seeds"
+    }
+    ["Parrot"] {
+      lifespan = 20
+      diet = "Berries"
     }
   }
