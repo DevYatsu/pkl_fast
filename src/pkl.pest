@@ -18,7 +18,7 @@ WHITESPACE = _{ " "|"\t"|"\n"|"\r"|";" }
 SPACE = _{ " "|"\t" }
 
 WHITESPACE_COMMENT = {WHITESPACE|COMMENT|";"}
-SPACE_COMMENT = {(SPACE|COMMENT)*}
+SPACE_COMMENT = {SPACE|COMMENT}
 
 EQUAL = !{WHITESPACE_COMMENT* ~ "="}
 COLON = !{WHITESPACE_COMMENT* ~ ":"}
@@ -45,7 +45,7 @@ PREFIX_KEYWORD = @{"local"|"fixed"|"const"|"external"|"hidden"|"abstract"|"open"
 // ********
 
 expr = !{ (prefix? ~ primary_expr ~ postfix? ~ ((infix ~ prefix? ~ primary_expr ~ postfix?)|(type_op~TYPE))*) }
-primary_expr = {if_else_expr|let_expr|function_expr|listing|class_instance|indexing_expr|fn_call|ident|value|amended_object|parenthesized}
+primary_expr = {if_else_expr|let_expr|function_expr|indexing_expr|class_instance|fn_call|literal|ident|amended_object|parenthesized}
 
 parenthesized = !{"(" ~ expr ~ ")"}
 
@@ -57,9 +57,7 @@ if_else_expr = {"if" ~ "(" ~ condition ~ ")" ~ if ~ "else" ~ else }
 let_value = {expr}
 let_expr = {"let" ~ "(" ~ ident ~ (COLON ~ TYPE)? ~ EQUAL ~ let_value ~ ")" ~ expr}
 
-listing_body = !{ "{" ~ (property|expr)* ~ "}"}
-listing = ${"new" ~ WHITESPACE_COMMENT+ ~ "Listing" ~ WHITESPACE_COMMENT* ~ listing_body}
-class_instance = ${"new" ~ (WHITESPACE_COMMENT+ ~ ident_with_opt_dots)? ~ WHITESPACE_COMMENT* ~ "{" ~ WHITESPACE_COMMENT* ~ (property ~ WHITESPACE_COMMENT*)* ~ "}"}
+class_instance = ${"new" ~ (WHITESPACE_COMMENT+ ~ ident_with_opt_dots)? ~ WHITESPACE_COMMENT* ~ object}
 
 function_expr_arg = { (ident|blank_ident) ~ (COLON ~ TYPE)? }
 function_expr = !{"(" ~ (function_expr_arg ~ ("," ~ function_expr_arg)* ~ ","?)* ~ ")" ~ "->" ~ expr}
@@ -70,7 +68,7 @@ globbed_import = _{"import*"}
 fn_call = !{ (nullable_read|globbed_read|globbed_import|ident) ~ "(" ~ (expr ~ ("," ~ expr)* ~ ","?)? ~ ")"}
 
 // operations
-infix  = _{ add|sub|mul|div|div_r|pow|modulo|and|or|comp_equal|comp_not_equal|comp_greater|comp_greater_equal|comp_less|comp_less_equal|null_coalescing  }
+infix  = _{ add|sub|pow|mul|div|div_r|modulo|and|or|comp_equal|comp_not_equal|comp_greater|comp_greater_equal|comp_less|comp_less_equal|null_coalescing  }
 prefix = _{ neg|logical_not }
 postfix = { non_null }
 
@@ -105,7 +103,7 @@ null_coalescing = _{ "??" }
 
 
 
-ident_with_opt_dots = {ident ~ ("." ~ ident)*}
+ident_with_opt_dots = !{ident ~ ("." ~ ident)*}
 ident_with_start_symbol = { ("_"|"$") ~ (ASCII_ALPHA|ASCII_DIGIT|"_")+ }
 ident_without_start_symbol = { ASCII_ALPHA+ ~ (ASCII_ALPHA|ASCII_DIGIT|"_")* }
 basic_ident = @{ ident_without_start_symbol|ident_with_start_symbol }
@@ -117,14 +115,14 @@ ident = @{ basic_ident|illegal_ident }
 // a[anything]
 // a.anything
 // a?.anything
-indexing_expr = !{(non_null|class_instance|value|index_expr|fn_call|ident|amended_object|parenthesized) ~ (null_propagation|dot_expr|index_expr)+ }
-null_propagation = { "?." ~ (fn_call|index_expr|ident) }
+indexing_expr = ${(class_instance|literal|index_expr|fn_call|ident|amended_object|parenthesized) ~ ((WHITESPACE_COMMENT*~(null_propagation|dot_expr))|(SPACE_COMMENT*~index_expr))+ }
+null_propagation = !{ "?." ~ (fn_call|ident) }
 
-dot_expr = { "." ~ (fn_call|index_expr|ident) }
+dot_expr = !{ "." ~ (fn_call|ident) }
 // index_expr => listing[index]
-index_expr = { "[" ~ expr ~ "]" }
+index_expr = !{ "[" ~ expr ~ "]" }
 
-value = { bool|null|float|int|string }
+literal = !{ bool|null|float|int|string }
 
 null = _{ "null" }
 bool = @{ "true"|"false" }
@@ -171,11 +169,21 @@ int = { hex_int|octal_int|binary_int|basic_int }
 exponent = { ("e"|"E") ~ ("+"|"-")? ~ basic_int+ }
 float = @{ "NaN"|("Infinity"|(basic_int? ~ "." ~ basic_int+ ~ exponent? ))}
 
-obj_body = { "{" ~ property* ~ "}" }
-object = !{ obj_body|listing_body }
+// expr parsed for listing and mappings
+// then in evaluation step we check if the
+// fields are valid
+obj_body = { "{" ~ (property|mapping_field|field_amending|when_generator|for_generator|expr)* ~ "}" }
+object = !{ obj_body ~ (obj_body)* }
 
 // add support for objects amended with {} {} syntax
-amended_object = { "(" ~ ident_with_opt_dots ~ ")" ~ WHITESPACE* ~ object }
+amended_object = !{ "(" ~ ident_with_opt_dots ~ ")" ~ object }
+
+mapping_field = !{"[" ~ expr ~ "]" ~ (object|(EQUAL~(field_amending|expr)))}
+field_amending = !{"(" ~ "this" ~ "[" ~ expr ~ "]" ~ ")" ~ object}
+
+when_generator = !{ "when" ~ "(" ~ expr ~ ")" ~ obj_body ~ ("else" ~ obj_body)? }
+for_in = @{"in" ~ WHITESPACE+}
+for_generator = !{ "for" ~ "(" ~ ident ~ ("," ~ ident)* ~ for_in ~ expr ~ ")" ~ obj_body }
 
 // ********
 //  *****

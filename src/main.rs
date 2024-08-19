@@ -44,7 +44,7 @@ fn main() -> Result<(), (String, String, Option<String>)> {
             println!("{:?}", pkl);
         }
         None => {
-            let src = fs::read_to_string("base.pkl").unwrap();
+            let src = fs::read_to_string("a.pkl").unwrap();
 
             let src = src.repeat(1);
             let time = Instant::now();

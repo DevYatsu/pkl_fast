@@ -1,35 +1,86 @@
-/// Renders values as YAML.
-///
-/// To render a YAML stream, set [isStream] to [true].
-class YamlRenderer extends ValueRenderer {
-  extension = "yaml"
-
-  /// The YAML version used by consumers of the rendered documents.
-  ///
-  /// - `"compat"` - YAML 1.1 _or_ 1.2 (default)
-  /// - `"1.1"` - YAML 1.1
-  /// - `"1.2"` - YAML 1.2 (Core schema)
-  ///
-  /// At present, the mode only affects which String values are quoted in YAML.
-  /// For example, `x = "yes"` is rendered as `x: 'yes'` in modes `"compat"` and `"1.1"`,
-  /// and as `x: yes` in mode `"1.2"`.
-  mode: "compat"|"1.1"|"1.2" = "compat"
-
-  /// The number of spaces to use for indenting output.
-  indentWidth: Int(this > 1) = 2
-
-  /// Whether to skip rendering properties whose value is [null].
-  omitNullProperties: Boolean = true
-
-  /// If [true], [renderDocument] expects an argument of type [Listing] or [Collection]
-  /// and renders it as YAML stream.
-  isStream: Boolean = false
-
-  /// Renders [value] as a YAML document.
-  ///
-  /// Every YAML value is a valid YAML document.
-  external function renderDocument(value: Any): String
-
-  /// Renders [value] as YAML value.
-  external function renderValue(value: Any): String
+mapping = new Mapping {
+  ["number"] = 42
+  ["list"] = List("Pigeon", "Parrot")
+  ["nested mapping"] {
+    ["Pigeon"] {
+      lifespan = 20
+      diet = "Seeds"
+    }
+  }
 }
+mapping = new Mapping {
+  [3.min] = 42
+  [new Dynamic { name = "Pigeon" }] = "abc"
+}
+mapping = new Mapping {
+  ["Pigeon".reverse()] = 42
+}
+mapping = new Mapping {
+  local parrot = "Parrot"
+  ["Pigeon"] {
+    friend = parrot
+  }
+}
+birds = new Mapping {
+  ["Pigeon"] {
+    lifespan = 8
+    diet = "Seeds"
+  }
+  ["Parrot"] {
+    lifespan = 20
+    diet = "Berries"
+  }
+}
+birds2 = (birds) {
+  ["Barn owl"] {
+    lifespan = 15
+    diet = "Mice"
+  }
+  ["Pigeon"] {
+    diet = "Seeds"
+  }
+  ["Parrot"] = new {
+    lifespan = 20
+    diet = "Berries"
+  }
+}
+birds = new Mapping {
+  ["Pigeon"] {
+    lifespan = 8
+    diet = "Seeds"
+  }
+  ["Parrot"] = (this["Pigeon"]) {
+    lifespan = 20
+  }
+}
+birds2 = (birds) {
+  ["Pigeon"] {
+    diet = "Seeds"
+  }
+}
+
+parrotDiet = birds2["Parrot"].diet
+birds = new Mapping {
+  ["Pigeon"] {
+    lifespan = 8
+    diet = "Seeds"
+  }
+  ["Parrot"] = (this["Pigeon"]) {
+    lifespan = 20
+  }
+}
+result = birds
+  .toMap()
+  .mapKeys((key, value) -> key.reverse())
+  .toMapping()
+  birds = new Mapping {
+    default {
+      lifespan = 8
+    }
+    ["Pigeon"] {
+      diet = "Seeds"
+    }
+    ["Parrot"] {
+      lifespan = 20
+    }
+  }
