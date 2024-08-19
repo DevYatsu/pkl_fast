@@ -7,7 +7,7 @@ file = { SOI ~ stmt* ~ EOI}
 //
 // the only file in the pkl stdlib not
 // working is Benchmark.pkl
-stmt = { typealias|module|import|extends|amends|function|class|property|expr }
+stmt = { typealias|module|import|extends|amends|function|class|property }
 
 KEYWORDS = {"typealias"|"module"|"import"|"extends"|"amends"|"function"|"in"|"let"|"is" |
     "local"|"fixed"|"const"|"hidden"|"open"|"true"|"false"|"null"|"Infinity"|"NaN" |
@@ -59,7 +59,7 @@ let_expr = {"let" ~ "(" ~ ident ~ (COLON ~ TYPE)? ~ EQUAL ~ let_value ~ ")" ~ ex
 
 class_instance = ${"new" ~ (WHITESPACE_COMMENT+ ~ ident_with_opt_dots)? ~ WHITESPACE_COMMENT* ~ object}
 
-function_expr_arg = { (ident|blank_ident) ~ (COLON ~ TYPE)? }
+function_expr_arg = { ident ~ (COLON ~ TYPE)? }
 function_expr = !{"(" ~ (function_expr_arg ~ ("," ~ function_expr_arg)* ~ ","?)* ~ ")" ~ "->" ~ expr}
 
 nullable_read = _{"read?"}
@@ -109,7 +109,7 @@ ident_without_start_symbol = { ASCII_ALPHA+ ~ (ASCII_ALPHA|ASCII_DIGIT|"_")* }
 basic_ident = @{ ident_without_start_symbol|ident_with_start_symbol }
 illegal_ident = { "`" ~ (!"`" ~ ANY)+ ~ "`" }
 blank_ident = _{ "_" }
-ident = @{ basic_ident|illegal_ident }
+ident = @{ basic_ident|illegal_ident|blank_ident }
 
 // either
 // a[anything]
@@ -179,7 +179,7 @@ object = !{ obj_body ~ (obj_body)* }
 amended_object = !{ "(" ~ ident_with_opt_dots ~ ")" ~ object }
 
 mapping_field = !{ expr ~ "]" ~ (object|(EQUAL~(field_amending|expr)))}
-predicate_match = !{"["~expr~"]"~"]"~object}
+predicate_match = !{"["~expr~"]"~"]"~(object|(EQUAL~expr))}
 bracket_field = !{"[" ~ (predicate_match|mapping_field)}
 
 field_amending = !{"(" ~ "this" ~ "[" ~ expr ~ "]" ~ ")" ~ object}
