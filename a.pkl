@@ -251,3 +251,13 @@ result = birds
   properties2 {
     ...properties1
   }
+  environmentVariables {
+    new { name = "PIGEON"; value = "pigeon-value" }
+    new { name = "PARROT"; value = "parrot-value" }
+    new { name = "BARN OWL"; value = "barn-owl-value" }
+  }
+  updated = (environmentVariables) {
+    [[name == "PARROT"]] {
+      value = "new-value"
+    }
+  }
