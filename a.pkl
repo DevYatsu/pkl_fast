@@ -178,3 +178,76 @@ result = birds
       diet = "Berries"
     }
   }
+  names = birds.toList().map((it) -> it.name) as List<String>
+  map = Map("Pigeon", 5.gb, "Parrot", 10.gb)
+  parrotValue = map["Parrot"]
+  abilities {
+    "chirping"
+    when (isSinger) {
+      "singing"
+    }
+    "whistling"
+  }
+
+  abilitiesByBird {
+    ["Barn owl"] = "hooing"
+    when (isSinger) {
+      ["Parrot"] = "singing"
+    }
+    ["Parrot"] = "whistling"
+  }
+  isSinger = false
+
+  parrot {
+    lifespan = 20
+    when (isSinger) {
+      hobby = "singing"
+      idol = "Aretha Franklin"
+    } else {
+      hobby = "whistling"
+      idol = "Wolfgang Amadeus Mozart"
+    }
+  }
+  names = List("Pigeon", "Barn owl", "Parrot")
+
+  birds {
+    for (_name in names) {
+      new {
+        name = _name
+        lifespan = 42
+      }
+    }
+  }
+  namesAndLifespans = Map("Pigeon", 8, "Barn owl", 15, "Parrot", 20)
+
+  birdsByName {
+    for (_name, _lifespan in namesAndLifespans) {
+      [_name] {
+        name = _name
+        lifespan = _lifespan
+      }
+    }
+  }
+  entries1 {
+    ["Pigeon"] = "Piggy the Pigeon"
+    ["Barn owl"] = "Barney the Barn owl"
+  }
+
+  entries2 {
+    ...entries1
+  }
+
+  elements1 { 1; 2 }
+
+  elements2 {
+    ...elements1
+  }
+
+  properties1 {
+    name = "Pigeon"
+    diet = "Seeds"
+  }
+
+  properties2 {
+    ...properties1
+  }

@@ -172,7 +172,7 @@ float = @{ "NaN"|("Infinity"|(basic_int? ~ "." ~ basic_int+ ~ exponent? ))}
 // expr parsed for listing and mappings
 // then in evaluation step we check if the
 // fields are valid
-obj_body = { "{" ~ (property|mapping_field|field_amending|when_generator|for_generator|expr)* ~ "}" }
+obj_body = { "{" ~ (property|mapping_field|field_amending|iterable_spread|when_generator|for_generator|expr)* ~ "}" }
 object = !{ obj_body ~ (obj_body)* }
 
 // add support for objects amended with {} {} syntax
@@ -180,6 +180,9 @@ amended_object = !{ "(" ~ ident_with_opt_dots ~ ")" ~ object }
 
 mapping_field = !{"[" ~ expr ~ "]" ~ (object|(EQUAL~(field_amending|expr)))}
 field_amending = !{"(" ~ "this" ~ "[" ~ expr ~ "]" ~ ")" ~ object}
+
+is_nullable     = _{"?"}
+iterable_spread     = !{"..."~is_nullable?~expr}
 
 when_generator = !{ "when" ~ "(" ~ expr ~ ")" ~ obj_body ~ ("else" ~ obj_body)? }
 for_in = @{"in" ~ WHITESPACE+}
