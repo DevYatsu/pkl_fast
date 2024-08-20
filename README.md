@@ -2,7 +2,7 @@
 
 Fastest pkl-parsing crate out there (and surely the only one)!
 
-I am currently working on a big rework, as the current lexer (logos) does not cover all the features I need, I am replacing it with the pest parser! Should have payed more attention, sry!
+I am currently working on a big rework, as the current lexer (logos) does not cover all the features I need, I am replacing it with the pest crate! Should have payed more attention, sry!
 
 ## Features
 
