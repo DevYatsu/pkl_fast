@@ -2,7 +2,7 @@
 
 Fastest pkl-parsing crate out there (and surely the only one)!
 
-I am currently working on a big rework, as the current lexer (logos) does not cover all the features I need, I am replacing it with the pest crate! Should have payed more attention, sry!
+I am currently working on a big rework, as the current lexer (logos) does not cover all the features I need, I am replacing it with the pest crate, all the work on the pkl parser was moved to another crate of my own [pkl-parser](https://crates.io/crates/pkl-parser) which can be considered finished! Just need to adapt interpreting the pkl ast node to this new parser, sry for the delay!
 
 ## Features
 
