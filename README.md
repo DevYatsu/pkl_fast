@@ -1,81 +1,106 @@
-# pkl_fast
+# pkl-bindgen
 
-Fastest pkl-parsing crate out there (and surely the only one)!
+Rust bindings for the [Pkl configuration language](https://pkl-lang.org). Port of Apple's [pkl-go](https://github.com/apple/pkl-go).
 
-I am currently working on a big rework, as the current lexer (logos) does not cover all the features I need, I am replacing it with the pest crate, all the work on the pkl parser was moved to another crate of my own [pkl-parser](https://crates.io/crates/pkl-parser) which can be considered finished! Just need to adapt interpreting the pkl ast node to this new parser, sry for the delay!
+> Requires the `pkl` CLI. See [pkl-lang.org](https://pkl-lang.org) to install.
 
-## Features
+```toml
+[dependencies]
+pkl_core = "0.1"
+pkl_macros = "0.1"
+tokio = { version = "1", features = ["rt", "macros"] }
+```
 
-- Parse Pkl string into a structured representation (hashmap) in rust
-- Parse Pkl string into an AST
-- Support for strings, integers (decimal, octal, hex, binary), floats, boolean, objects (amends syntax as well), class instances
-- Boolean API supported
-- String API (mostly) supported
-- Int/Float/Duration/DataSize properties and methods supported
+```bash
+# CLI eval
+pkl-bindgen eval config.pkl
 
-## Currently Not Supported
+# Inline eval
+pkl-bindgen expr 'name = "Hello, Pkl!"'
 
-- Multiline String containing <<">> not preceded by a backlash, String interpolation and Strings with custom delimiters
-- Lists methods API, only properties are supported
-- Listings, Mappings, Maps
-- functions -> thus also functions and methods taking functions as parameters
-- Packages (official or not) imports not supported
-- Globbed imports + dynamic imports + amends expresions
-- type annotations
-- Classes declarations
-- If expressions
-
-## Installation
-
-When in your rust project, simply run: `cargo add new-pkl` (for the moment use new-pkl crate, new stable release coming to pkl_fast really soon)
-
-## Usage
-
-Here's an example of how to parse a PKL string and retrieve values from the context:
+# Generate Rust code from .pkl
+pkl-bindgen generate schema.pkl -o gen.rs
+```
 
 ```rust
-use new_pkl::{Pkl, PklResult, PklValue};
+use pkl_core::{PklDecode, PklEvaluator, CliEvaluator, ModuleSource};
 
-fn main() -> PklResult<()> {
-    let source = r#"
-    bool_var = true
-    int_var = 42
-    float_var = 3.14
-    $string_var = "hello"
-    object_var {
-        key1 = "value1"
-        key2 = 2
-    }
-    "#;
+#[derive(PklDecode)]
+struct Config { host: String, port: u16 }
 
-    let mut pkl = Pkl::new();
-    pkl.parse(source)?;
-
-    println!("{:?}", pkl.get("int_var")); // Ok(PklValue::Int(42))
-
-    // Get values
-    println!("{:?}", pkl.get_bool("bool_var")); // Ok(true)
-    println!("{:?}", pkl.get_int("int_var")); // Ok(42)
-    println!("{:?}", pkl.get_float("float_var")); // Ok(3.14)
-    println!("{:?}", pkl.get_string("$string_var")); // Ok("hello")
-    println!("{:?}", pkl.get_object("object_var")); // Ok(HashMap with key1 and key2)
-
-    // Modify values
-    pkl.set("int_var", PklValue::Int(100));
-
-    // Remove values
-    pkl.remove("float_var");
-    println!("{:?}", pkl.get_float("float_var")); // Err("Variable `float_var` not found")
-
-    // Or just generate an ast
-    let mut pkl = Pkl::new();
-    // the ast contains the start and end indexes of each value and statement
-    let ast = pkl.generate_ast(source)?;
-
+#[tokio::main]
+async fn main() -> Result<(), pkl_core::PklError> {
+    let cfg: Config = CliEvaluator::new()
+        .evaluate(&ModuleSource::from_file("config.pkl")).await?;
+    println!("{}:{}", cfg.host, cfg.port);
     Ok(())
 }
 ```
 
-### LICENSE
+## Evaluators
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+```rust
+// Simple (spawns pkl eval)
+let e = CliEvaluator::new();
+
+// Persistent server (10x faster repeated eval)
+let e = ServerEvaluator::new().await?;
+
+// Shared server process
+let mgr = EvaluatorManager::new().await?;
+let ev1 = mgr.new_evaluator().await?;
+let ev2 = mgr.new_evaluator().await?;
+```
+
+## Derive macro
+
+```rust
+#[derive(PklDecode)]
+struct Config {
+    name: String,
+    #[pkl(rename = "dbHost")]  db_host: String,
+    #[pkl(default)]             port: u16,
+    #[pkl(skip)]                computed: String,
+    #[pkl(flatten)]             extra: BTreeMap<String, Value>,
+}
+
+#[derive(PklDecode)]
+enum Diet { Seeds, Berries, Insects }
+
+#[derive(PklDecode)]
+#[pkl(tag = "type")]
+enum Shape {
+    Circle { radius: f64 },
+    #[pkl(tag = "rect")] Rect { width: f64, height: f64 },
+}
+```
+
+## Codegen
+
+```rust
+// build.rs
+fn main() { pkl_codegen::generate("config.pkl", "src/gen/config.rs").unwrap(); }
+```
+
+```rust
+include!("gen/config.rs");
+let cfg: Root = CliEvaluator::new()
+    .evaluate(&ModuleSource::from_file("config.pkl")).await?;
+```
+
+## External readers
+
+```rust
+impl ResourceReader for MyReader {
+    fn scheme(&self) -> &str { "secret" }
+    fn read(&self, uri: &str) -> Result<Vec<u8>, String> { Ok(b"data".to_vec()) }
+}
+let e = ServerEvaluator::with_options(EvaluatorOptions {
+    resource_readers: vec![Box::new(MyReader)],
+    ..Default::default()
+}).await?;
+// read("secret:key") → "data"
+```
+
+Repo: [github.com/DevYatsu/pkl_bindgen](https://github.com/DevYatsu/pkl_bindgen.git)
+License: Apache 2.0
