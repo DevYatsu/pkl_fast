@@ -156,9 +156,9 @@ fn parse_class_blocks_with_ranges(source: &str) -> (Vec<Class>, Vec<(usize, usiz
             // Find opening brace
             let mut body_start = i;
             let mut found_open = false;
-            for j in i..lines.len() {
-                if lines[j].trim().contains('{') || lines[j].trim().ends_with('{') {
-                    body_start = j;
+            for (offset, line) in lines[i..].iter().enumerate() {
+                if line.trim().contains('{') || line.trim().ends_with('{') {
+                    body_start = i + offset;
                     found_open = true;
                     break;
                 }
@@ -169,12 +169,11 @@ fn parse_class_blocks_with_ranges(source: &str) -> (Vec<Class>, Vec<(usize, usiz
             let mut depth = 0;
             let mut body_end = body_start + 1;
             let mut found_close = false;
-            for j in body_start..lines.len() {
-                let l = lines[j].trim();
-                for ch in l.chars() {
+            for (offset, line) in lines[body_start..].iter().enumerate() {
+                for ch in line.trim().chars() {
                     match ch {
                         '{' => depth += 1,
-                        '}' => { depth -= 1; if depth == 0 { body_end = j + 1; found_close = true; break; } }
+                        '}' => { depth -= 1; if depth == 0 { body_end = body_start + offset + 1; found_close = true; break; } }
                         _ => {}
                     }
                 }
@@ -184,8 +183,8 @@ fn parse_class_blocks_with_ranges(source: &str) -> (Vec<Class>, Vec<(usize, usiz
 
             // Parse properties from class body
             let mut properties = Vec::new();
-            for j in (body_start + 1)..(body_end - 1) {
-                if let Some(prop) = try_parse_property(lines[j].trim()) {
+            for line in &lines[(body_start + 1)..(body_end - 1)] {
+                if let Some(prop) = try_parse_property(line.trim()) {
                     properties.push(prop);
                 }
             }
@@ -217,7 +216,7 @@ fn try_extract_class_header(line: &str) -> Option<(String, Option<String>, bool,
     rest = rest.strip_prefix("class ").unwrap();
 
     // Split on '{', 'extends', or whitespace
-    let name_end = rest.find(|c: char| c == '{' || c == ' ' || c == '\t').unwrap_or(rest.len());
+    let name_end = rest.find(['{', ' ', '\t']).unwrap_or(rest.len());
     let name = rest[..name_end].to_string();
     if name.is_empty() { return None; }
 
@@ -225,7 +224,7 @@ fn try_extract_class_header(line: &str) -> Option<(String, Option<String>, bool,
     let superclass = after_name
         .strip_prefix("extends ")
         .map(|e| {
-            let extends_end = e.find(|c: char| c == '{' || c == ' ').unwrap_or(e.len());
+            let extends_end = e.find(['{', ' ']).unwrap_or(e.len());
             e[..extends_end].trim().to_string()
         });
 
@@ -447,7 +446,7 @@ impl PklDecode for {} {{
 }
 
 fn generate_struct(class: &Class, _module: &Module) -> String {
-    let derives = vec!["PklDecode", "Debug", "Clone"];
+    let derives = ["PklDecode", "Debug", "Clone"];
 
     let mut code = String::new();
 
@@ -470,7 +469,7 @@ fn generate_struct(class: &Class, _module: &Module) -> String {
 }
 
 fn generate_root_struct(module: &Module) -> String {
-    let mut code = format!("#[derive(PklDecode, Debug, Clone)]\npub struct Root {{\n");
+    let mut code = "#[derive(PklDecode, Debug, Clone)]\npub struct Root {\n".to_string();
 
     for prop in &module.properties {
         let rust_type = map_pkl_type_str(&prop.type_str);

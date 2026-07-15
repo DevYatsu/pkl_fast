@@ -13,11 +13,7 @@ impl ModuleSource {
     /// Create a source from a file path. The path is converted to a `file://` URI.
     pub fn from_file(path: impl AsRef<std::path::Path>) -> Self {
         let path = path.as_ref();
-        let uri = if path.is_absolute() {
-            format!("file://{}", path.display())
-        } else {
-            format!("file://{}", path.display())
-        };
+        let uri = format!("file://{}", path.display());
         Self {
             uri,
             contents: None,

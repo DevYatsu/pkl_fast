@@ -394,10 +394,6 @@ fn decode_rmpv(val: &RmpValue) -> PklResult<Value> {
     decode_rmpv_depth(val, 0)
 }
 
-fn decode_tagged_array(code: u8, data: &[RmpValue]) -> PklResult<Value> {
-    decode_tagged_array_depth(code, data, 0)
-}
-
 fn decode_tagged_array_depth(code: u8, data: &[RmpValue], depth: usize) -> PklResult<Value> {
     if depth > MAX_DECODE_DEPTH {
         return Err(PklError::DecodeError(
@@ -453,7 +449,7 @@ fn decode_tagged_array_depth(code: u8, data: &[RmpValue], depth: usize) -> PklRe
         }
         CODE_LIST | CODE_LISTING | CODE_SET => {
             // Format: [code, [elem1, elem2, ...]]
-            let items = match data.get(0) {
+            let items = match data.first() {
                 Some(RmpValue::Array(arr)) => {
                     arr.iter().map(decode_rmpv).collect::<PklResult<Vec<_>>>()?
                 }

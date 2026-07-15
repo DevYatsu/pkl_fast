@@ -40,13 +40,15 @@ impl Default for EvaluatorOptions {
 
 // ── ManagerInner (shared state) ──
 
+type PendingMap = Arc<Mutex<HashMap<i64, oneshot::Sender<PklResult<ServerMessage>>>>>;
+
 struct ManagerInner {
     child: Mutex<Option<Child>>,
     write_tx: tokio::sync::mpsc::UnboundedSender<Vec<u8>>,
     resource_readers: Vec<Box<dyn ResourceReader>>,
     module_readers: Vec<Box<dyn ModuleReader>>,
     create_pending: Mutex<HashMap<i64, oneshot::Sender<PklResult<ServerMessage>>>>,
-    eval_pendings: Mutex<HashMap<i64, Arc<Mutex<HashMap<i64, oneshot::Sender<PklResult<ServerMessage>>>>>>>,
+    eval_pendings: Mutex<HashMap<i64, PendingMap>>,
 }
 
 impl ManagerInner {
@@ -425,14 +427,9 @@ async fn read_loop(stdout: tokio::process::ChildStdout, inner: Arc<ManagerInner>
             Ok(n) => buf.extend_from_slice(&chunk[..n]),
             Err(e) => { eprintln!("pkl server read error: {}", e); break; }
         }
-        loop {
-            match try_decode_message(&buf) {
-                Some((consumed, code, body_bytes)) => {
-                    let _ = handle_message(code, &body_bytes, &inner).await;
-                    buf.drain(..consumed);
-                }
-                None => break,
-            }
+        while let Some((consumed, code, body_bytes)) = try_decode_message(&buf) {
+            let _ = handle_message(code, &body_bytes, &inner).await;
+            buf.drain(..consumed);
             if buf.is_empty() { break; }
         }
     }

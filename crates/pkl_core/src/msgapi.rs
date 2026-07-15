@@ -2,6 +2,10 @@
 //!
 //! The `pkl server` subprocess communicates using MessagePack.
 //! Each message is a 2-element array: `[code: int, body: object]`.
+//!
+//! Field names match the Pkl server protocol exactly (camelCase).
+
+#![allow(non_snake_case)]
 
 use serde::{Deserialize, Serialize};
 

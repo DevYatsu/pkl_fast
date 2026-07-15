@@ -1,6 +1,5 @@
 //! Cross-platform utility functions for locating the `pkl` CLI binary.
 
-use std::path::PathBuf;
 use crate::error::{PklError, PklResult};
 
 /// The default name of the `pkl` CLI binary.

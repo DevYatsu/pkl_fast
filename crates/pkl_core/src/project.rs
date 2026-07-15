@@ -57,7 +57,7 @@ pub struct ProjectRemoteDependency {
 /// Load a project from a directory containing `PklProject` (and optionally `PklProject.deps.json`).
 pub async fn load_project(project_dir: &str) -> PklResult<Project> {
     // Use a temporary evaluator to load the PklProject file
-    let source = ModuleSource::from_file(&format!("{}/PklProject", project_dir));
+    let source = ModuleSource::from_file(format!("{}/PklProject", project_dir));
     load_project_from_source(&source).await
 }
 
