@@ -1,0 +1,20 @@
+[package]
+name = "pkl_core"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Pkl configuration language evaluator and deserialization"
+repository = "https://github.com/DevYatsu/pkl_bindgen.git"
+
+[dependencies]
+pkl_macros = { version = "0.1", path = "../pkl_macros" }
+serde = { version = "1", features = ["derive"] }
+rmpv = { version = "1", features = ["serde"] }
+rmp-serde = "1"
+tokio = { version = "1", features = ["process", "io-util", "sync", "rt", "rt-multi-thread", "macros", "time"] }
+thiserror = "2"
+async-trait = "0.1"
+serde_json = "1"
+serde_bytes = "0.11"
+which = "6"
+uuid = { version = "1", features = ["v4"] }
