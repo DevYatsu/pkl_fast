@@ -285,6 +285,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
+name = "pkl-bindgen"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "pkl_codegen",
+ "pkl_core",
+ "pkl_macros",
+ "tokio",
+]
+
+[[package]]
 name = "pkl_codegen"
 version = "0.1.0"
 dependencies = [
@@ -306,17 +317,6 @@ dependencies = [
  "tokio",
  "uuid",
  "which",
-]
-
-[[package]]
-name = "pkl_fast"
-version = "0.1.0"
-dependencies = [
- "clap",
- "pkl_codegen",
- "pkl_core",
- "pkl_macros",
- "tokio",
 ]
 
 [[package]]

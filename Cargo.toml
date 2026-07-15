@@ -1,6 +1,6 @@
 [package]
 name = "pkl-bindgen"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Code generation and evaluation for Pkl configuration language"
 
