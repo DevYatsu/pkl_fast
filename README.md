@@ -28,25 +28,45 @@ tokio = { version = "1", features = ["rt", "macros"] }
 pkl_codegen = "0.2"
 ```
 
+Define a Pkl schema:
+
+```pkl
+# config.pkl
+host: String
+port: UInt16
+timeout: Duration?
+```
+
+Two options to use it in Rust:
+
+**With codegen (recommended)** — structs are auto-generated from your `.pkl` file. No manual struct definitions, no drift between schema and code:
+
 ```rust
-// build.rs — generate types from .pkl at compile time
+// build.rs
 fn main() { pkl_codegen::generate("config.pkl", "src/gen/config.rs").unwrap(); }
 ```
 
 ```rust
-use pkl_core::{PklDecode, PklEvaluator, CliEvaluator, ModuleSource};
+// Just include — struct is auto-generated with correct types, optionals, etc.
+include!("gen/config.rs");
 
+let cfg: Root = CliEvaluator::new()
+    .evaluate(&ModuleSource::from_file("config.pkl")).await?;
+println!("{}:{}", cfg.host, cfg.port);
+```
+
+**Without codegen** — define structs manually with the derive macro:
+
+```rust
 #[derive(PklDecode)]
-struct Config { host: String, port: u16 }
-
-#[tokio::main]
-async fn main() -> Result<(), pkl_core::PklError> {
-    // Evaluating a Pkl file into a typed struct
-    let cfg: Config = CliEvaluator::new()
-        .evaluate(&ModuleSource::from_file("config.pkl")).await?;
-    println!("{}:{}", cfg.host, cfg.port);
-    Ok(())
+struct Config {
+    host: String,
+    port: u16,
+    timeout: Option<Duration>,
 }
+
+let cfg: Config = CliEvaluator::new()
+    .evaluate(&ModuleSource::from_file("config.pkl")).await?;
 ```
 
 ## Evaluators
