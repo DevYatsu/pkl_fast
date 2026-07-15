@@ -4,6 +4,14 @@ Rust bindings for the [Pkl configuration language](https://pkl-lang.org). Port o
 
 > Requires the `pkl` CLI. See [pkl-lang.org](https://pkl-lang.org) to install.
 
+## Install
+
+```bash
+cargo install --git https://github.com/DevYatsu/pkl_bindgen.git
+```
+
+## Quickstart
+
 ```toml
 [dependencies]
 pkl_core = "0.1"
