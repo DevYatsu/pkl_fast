@@ -1,6 +1,0 @@
-open module X
-
-amends "test.pkl"
-
-local z = 0
-w = z

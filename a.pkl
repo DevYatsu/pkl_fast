@@ -1,1 +1,0 @@
-name = let (_ = trace("defining name")) "Eagle"
