@@ -1,0 +1,12 @@
+[package]
+name = "pkl_codegen"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Code generation for Pkl configuration files"
+repository = "https://github.com/DevYatsu/pkl_bindgen.git"
+
+[dependencies]
+
+[dev-dependencies]
+syn = { version = "2", features = ["full"] }
