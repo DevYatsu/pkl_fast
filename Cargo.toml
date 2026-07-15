@@ -1,8 +1,8 @@
 [package]
-name = "pkl_fast"
+name = "pkl-bindgen"
 version = "0.1.0"
 edition = "2021"
-description = "pkl-bindgen — Code generation and evaluation for Pkl configuration language"
+description = "Code generation and evaluation for Pkl configuration language"
 
 [workspace]
 resolver = "2"
