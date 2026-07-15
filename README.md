@@ -4,30 +4,33 @@ Rust bindings for the [Pkl configuration language](https://pkl-lang.org). Port o
 
 > Requires the `pkl` CLI. See [pkl-lang.org](https://pkl-lang.org) to install.
 
-## Install
+## Choose your path
+
+### 🛠 CLI — evaluate and generate from the terminal
 
 ```bash
 cargo install --git https://github.com/DevYatsu/pkl_bindgen.git
+
+pkl-bindgen eval config.pkl
+pkl-bindgen expr 'name = "Hello, Pkl!"'
+pkl-bindgen generate schema.pkl -o gen.rs
 ```
 
-## Quickstart
+### 📦 Library — embed in your Rust project
 
 ```toml
 [dependencies]
-pkl_core = "0.1"
-pkl_macros = "0.1"
+pkl_core = "0.2"
+pkl_macros = "0.2"
 tokio = { version = "1", features = ["rt", "macros"] }
+
+[build-dependencies]
+pkl_codegen = "0.2"
 ```
 
-```bash
-# CLI eval
-pkl-bindgen eval config.pkl
-
-# Inline eval
-pkl-bindgen expr 'name = "Hello, Pkl!"'
-
-# Generate Rust code from .pkl
-pkl-bindgen generate schema.pkl -o gen.rs
+```rust
+// build.rs — generate types from .pkl at compile time
+fn main() { pkl_codegen::generate("config.pkl", "src/gen/config.rs").unwrap(); }
 ```
 
 ```rust
@@ -38,6 +41,7 @@ struct Config { host: String, port: u16 }
 
 #[tokio::main]
 async fn main() -> Result<(), pkl_core::PklError> {
+    // Evaluating a Pkl file into a typed struct
     let cfg: Config = CliEvaluator::new()
         .evaluate(&ModuleSource::from_file("config.pkl")).await?;
     println!("{}:{}", cfg.host, cfg.port);
@@ -48,13 +52,13 @@ async fn main() -> Result<(), pkl_core::PklError> {
 ## Evaluators
 
 ```rust
-// Simple (spawns pkl eval)
+// Simple (spawns pkl eval per call)
 let e = CliEvaluator::new();
 
 // Persistent server (10x faster repeated eval)
 let e = ServerEvaluator::new().await?;
 
-// Shared server process
+// Shared server process — multiple evaluators, one connection
 let mgr = EvaluatorManager::new().await?;
 let ev1 = mgr.new_evaluator().await?;
 let ev2 = mgr.new_evaluator().await?;
@@ -81,19 +85,6 @@ enum Shape {
     Circle { radius: f64 },
     #[pkl(tag = "rect")] Rect { width: f64, height: f64 },
 }
-```
-
-## Codegen
-
-```rust
-// build.rs
-fn main() { pkl_codegen::generate("config.pkl", "src/gen/config.rs").unwrap(); }
-```
-
-```rust
-include!("gen/config.rs");
-let cfg: Root = CliEvaluator::new()
-    .evaluate(&ModuleSource::from_file("config.pkl")).await?;
 ```
 
 ## External readers
