@@ -6,7 +6,7 @@ Rust bindings for the [Pkl configuration language](https://pkl-lang.org). Port o
 
 ## Choose your path
 
-### 🛠 CLI — evaluate and generate from the terminal
+### CLI — evaluate and generate from the terminal
 
 ```bash
 cargo install --git https://github.com/DevYatsu/pkl_bindgen.git
@@ -16,7 +16,7 @@ pkl-bindgen expr 'name = "Hello, Pkl!"'
 pkl-bindgen generate schema.pkl -o gen.rs
 ```
 
-### 📦 Library — embed in your Rust project
+### Library — embed in your Rust project
 
 ```toml
 [dependencies]
