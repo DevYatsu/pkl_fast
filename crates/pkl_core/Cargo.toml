@@ -7,7 +7,6 @@ description = "Pkl configuration language evaluator and deserialization"
 repository = "https://github.com/DevYatsu/pkl_bindgen.git"
 
 [dependencies]
-pkl_macros = { version = "0.2", path = "../pkl_macros" }
 serde = { version = "1", features = ["derive"] }
 rmpv = { version = "1", features = ["serde"] }
 rmp-serde = "1"

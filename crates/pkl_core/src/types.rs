@@ -1,10 +1,10 @@
 use std::fmt;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Represents a Pkl Duration value.
 ///
 /// Durations have a numeric value and a unit (ns, us, ms, s, min, h, d).
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct Duration {
     /// The numeric value of this duration.
     pub value: f64,
@@ -45,7 +45,7 @@ impl fmt::Display for Duration {
 /// Represents a Pkl DataSize value.
 ///
 /// Data sizes have a numeric value and a unit (b, kb, mb, gb, tb, pb, kib, mib, gib, tib, pib).
-#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 pub struct DataSize {
     /// The numeric value of this data size.
     pub value: f64,

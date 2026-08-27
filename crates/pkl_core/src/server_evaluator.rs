@@ -7,7 +7,7 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, oneshot};
 use std::time::Duration;
 
-use crate::decode::{self, PklDecode};
+use crate::decode;
 use crate::error::{PklError, PklResult};
 use crate::evaluator::PklEvaluator;
 use crate::module_source::ModuleSource;
@@ -360,11 +360,6 @@ impl ServerEvaluator {
 
 #[async_trait]
 impl PklEvaluator for ServerEvaluator {
-    async fn evaluate<T: PklDecode>(&self, source: &ModuleSource) -> PklResult<T> {
-        let value = self.evaluate_request(source, None).await?;
-        T::decode(value)
-    }
-
     async fn evaluate_raw(&self, source: &ModuleSource) -> PklResult<Value> {
         self.evaluate_request(source, None).await
     }

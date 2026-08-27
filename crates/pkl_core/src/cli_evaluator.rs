@@ -4,7 +4,7 @@ use tokio::io::AsyncWriteExt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use crate::decode::{self, PklDecode};
+use crate::decode;
 use crate::error::{PklError, PklResult};
 use crate::evaluator::PklEvaluator;
 use crate::module_source::ModuleSource;
@@ -45,11 +45,6 @@ impl Default for CliEvaluator {
 
 #[async_trait]
 impl PklEvaluator for CliEvaluator {
-    async fn evaluate<T: PklDecode>(&self, source: &ModuleSource) -> PklResult<T> {
-        let value = self.evaluate_raw(source).await?;
-        T::decode(value)
-    }
-
     async fn evaluate_raw(&self, source: &ModuleSource) -> PklResult<Value> {
         if self.closed.load(Ordering::SeqCst) {
             return Err(PklError::CliError("evaluator is closed".to_string()));

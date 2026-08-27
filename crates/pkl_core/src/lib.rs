@@ -105,17 +105,16 @@ pub mod module_source;
 pub mod msgapi;
 pub mod project;
 pub mod reader;
+pub mod serdes;
 pub mod server_evaluator;
 pub mod types;
 pub mod util;
 pub mod value;
 
 pub use cli_evaluator::CliEvaluator;
-pub use decode::PklDecode;
 pub use error::{PklError, PklResult};
 pub use evaluator::PklEvaluator;
 pub use module_source::ModuleSource;
-pub use pkl_macros::PklDecode;
 pub use server_evaluator::{EvaluatorManager, EvaluatorOptions, ServerEvaluator};
 pub use types::{DataSize, Duration};
 pub use value::Value;

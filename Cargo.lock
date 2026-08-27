@@ -286,7 +286,7 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "pkl-bindgen"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "clap",
  "pkl_codegen",
@@ -297,17 +297,16 @@ dependencies = [
 
 [[package]]
 name = "pkl_codegen"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "syn",
 ]
 
 [[package]]
 name = "pkl_core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "async-trait",
- "pkl_macros",
  "rmp-serde",
  "rmpv",
  "serde",
@@ -321,7 +320,7 @@ dependencies = [
 
 [[package]]
 name = "pkl_macros"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -1,0 +1,11 @@
+/// Application configuration
+name = "pkl_fast"
+version = 42
+debug = true
+pi = 3.14159
+timeout = 30.s
+storage = 100.gb
+output {
+  value = name
+  renderer = new JsonRenderer {}
+}
